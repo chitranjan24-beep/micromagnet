@@ -16,6 +16,7 @@ def fig(fn):
 
 
 def save(name, svg):
+    svg = svg.replace('id="k', f'id="{name}-k').replace('url(#k', f'url(#{name}-k')
     open(os.path.join(OUT, name + '.svg'), 'w', encoding='utf-8').write(svg)
 
 
@@ -307,6 +308,204 @@ def rb_decay():
     ax.line(m, F, 't2', 'fit A·pᵐ + B, p = 0.998')
     ax.hline(0.5, 'thin dash', 'fully mixed', lx=300)
     save('rb-decay', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- Part II figures
+def fermi(E, kT):
+    return 1 / (1 + np.exp(np.clip(E / kT, -60, 60)))
+
+
+@fig
+def band_sige():
+    # conduction band edge vs depth for Si/SiGe heterostructure under positive gate bias
+    z = np.linspace(-60, 60, 1200)  # nm, 0 = top of well, surface at z=-50
+    Ec = np.where(z < -50, 3000, 0.0)
+    off = 160.0
+    Ec = np.where((z >= -50) & (z < 0), off, Ec)
+    Ec = np.where((z >= 0) & (z < 10), 0.0, Ec)
+    Ec = np.where(z >= 10, off, Ec)
+    field = -1.2  # meV/nm tilt from gate
+    E = Ec + field * (z - 5)
+    E = np.where(z < -50, np.nan, E)
+    ax = Axes(600, 300, xlim=(-55, 60), ylim=(-60, 260), xlabel='depth below surface (nm, well from 0 to 10 nm)', ylabel='conduction band edge (meV)')
+    ax.line(z, E, 't1', 'conduction band edge')
+    ax.hline(8, 't2 dash', 'Fermi level (set by reservoir)', lx=-48)
+    ax.text(-45, 225, 'SiGe spacer', 'sm'); ax.text(1, 230, 'Si well', 'sm'); ax.text(20, 210, 'SiGe buffer', 'sm')
+    ax.vline(0, 'thin dash'); ax.vline(10, 'thin dash')
+    save('band-sige', ax.svg(legend_pos='br'))
+
+
+def ci_dot_current(Vsd, Vg, Ec=1.0, alpha=0.1, kT=0.02, n_levels=range(-3, 5)):
+    I = np.zeros_like(Vsd)
+    for N in n_levels:
+        mu = N * Ec - alpha * Vg * 1000 * 1e-3  # all in meV, Vg in mV
+        # symmetric bias, gate also couples weakly to source/drain potential via eta
+        muL, muR = Vsd / 2, -Vsd / 2
+        I += fermi(mu - muL, kT) - fermi(mu - muR, kT)
+    return I
+
+
+@fig
+def coulomb_peaks():
+    Vg = np.linspace(0, 40, 2000)  # mV
+    kT = 0.02
+    Ec, alpha = 1.0, 0.1
+    G = np.zeros_like(Vg)
+    for N in range(0, 6):
+        mu = N * Ec + 0.5 - alpha * Vg
+        G += 1 / np.cosh(mu / (2 * kT)) ** 2
+    ax = Axes(600, 260, xlim=(0, 40), ylim=(0, 1.1), xlabel='plunger gate voltage V<tspan baseline-shift="sub" font-size="9">P</tspan> (mV, relative)', ylabel='conductance G (norm.)', yticks=[0, 0.5, 1])
+    ax.line(Vg, G, 't1')
+    for x, N in [(10, 1), (20, 2), (30, 3)]:
+        ax.text(x, 0.55, f'N = {N}', 'sm', anchor='middle')
+    ax.text(2.4, 0.55, 'N = 0', 'sm', anchor='middle')
+    save('coulomb-peaks', ax.svg())
+
+
+@fig
+def coulomb_diamonds():
+    vg = np.linspace(0, 40, 420)
+    vsd = np.linspace(-2.5, 2.5, 300)
+    VG, VSD = np.meshgrid(vg, vsd)
+    I = np.zeros_like(VG)
+    kT = 0.03
+    Ec, alpha = 1.0, 0.1
+    for N in range(-1, 7):
+        mu = N * Ec + 0.5 - alpha * VG
+        I += fermi(mu - VSD / 2, kT) - fermi(mu + VSD / 2, kT)
+    G = np.gradient(I, vsd, axis=0)
+    ax = Axes(600, 330, xlim=(0, 40), ylim=(-2.5, 2.5), xlabel='plunger gate voltage V<tspan baseline-shift="sub" font-size="9">P</tspan> (mV, relative)', ylabel='bias V<tspan baseline-shift="sub" font-size="9">SD</tspan> (mV)', grid=False)
+    ax.image(colormap(np.abs(G[::-1]), 'magma', 0, np.percentile(np.abs(G), 99.5)))
+    ax.text(10, 0, 'N = 1', 'lbl', anchor='middle', dy=4)
+    ax.text(20, 0, 'N = 2', 'lbl', anchor='middle', dy=4)
+    ax.text(30, 0, 'N = 3', 'lbl', anchor='middle', dy=4)
+    for t in ax.parts[-3:]:
+        pass
+    save('coulomb-diamonds', ax.svg())
+
+
+def dd_ground(V1, V2, U1=3.0, U2=3.0, Um=0.6, a=((0.10, 0.03), (0.03, 0.10)), kT=0.03, tc=0.0, Nmax=4):
+    n1 = a[0][0] * V1 + a[0][1] * V2
+    n2 = a[1][0] * V1 + a[1][1] * V2
+    best = None
+    states = [(i, j) for i in range(Nmax) for j in range(Nmax)]
+    Es = []
+    for (i, j) in states:
+        E = 0.5 * U1 * (i - n1) ** 2 + 0.5 * U2 * (j - n2) ** 2 + Um * (i - n1) * (j - n2)
+        Es.append(E)
+    Es = np.array(Es)
+    w = np.exp(-(Es - Es.min(axis=0)) / kT)
+    Z = w.sum(axis=0)
+    N1 = sum(w[k] * states[k][0] for k in range(len(states))) / Z
+    N2 = sum(w[k] * states[k][1] for k in range(len(states))) / Z
+    return N1, N2
+
+
+@fig
+def honeycomb():
+    v1 = np.linspace(0, 32, 360); v2 = np.linspace(0, 32, 360)
+    V1, V2 = np.meshgrid(v1, v2)
+    N1, N2 = dd_ground(V1, V2, kT=0.05)
+    sig = -(0.8 * N1 + 0.5 * N2) + 0.015 * V1 + 0.01 * V2
+    d = np.hypot(np.gradient(sig, axis=1), np.gradient(sig, axis=0))
+    ax = Axes(420, 400, xlim=(0, 32), ylim=(0, 32), xlabel='V<tspan baseline-shift="sub" font-size="9">P1</tspan> (mV, relative)', ylabel='V<tspan baseline-shift="sub" font-size="9">P2</tspan> (mV, relative)', grid=False, ml=56)
+    ax.image(colormap(d[::-1], 'Greys', 0, np.percentile(d, 99)))
+    labels = {}
+    for i in range(4):
+        for j in range(4):
+            m = (np.round(N1) == i) & (np.round(N2) == j)
+            if m.sum() > 400:
+                labels[(i, j)] = (V1[m].mean(), V2[m].mean())
+    for (i, j), (x, y) in labels.items():
+        ax.text(x, y, f'({i},{j})', 'sm tacc', anchor='middle', dy=4)
+    save('honeycomb', ax.svg())
+
+
+@fig
+def virtual_gates():
+    v1 = np.linspace(0, 32, 300); v2 = np.linspace(0, 32, 300)
+    V1, V2 = np.meshgrid(v1, v2)
+    a = ((0.10, 0.05), (0.05, 0.10))
+    N1, N2 = dd_ground(V1, V2, a=a, kT=0.05)
+    sig = -(0.8 * N1 + 0.5 * N2)
+    d = np.hypot(np.gradient(sig, axis=1), np.gradient(sig, axis=0))
+    ax1 = Axes(330, 330, xlim=(0, 32), ylim=(0, 32), xlabel='V<tspan baseline-shift="sub" font-size="9">P1</tspan> (mV)', ylabel='V<tspan baseline-shift="sub" font-size="9">P2</tspan> (mV)', grid=False, title='physical gates')
+    ax1.image(colormap(d[::-1], 'Greys', 0, np.percentile(d, 99)))
+    # virtual: u1 = n1/a11 etc.  Map virtual grid to physical voltages
+    A = np.array(a)
+    u1 = np.linspace(0, 32, 300); u2 = np.linspace(0, 32, 300)
+    U1, U2 = np.meshgrid(u1, u2)
+    # we want n1 = 0.1*U1, n2 = 0.1*U2 -> solve A @ V = 0.1*U
+    inv = np.linalg.inv(A) * 0.1
+    P1 = inv[0, 0] * U1 + inv[0, 1] * U2
+    P2 = inv[1, 0] * U1 + inv[1, 1] * U2
+    N1v, N2v = dd_ground(P1, P2, a=a, kT=0.05)
+    sigv = -(0.8 * N1v + 0.5 * N2v)
+    dv = np.hypot(np.gradient(sigv, axis=1), np.gradient(sigv, axis=0))
+    ax2 = Axes(330, 330, xlim=(0, 32), ylim=(0, 32), xlabel='virtual gate P1′ (mV)', ylabel='virtual gate P2′ (mV)', grid=False, title='virtual gates')
+    ax2.image(colormap(dv[::-1], 'Greys', 0, np.percentile(dv, 99)))
+    save('virtual-gates', row(ax1.svg(), ax2.svg()))
+
+
+@fig
+def interdot_anticrossing():
+    eps = np.linspace(-60, 60, 400)  # ueV
+    for_t = [(0, 't2', 't_c = 0'), (10, 't1', 't_c = 10 µeV'), (25, 't3', 't_c = 25 µeV')]
+    ax = Axes(600, 300, xlim=(-60, 60), ylim=(-115, 60), xlabel='detuning ε (µeV)', ylabel='energy (µeV)')
+    for tc, cls, lab in for_t:
+        E = 0.5 * np.sqrt(eps ** 2 + 4 * tc ** 2)
+        ax.line(eps, E, cls, lab); ax.line(eps, -E, cls)
+    ax.text(-58, 48, '(1,0): electron on the left', 'sm'); ax.text(12, 48, '(0,1): electron on the right', 'sm')
+    save('interdot-anticrossing', ax.svg(legend_pos='br'))
+
+
+def gamma(f, L, Cp, R, Z0=50.0, Cc=None):
+    w = 2 * np.pi * f
+    Zdev = 1 / (1j * w * Cp + 1 / R)
+    Z = 1j * w * L + Zdev
+    return (Z - Z0) / (Z + Z0)
+
+
+@fig
+def reflecto_resonance():
+    f = np.linspace(150e6, 350e6, 2000)
+    L, Cp = 820e-9, 0.5e-12
+    ax = Axes(330, 300, xlim=(150, 350), ylim=(0, 1.02), xlabel='frequency (MHz)', ylabel='|Γ| (reflection magnitude)', title='magnitude', mr=12)
+    ax2 = Axes(330, 300, xlim=(150, 350), ylim=(-180, 180), xlabel='frequency (MHz)', ylabel='phase of Γ (deg)', title='phase', yticks=[-180, -90, 0, 90, 180], mr=12)
+    for R, cls, lab in [(10e3, 't2', 'R = 10 kΩ'), (33e3, 't1', 'R = 33 kΩ (matched)'), (150e3, 't3', 'R = 150 kΩ'), (1e9, 't4', 'R → ∞ (blockade)')]:
+        g = gamma(f, L, Cp, R)
+        ax.line(f / 1e6, np.abs(g), cls, lab)
+        ax2.line(f / 1e6, np.degrees(np.angle(g)), cls)
+    save('reflecto-resonance', row(ax.svg(legend_pos='bl'), ax2.svg()))
+
+
+@fig
+def reflecto_sensitivity():
+    R = np.logspace(3.5, 6.5, 400)
+    L, Cp = 820e-9, 0.5e-12
+    f0 = 1 / (2 * np.pi * np.sqrt(L * Cp))
+    g = gamma(f0, L, Cp, R)
+    dG = np.abs(np.gradient(g, np.log(R)))
+    ax = Axes(600, 280, xlim=(3.5, 6.5), ylim=(0, 1.05), xlabel='sensor resistance R (log scale)', ylabel='value', xticks=[4, 5, 6], xfmt=lambda v: {4: '10 kΩ', 5: '100 kΩ', 6: '1 MΩ'}[int(v)])
+    ax.line(np.log10(R), np.abs(g), 't1', '|Γ| at f₀')
+    ax.line(np.log10(R), dG / dG.max(), 't2', 'sensitivity |dΓ/d ln R| (norm.)')
+    ax.vline(np.log10(L / (50 * Cp)), 'thin dash', 'R_match = L/(Z₀C_p)', ly=0.2)
+    save('reflecto-sensitivity', ax.svg(legend_pos='tr'))
+
+
+@fig
+def sensor_peak():
+    V = np.linspace(-3, 3, 800)
+    G0 = 1 / np.cosh(V / 0.6) ** 2
+    G1 = 1 / np.cosh((V + 0.45) / 0.6) ** 2
+    ax = Axes(600, 290, xlim=(-3, 3), ylim=(0, 1.1), xlabel='sensor gate voltage (mV, relative)', ylabel='sensor conductance (norm.)')
+    ax.line(V, G0, 't1', 'qubit dot holds N electrons')
+    ax.line(V, G1, 't2', 'one extra electron nearby: peak shifts')
+    ax.vline(0.55, 'acc', 'operating point (steepest slope)', ly=1.02)
+    ax.text(0.62, 0.48, 'ΔG', 'lbl tacc')
+    ax.parts.append(f'<line class="acc" x1="{float(ax.X(0.58)):.1f}" x2="{float(ax.X(0.58)):.1f}" y1="{float(ax.Y(1/np.cosh(0.55/0.6)**2)):.1f}" y2="{float(ax.Y(1/np.cosh(1.0/0.6)**2)):.1f}"/>')
+    save('sensor-peak', ax.svg(legend_pos='tl'))
 
 
 if __name__ == '__main__':

@@ -1,2 +1,113 @@
-<!--meta {"id": "semiconductors", "part": "Part II \u00b7 Semiconductor quantum dots", "title": "Electrons in semiconductors: bands, heterostructures and 2DEGs"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "semiconductors", "part": "Part II · Semiconductor quantum dots", "title": "Electrons in semiconductors: bands, heterostructures and 2DEGs"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Before an electron can be trapped in a quantum dot, it must be confined to a thin sheet: a two-dimensional electron gas. How that sheet is made decides almost everything about your device: whether gates attract or repel electrons, how big the dots are, how much charge noise there is, whether there are nuclear spins, and, in silicon, the size of the troublesome "valley splitting". When a paper says "undoped Si/SiGe heterostructure, 2DEG 50 nm below the surface, mobility \(2\times10^5\) cm²/Vs", this chapter tells you what each of those words means for your experiment.</p>
+</div>
+
+<p class="lede">You know from solid-state physics that electrons in a crystal live in energy bands, and that a semiconductor has an empty conduction band above a full valence band with a gap in between. This chapter recalls the few results we need and then builds up to the layered structures used for quantum dots.</p>
+
+<h2>Bands, effective mass and why electrons in a crystal look light</h2>
+
+<p>In a crystal, the electron's energy depends on its wave vector \(\vec k\). Near the bottom of the conduction band, at wave vector \(\vec k_0\), the energy is approximately parabolic:</p>
+\[ E(\vec k) \approx E_c + \frac{\hbar^2}{2}\sum_i \frac{(k_i - k_{0,i})^2}{m_i^*} . \]
+<p>The constants \(m_i^*\) are the <dfn data-def="The mass an electron appears to have when moving in a crystal, set by the curvature of the energy band.">effective masses</dfn>. They absorb the whole effect of the periodic crystal potential: near the band edge, an electron behaves like a free particle with mass \(m^*\) instead of the free-electron mass \(m_e\). This is the <i>effective-mass approximation</i>, and it lets us treat a dot like a "particle in a box" with a modified mass.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Property</th><th>Silicon</th><th>GaAs</th></tr></thead>
+<tbody>
+<tr><td>Band gap at low T</td><td>1.17 eV (indirect)</td><td>1.52 eV (direct)</td></tr>
+<tr><td>Conduction band minima</td><td>6 equivalent "Δ valleys" along ⟨100⟩, at about 85% of the way to the zone edge</td><td>1 minimum at the zone centre (Γ point)</td></tr>
+<tr><td>Effective mass</td><td>anisotropic: \(m_l = 0.92\,m_e\) (along the valley axis), \(m_t = 0.19\,m_e\) (across)</td><td>isotropic: \(0.067\,m_e\)</td></tr>
+<tr><td>Relative permittivity \(\varepsilon_r\)</td><td>11.7</td><td>12.9</td></tr>
+<tr><td>Electron g-factor</td><td>≈ 2.00 (weak spin–orbit)</td><td>≈ −0.44 (stronger spin–orbit)</td></tr>
+<tr><td>Nuclear spins</td><td>only <sup>29</sup>Si (4.7% natural), can be removed</td><td>every Ga and As nucleus (spin 3/2)</td></tr>
+</tbody></table></div>
+<p>Values are standard textbook numbers; see the reviews for context <cite data-r="zwanenburg2013,hanson2007"></cite>.</p>
+
+<p>The light mass in GaAs makes quantum effects appear on larger length scales, so GaAs dots can be larger and easier to make. The heavier transverse mass in silicon means silicon dots must be smaller (tens of nanometres) for the same orbital energy spacing. The table's last two rows explain why silicon won the coherence race.</p>
+
+<h2>Confinement in one direction: quantum wells and 2DEGs</h2>
+
+<p>If you confine an electron in the z direction to a layer of thickness \(w\), its z motion is quantised like a particle in a box, with energies \(E_n \approx \hbar^2\pi^2 n^2/(2m_z w^2)\), while it moves freely in x and y. If only the lowest z level (\(n=1\)) is occupied, the electrons form a <dfn data-def="Electrons that can move freely in a plane but are confined in the perpendicular direction, typically in a quantum well or at an interface.">two-dimensional electron gas (2DEG)</dfn>.</p>
+
+<p>Two useful 2D results:</p>
+<ul>
+<li><b>Density of states</b> is constant: \(D = g_s g_v m^*/(2\pi\hbar^2)\) per unit area and energy, where \(g_s = 2\) is the spin degeneracy and \(g_v\) the valley degeneracy (2 for silicon wells, 1 for GaAs).</li>
+<li><b>Electron density</b> \(n\) is set by the gate voltage through a parallel-plate capacitor: \(n \approx C_{\text{gate}}(V_g - V_{\text{th}})/e\) per unit area, where \(V_{\text{th}}\) is the turn-on (threshold) voltage. Typical Si/SiGe quantum-dot wafers run at \(n \sim (1\text{–}5)\times 10^{11}\) cm⁻².</li>
+</ul>
+
+<p>The quality of a 2DEG is usually quoted as its <dfn data-def="How easily electrons move in a material: drift velocity per unit electric field, in cm²/Vs; a measure of disorder.">mobility</dfn> \(\mu\) (drift velocity per unit electric field). High mobility means little disorder. Si/SiGe quantum-dot wafers reach \(10^5\)–\(10^6\) cm²/Vs; the best GaAs/AlGaAs wafers exceed \(10^7\) cm²/Vs. Mobility is measured in Hall bars on the same wafer, and labs also quote the <dfn data-def="The lowest 2DEG density at which a sample still conducts; lower values indicate less disorder.">percolation density</dfn>: the lowest density at which the 2DEG still conducts. A low percolation density (around \(10^{10}\) cm⁻²) indicates a clean, quiet potential landscape, which is what quantum dots need.</p>
+
+<h2>The Si/SiGe heterostructure</h2>
+
+<p>Germanium has a 4% larger lattice constant than silicon, and SiGe alloys lie in between. A <dfn data-def="A crystal made of layers of different semiconductors grown on top of each other, used to confine carriers.">heterostructure</dfn> for electron spin qubits is grown like this (Figure 1.1):</p>
+<ol>
+<li>A silicon wafer, then a <b>graded buffer</b> in which the Ge fraction rises slowly to about 30% over a few micrometres. Defects from the lattice mismatch are trapped in this buffer.</li>
+<li>A thick relaxed Si<sub>0.7</sub>Ge<sub>0.3</sub> layer with the larger lattice constant.</li>
+<li>A thin (about 10 nm) <b>silicon quantum well</b>. Because it is grown on the larger SiGe lattice, it is stretched in-plane: <b>tensile strain</b>.</li>
+<li>A SiGe <b>spacer</b> (30–50 nm), a thin Si cap, an oxide, and the metal gates.</li>
+</ol>
+
+<p>The strain is essential. In bulk silicon all six Δ valleys have the same energy. Tensile in-plane strain lowers the two valleys whose axis points out of the plane (along ±z) by roughly 100–200 meV relative to the four in-plane valleys. The conduction band in the silicon layer is also lower than in the SiGe around it by roughly 150 meV, so electrons collect in the silicon well. In those two z valleys, the in-plane effective mass is the light transverse mass \(m_t = 0.19\,m_e\), which helps make reasonably sized dots <cite data-r="zwanenburg2013"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:band-sige--></div>
+<figcaption>Schematic conduction-band edge through a Si/SiGe heterostructure with a positive top-gate voltage. The gate field tilts the bands; electrons accumulate where the band edge drops below the Fermi level, which is in the silicon well. In an undoped heterostructure there are no electrons at all until a gate pulls them in. The ~160 meV band offset is a typical value for Si<sub>0.7</sub>Ge<sub>0.3</sub>.</figcaption>
+</figure>
+
+<h3>Undoped, accumulation-mode devices</h3>
+<p>Modern Si/SiGe qubit wafers are <b>undoped</b>. With no gate voltage there are no free electrons near the well. Positive voltages on <dfn data-def="A gate that pulls electrons into the 2DEG under it; used to form the reservoirs leading to dots.">accumulation gates</dfn> pull electrons in from implanted ohmic contacts to form reservoirs, and positive plunger gates pull electrons into the dots. Without dopant atoms nearby, the potential is quieter. The price is that you need a dense set of gates to make anything happen, usually in several overlapping layers of aluminium or palladium separated by thin oxide. Overlapping-gate designs, introduced for Si/SiGe by the Princeton group, let every barrier and plunger be controlled independently <cite data-r="burkard2023"></cite>.</p>
+
+<h2>Valleys: silicon's extra quantum number</h2>
+
+<p>The two lowest valleys (+z and −z) are degenerate in the ideal strained well. Electrons in a dot then have an extra two-fold degree of freedom, the <dfn data-def="The label distinguishing degenerate conduction-band minima (valleys) in silicon; an extra two-level degree of freedom besides spin.">valley</dfn>, besides spin. A sharp interface couples the two valleys and splits them into two states separated by the <dfn data-def="The energy splitting between the two lowest valley states of an electron in a silicon quantum dot; typically 20–300 µeV in Si/SiGe.">valley splitting</dfn> \(E_{VS}\).</p>
+
+<p>Why it matters for spin qubits:</p>
+<ul>
+<li>If \(E_{VS}\) is smaller than or comparable to the Zeeman energy, a "spin-up, lower valley" state can be close in energy to "spin-down, upper valley". These states mix via spin–orbit coupling and T1 collapses (the <b>relaxation hot spot</b>).</li>
+<li>Pauli spin blockade readout (Chapter 11) relies on the two-electron triplet states being high in energy. A small valley splitting provides a low-energy triplet-like state that lifts the blockade and ruins readout.</li>
+<li>Small valley splittings also make it hard to shuttle electrons between dots without errors.</li>
+</ul>
+<p>In Si/SiGe, \(E_{VS}\) is typically 20–300 µeV and varies from dot to dot, because the random arrangement of Ge atoms at the interface (alloy disorder) shifts the valley coupling. Measuring it on each dot is part of device characterisation, by spectroscopy, by finding the T1 hot spot versus magnetic field, or by magnetospectroscopy <cite data-r="burkard2023"></cite>. Si-MOS devices, with a sharp Si/SiO<sub>2</sub> interface, usually have larger valley splittings (0.1–1 meV) but more disorder <cite data-r="zwanenburg2013"></cite>. GaAs has a single conduction-band minimum and no valley problem.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>A dot has \(E_{VS} = 60\ \mu\)eV. At what field does the spin Zeeman energy reach the valley splitting (the hot spot)?</p>
+<p>\(E_Z = g\mu_B B = 2\times57.9\ \mu\text{eV/T}\times B\). Setting \(E_Z = 60\ \mu\)eV gives \(B = 0.52\) T, a qubit frequency of about 14.5 GHz. Operating near 0.5 T would make T1 short. You would choose a field well below (say 0.3 T, 8.4 GHz) or, if possible, well above. Notice that the field you choose also decides your microwave hardware (Chapter 2).</p>
+</div>
+
+<h2>GaAs/AlGaAs heterostructures</h2>
+
+<p>In the classic GaAs system, a layer of AlGaAs (larger band gap) sits on GaAs. Silicon donor atoms placed in the AlGaAs, away from the interface ("modulation doping"), give up their electrons, which fall into a triangular well at the GaAs side of the interface and form a 2DEG about 50–100 nm below the surface. The donors stay behind, far from the electrons, so mobility is very high. Here the 2DEG exists without any gate voltage. Negative voltages on surface gates <b>deplete</b> the electrons underneath, and dots are defined as small islands left between depleted regions. That is why older GaAs papers show gate patterns that look like fingers pinching off a channel <cite data-r="hanson2007"></cite>.</p>
+
+<p>GaAs remains valuable for spin physics because its devices are easy to make and tune, and because some experiments benefit from its strong hyperfine interaction or spin–orbit coupling. Its weakness for qubits is the nuclear-spin bath, which limits \(T_2^*\) to about 10 ns without special techniques.</p>
+
+<h2>Other platforms you will read about</h2>
+<ul>
+<li><b>Si-MOS</b>: electrons at a Si/SiO<sub>2</sub> interface under aluminium gates, close to standard transistor technology. Larger valley splitting, more interface disorder.</li>
+<li><b>Holes in Ge/SiGe</b>: planar germanium quantum wells host holes with a light in-plane mass, strong spin–orbit coupling (allowing all-electrical driving without a micromagnet) and low hyperfine coupling. Four-qubit processors have been made in this system <cite data-r="scappucci2021"></cite>.</li>
+<li><b>Donors in silicon</b>: a single phosphorus atom provides both an electron spin and a nuclear spin qubit.</li>
+<li><b>Fin and nanowire devices</b> (FinFET, CMOS foundry qubits), in which the dot forms at the corner of a silicon channel.</li>
+</ul>
+<p>The measurement techniques in this book apply to all of them. The details of tuning differ.</p>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Before a new wafer is used for qubits, groups measure Hall bars at 4 K or below to get density and mobility versus gate voltage, then measure single-electron transistors to check charge noise. Only promising wafers go on to full qubit devices. Ask about the heterostructure details whenever you get a new device: spacer thickness (deeper 2DEG means quieter but less strongly controlled dots), well width, and the isotope content of the well (<sup>28</sup>Si purified or natural).</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why do gates on undoped Si/SiGe need positive voltages, while gates on modulation-doped GaAs use negative voltages?</p>
+<details><summary>Show answer</summary><div>Undoped Si/SiGe has no free electrons in the well until a positive gate voltage pulls them in (accumulation mode). Doped GaAs already has a 2DEG; negative gate voltages push electrons away (depletion mode) to define dots.</div></details>
+<p>2. What two roles does tensile strain play in a Si quantum well?</p>
+<details><summary>Show answer</summary><div>It lowers the two out-of-plane (±z) valleys well below the four in-plane valleys, leaving just a two-fold valley degeneracy, and it gives the light transverse mass for in-plane motion. (Together with the band offset it also confines electrons in the silicon layer.)</div></details>
+<p>3. A paper reports a valley splitting of 25 µeV in one dot. Name two problems this might cause.</p>
+<details><summary>Show answer</summary><div>A spin–valley relaxation hot spot at a low field (about 0.22 T), limiting T1 and the usable field range; and weak Pauli spin blockade, because a low-lying excited valley state allows triplets to tunnel, reducing readout fidelity.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Near the band edge, electrons act as particles with an effective mass: \(0.19\,m_e\) (in-plane, strained Si) or \(0.067\,m_e\) (GaAs).</li>
+<li>Heterostructures confine electrons into 2DEGs. Undoped Si/SiGe works in accumulation mode with positive gates; doped GaAs works in depletion mode with negative gates.</li>
+<li>Silicon has two low valleys separated by a device-dependent valley splitting (20–300 µeV in Si/SiGe), which limits T1 and readout if small.</li>
+<li>Silicon's nuclear-spin bath can be removed by isotopic purification; GaAs's cannot.</li>
+</ul>
+</div>

@@ -1,2 +1,203 @@
-<!--meta {"id": "sensing", "part": "Part II \u00b7 Semiconductor quantum dots", "title": "Charge sensing and RF reflectometry"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "sensing", "part": "Part II · Semiconductor quantum dots", "title": "Charge sensing and RF reflectometry"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Spin readout is charge readout in disguise: the spin state is converted into "did an electron move or not?" (Chapter 11), and that question is answered by a charge sensor. How fast and how cleanly you can read the sensor decides your readout fidelity, how quickly you can map charge stability diagrams, and how long every experiment takes. RF reflectometry is the standard fast technique, and it is the job the RFSoC 4x2 is best suited for: a carrier of a few hundred MHz out of a DAC, a reflected signal into an ADC, and real-time demodulation in the FPGA in between.</p>
+</div>
+
+<h2>Why sense charge instead of measuring current?</h2>
+
+<p>Measuring current through the qubit dots themselves has two problems. First, qubit dots are tuned with very opaque barriers so that electrons stay put; the currents would be femtoamperes. Second, a current means electrons passing through, which destroys the state you want to measure. A <dfn data-def="A nearby electrometer (QPC or sensor dot) whose conductance changes when an electron moves in the qubit dots.">charge sensor</dfn> avoids both: it is a separate, nearby conductor whose conductance depends on the electrostatic environment, so it detects charges in the qubit dots without any current flowing through them.</p>
+
+<h2>The two kinds of charge sensor</h2>
+<ul>
+<li><b>Quantum point contact (QPC).</b> A narrow constriction in the 2DEG, defined by two gates. Its conductance is quantised in steps of \(2e^2/h\); on the slope between steps, it is very sensitive to nearby charges. QPCs were the standard sensor in GaAs.</li>
+<li><b>Sensor dot (single-electron transistor, SET).</b> A larger quantum dot with relatively open barriers, tuned to the flank of one of its Coulomb peaks. A single electron arriving in a nearby qubit dot shifts the sensor's peak by a fraction of its width, changing the conductance by a large fraction. Sensor dots are standard in silicon devices.</li>
+</ul>
+
+<figure>
+<div class="figbody"><!--plot:sensor-peak--></div>
+<figcaption>How a sensor dot works. Biased on the steep flank of a Coulomb peak, a small shift of the peak, caused by one electron entering a nearby qubit dot, produces a large change \(\Delta G\) in conductance. The shift here is 0.45 mV in sensor-gate units: the qubit electron acts on the sensor like a small change of its gate voltage.</figcaption>
+</figure>
+
+<p>The <b>signal</b> is the conductance change \(\Delta G\). The <b>noise</b> comes from the amplifier chain and from charge noise moving the sensor peak. The ratio, integrated over a measurement time, gives the readout SNR of Chapter 5.</p>
+
+<h2>Why DC sensing is slow</h2>
+
+<p>The simplest way to read a sensor is to apply a small DC bias and measure the current with a room-temperature current amplifier. The problem is the wiring. A sensor with resistance \(R\sim 100\) kΩ connected through a coaxial cable to room temperature sees the cable's capacitance \(C_{\text{line}}\sim 100\) pF–1 nF. The resulting RC time constant is \(10^5\times 10^{-10} = 10\ \mu\)s or longer, and the current amplifier's own bandwidth (typically 1–100 kHz at high gain) limits things further. DC readout therefore needs tens of microseconds to milliseconds per point. That is fine for slow tune-up but slow for single-shot readout and very slow for mapping large CSDs.</p>
+
+<h2>RF reflectometry: the idea</h2>
+
+<p>Instead of measuring a current, <dfn data-def="Measuring a device's resistance or capacitance from the RF signal reflected by an LC resonator that contains it; enables MHz-bandwidth charge sensing.">RF reflectometry</dfn> measures how much of a radio-frequency wave is reflected from the sensor. The sensor is placed in an LC resonant circuit, so that its resistance changes the circuit's impedance. A carrier wave at the resonance frequency (typically 100 MHz–1 GHz) travels down a 50 Ω coaxial line to the circuit and reflects back. The reflected amplitude and phase depend on the sensor resistance. The cable capacitance no longer matters, because the cable is a transmission line with a defined impedance, not a lumped capacitor. Bandwidths of several MHz become possible <cite data-r="reilly2007,vigneau2023"></cite>.</p>
+
+<div class="box analogy"><span class="tag">Analogy</span>
+<p>Shout into a long pipe that ends at a wall: the echo comes back loud. If the pipe ends in open air, the echo is also strong (with opposite sign). If the pipe ends in a perfectly absorbing foam, no echo returns. The sensor plus resonator is a "foam" whose absorption changes with the sensor resistance. You listen to the echo's strength and timing to learn the resistance.</p>
+</div>
+
+<h3>Reflection from a load</h3>
+<p>A wave travelling on a transmission line of characteristic impedance \(Z_0\) (50 Ω for standard coax) that meets a load of impedance \(Z\) is partly reflected. The <dfn data-def="Γ = (Z − Z0)/(Z + Z0): the complex ratio of reflected to incident wave at a load of impedance Z on a line of impedance Z0.">reflection coefficient</dfn> is <cite data-r="pozar"></cite></p>
+\[ \Gamma = \frac{Z - Z_0}{Z + Z_0} . \]
+<p>If \(Z = Z_0\) (matched), \(\Gamma = 0\): all power is absorbed. If \(Z = 0\) (short) or \(Z = \infty\) (open), \(|\Gamma| = 1\): everything reflects. A sensor resistance of 100 kΩ on its own is so far from 50 Ω that it reflects almost everything, regardless of small changes. The resonator's job is to transform the sensor's large resistance into something close to 50 Ω, so that small changes in \(R\) produce large changes in \(\Gamma\).</p>
+
+<h3>The LC tank circuit</h3>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 270" width="760" role="img" aria-label="Reflectometry tank circuit">
+  <text class="sm" x="20" y="22">from the fridge line (Z₀ = 50 Ω)</text>
+  <line class="ln" x1="20" y1="60" x2="120" y2="60"/>
+  <polygon points="80,52 96,60 80,68" class="fillink"/>
+  <text class="sm" x="28" y="80">incident wave</text>
+  <polygon points="60,92 44,100 60,108" class="f2"/>
+  <line class="t2" x1="40" y1="100" x2="120" y2="100"/>
+  <text class="sm t2t" x="28" y="124">reflected wave Γ</text>
+  <!-- inductor -->
+  <line class="ln" x1="120" y1="60" x2="160" y2="60"/>
+  <path class="ln" d="M160,60 q10,-18 20,0 q10,-18 20,0 q10,-18 20,0 q10,-18 20,0"/>
+  <line class="ln" x1="240" y1="60" x2="300" y2="60"/>
+  <text class="lbl" x="200" y="36" text-anchor="middle">L (chip inductor, 0.2–2 µH)</text>
+  <!-- node to bias tee -->
+  <circle cx="300" cy="60" r="3" class="fillink"/>
+  <line class="ln" x1="300" y1="60" x2="300" y2="110"/>
+  <!-- parasitic C -->
+  <line class="ln" x1="300" y1="110" x2="300" y2="140"/>
+  <line class="ln" x1="276" y1="140" x2="324" y2="140"/><line class="ln" x1="276" y1="148" x2="324" y2="148"/>
+  <line class="ln" x1="300" y1="148" x2="300" y2="200"/>
+  <text class="sm" x="180" y="142">C<tspan baseline-shift="sub" font-size="8">p</tspan> (parasitic,</text><text class="sm" x="180" y="156">0.2–1 pF)</text>
+  <!-- sensor resistor -->
+  <line class="ln" x1="300" y1="110" x2="400" y2="110"/>
+  <line class="ln" x1="400" y1="110" x2="400" y2="126"/>
+  <path class="ln" d="M400,126 l8,5 l-16,8 l16,8 l-16,8 l16,8 l-8,5"/>
+  <line class="ln" x1="400" y1="168" x2="400" y2="200"/>
+  <text class="lbl" x="414" y="146">R (sensor dot)</text>
+  <text class="sm" x="414" y="162">changes with charge</text>
+  <line class="ln" x1="280" y1="200" x2="420" y2="200"/>
+  <line class="ln" x1="290" y1="206" x2="410" y2="206"/><line class="ln" x1="305" y1="212" x2="395" y2="212"/>
+  <text class="sm" x="330" y="232">ground (at mK)</text>
+  <!-- bias tee -->
+  <line class="ln" x1="300" y1="60" x2="520" y2="60"/>
+  <rect x="520" y="44" width="120" height="34" rx="3" class="boxl"/>
+  <text class="sm" x="580" y="65" text-anchor="middle">bias tee / RC filter</text>
+  <line class="ln" x1="640" y1="60" x2="740" y2="60"/>
+  <text class="sm" x="650" y="48">DC bias for the sensor</text>
+  <text class="sm" x="520" y="110">On many devices the ohmic contact of the</text>
+  <text class="sm" x="520" y="126">sensor connects here and the other ohmic</text>
+  <text class="sm" x="520" y="142">is grounded. In gate-based sensing, the</text>
+  <text class="sm" x="520" y="158">resonator attaches to a gate instead.</text>
+</svg>
+</div>
+<figcaption>The standard reflectometry tank circuit. A chip inductor \(L\) on the sample PCB forms a series resonator with the parasitic capacitance \(C_p\) of the bond pads and wiring. The sensor's resistance \(R\) sits in parallel with \(C_p\). Typical values follow Vigneau et al. <cite data-r="vigneau2023"></cite>.</figcaption>
+</figure>
+
+<p>The load impedance seen from the line is</p>
+\[ Z(\omega) = i\omega L + \frac{1}{i\omega C_p + 1/R} . \]
+<p>For large \(R\), a short calculation (expand for \(\omega C_p R \gg 1\)) shows that near the resonance frequency</p>
+\[ f_0 = \frac{1}{2\pi\sqrt{LC_p}} \]
+<p>the circuit behaves like a resistance \(R_{\text{eff}} \approx L/(C_pR)\). Matching, \(R_{\text{eff}} = Z_0\), happens when the sensor resistance equals</p>
+\[ R_{\text{match}} = \frac{L}{Z_0 C_p} . \]
+<p>At matching \(|\Gamma| = 0\) at \(f_0\), and the sensitivity \(|d\Gamma/dR|\) is largest. Away from matching, the response is weaker.</p>
+
+<figure>
+<div class="figbody"><!--plot:reflecto-resonance--></div>
+<figcaption>Reflection from a tank circuit with \(L = 820\) nH and \(C_p = 0.5\) pF (\(f_0 \approx 249\) MHz, \(R_{\text{match}} = 33\) kΩ) for several sensor resistances. At matching, the dip in \(|\Gamma|\) goes to zero and the phase jumps sharply. In blockade (\(R\to\infty\)) the dip disappears in magnitude but a strong phase response remains.</figcaption>
+</figure>
+
+<figure>
+<div class="figbody"><!--plot:reflecto-sensitivity--></div>
+<figcaption>Reflection magnitude at \(f_0\) and the sensitivity to relative changes in \(R\), for the same circuit. The sensitivity peaks at the matching resistance. A sensor dot whose working point is far from \(R_{\text{match}}\) gives a much weaker signal.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: designing a tank</span>
+<p>Your sensor dot, tuned to its most sensitive flank, has about 50 kΩ. Bond pads and PCB traces give \(C_p \approx 0.6\) pF. Which inductor matches it, and where is the resonance?</p>
+<p>\(L = R_{\text{match}}Z_0C_p = 5\times10^4 \times 50 \times 0.6\times10^{-12} = 1.5\ \mu\)H. Then \(f_0 = 1/(2\pi\sqrt{1.5\times10^{-6}\times0.6\times10^{-12}}) = 168\) MHz. A real example: the Tohoku group used \(L = 1.2\ \mu\)H with \(C_p = 0.6\) pF, giving 193 MHz and matching at about 24 µS (42 kΩ), and noted that their device's actual conductance was far from this, which limited sensitivity <cite data-r="shinozaki2025"></cite>. This is the most common practical problem with reflectometry: the parasitic capacitance is not known until the device is cold, so the match is a guess. Variable capacitors (varactors) on the PCB allow tuning the match in situ.</p>
+</div>
+
+<h2>The measurement chain</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 270" width="900" role="img" aria-label="RF reflectometry measurement chain">
+  <rect x="10" y="10" width="250" height="250" rx="6" class="box"/>
+  <text class="ttl" x="24" y="32">Room temperature</text>
+  <rect x="300" y="10" width="200" height="250" rx="6" class="boxa"/>
+  <text class="ttl" x="314" y="32">4 K stage</text>
+  <rect x="540" y="10" width="350" height="250" rx="6" class="boxl"/>
+  <text class="ttl" x="554" y="32">Mixing chamber (~10 mK)</text>
+  <rect x="24" y="52" width="100" height="50" rx="4" class="boxb"/><text class="lbl" x="74" y="74" text-anchor="middle">DAC</text><text class="sm" x="74" y="92" text-anchor="middle">carrier at f₀</text>
+  <line class="t1" x1="124" y1="77" x2="160" y2="77"/>
+  <rect x="160" y="62" width="80" height="30" class="box"/><text class="sm" x="200" y="81" text-anchor="middle">−20 dB, filter</text>
+  <line class="t1" x1="240" y1="77" x2="340" y2="77"/>
+  <rect x="340" y="62" width="70" height="30" class="box"/><text class="sm" x="375" y="81" text-anchor="middle">−20 dB</text>
+  <line class="t1" x1="410" y1="77" x2="580" y2="77"/>
+  <rect x="580" y="62" width="70" height="30" class="box"/><text class="sm" x="615" y="81" text-anchor="middle">−20 dB</text>
+  <line class="t1" x1="650" y1="77" x2="690" y2="77"/>
+  <rect x="690" y="56" width="90" height="70" rx="3" class="box"/><text class="sm" x="735" y="80" text-anchor="middle">directional</text><text class="sm" x="735" y="96" text-anchor="middle">coupler</text><text class="sm" x="735" y="112" text-anchor="middle">(−20 dB)</text>
+  <line class="t1" x1="780" y1="90" x2="800" y2="90"/>
+  <rect x="800" y="66" width="80" height="50" rx="3" class="boxw"/><text class="sm" x="840" y="88" text-anchor="middle">tank +</text><text class="sm" x="840" y="104" text-anchor="middle">sensor dot</text>
+  <line class="t2" x1="735" y1="126" x2="735" y2="200"/>
+  <line class="t2" x1="735" y1="200" x2="470" y2="200"/>
+  <polygon points="470,188 470,212 446,200" class="f2"/>
+  <text class="sm" x="330" y="236">HEMT amplifier, +30–40 dB,</text><text class="sm" x="330" y="250">noise temperature a few K</text>
+  <line class="t2" x1="446" y1="200" x2="200" y2="200"/>
+  <polygon points="200,190 200,210 180,200" class="f2"/>
+  <text class="sm" x="150" y="232">amplifier + filter</text>
+  <line class="t2" x1="180" y1="200" x2="124" y2="200"/>
+  <rect x="24" y="176" width="100" height="50" rx="4" class="boxb"/><text class="lbl" x="74" y="198" text-anchor="middle">ADC</text><text class="sm" x="74" y="216" text-anchor="middle">+ FPGA demod.</text>
+  <text class="sm" x="24" y="136">DAC and ADC share one</text><text class="sm" x="24" y="152">clock, so the reference is</text><text class="sm" x="24" y="168">phase-locked to the carrier.</text>
+  <text class="sm" x="560" y="160">The coupler sends the weak incident</text><text class="sm" x="560" y="176">wave to the tank and routes the</text><text class="sm" x="560" y="192">reflected wave down to the amplifier.</text>
+</svg>
+</div>
+<figcaption>A typical reflectometry chain. The carrier is heavily attenuated on the way down, so that only about −100 dBm reaches the sample (enough signal, little heating or back-action). A directional coupler separates the reflected wave from the incident one. The reflected wave is amplified by a cryogenic amplifier and again at room temperature, then digitised and demodulated into I and Q.</figcaption>
+</figure>
+
+<p>Each part has a reason:</p>
+<ul>
+<li><b>Attenuation on the way down</b> removes thermal noise from warmer stages (Chapter 16) and sets the probe power at the device. Too much power heats the electrons and broadens the sensor peak; a common working point is around −90 to −110 dBm at the sample.</li>
+<li><b>The directional coupler</b> sends the incident wave through its weakly coupled port and the reflected wave out of its main port towards the amplifier, so the two are separated.</li>
+<li><b>The cryogenic amplifier</b> sets the noise floor. A HEMT amplifier at 4 K has a noise temperature of a few kelvin. Superconducting parametric amplifiers (JPAs, TWPAs) can approach the quantum limit and have improved spin readout speed significantly in some labs <cite data-r="vigneau2023"></cite>.</li>
+<li><b>Demodulation</b> multiplies the returning signal by the carrier (in-phase, I) and by a 90°-shifted copy (quadrature, Q), then low-pass filters. The result is a slowly varying complex number \(I + iQ \propto \Gamma\). With an RFSoC this happens digitally (Chapter 23).</li>
+</ul>
+
+<h3>How fast can you read?</h3>
+<p>For white amplifier noise, the SNR grows with integration time \(t\) as \(\sqrt t\). A useful figure of merit is the <dfn data-def="The integration time needed to achieve SNR = 1 for a given charge signal; lower is better.">minimum integration time</dfn> \(t_{\min}\) needed to reach SNR = 1; then SNR \(= \sqrt{t/t_{\min}}\). Good silicon sensor-dot reflectometry setups reach \(t_{\min}\) of order 10–100 ns with HEMT amplifiers, so SNR 6 (99.9% charge discrimination) takes a few microseconds. This is what enables single-shot spin readout in microseconds <cite data-r="connors2020,vigneau2023"></cite>.</p>
+
+<h2>Gate-based (dispersive) sensing</h2>
+
+<p>An alternative attaches the resonator to a <b>gate</b> of the qubit dots rather than to a separate sensor. When an electron can tunnel back and forth near an interdot transition, it responds to the gate's RF voltage and adds a small <dfn data-def="The effective capacitance from charge tunnelling near a degeneracy point, C_Q = (eα)² ∂P/∂ε; detected by gate-based reflectometry.">quantum capacitance</dfn> \(C_Q = (e\alpha)^2\,\partial P/\partial\varepsilon\). This shifts the resonance frequency, which appears as a phase shift of the reflected wave. Gate-based sensing needs no extra sensor dot, which is attractive for dense arrays and CMOS-style devices. Its signal is usually smaller than a well-tuned sensor dot's, and it only detects transitions where electrons can tunnel at the probe frequency <cite data-r="vigneau2023"></cite>.</p>
+
+<h2>Frequency multiplexing</h2>
+<p>Several resonators with different inductors (different \(f_0\)) can share one input and one output line. Each sensor is probed by its own carrier tone, and the returning signal is demodulated at each tone separately. This "frequency multiplexing" reduces wiring, which is essential for larger devices. With an RFSoC, multiplexing is natural: one DAC can play the sum of several tones, and the FPGA can demodulate several frequencies from one ADC stream at once.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Reflectometry is the 4x2's sweet spot:</p>
+<ul>
+<li>Carriers of 100 MHz–1 GHz are deep inside the DACs' first Nyquist zone (up to about 4.9 GHz) and well above the baluns' 10 MHz lower limit <cite data-r="rd4x2manual"></cite>.</li>
+<li>QICK demodulates in the FPGA: a readout block multiplies the ADC data by its own numerically controlled oscillator, filters, decimates and accumulates over a programmable window, giving one I/Q pair per shot <cite data-r="stefanazzi2022"></cite>.</li>
+<li>Generator and readout run from the same clock tree, so with QICK's frequency matching the demodulated phase is stable from shot to shot <cite data-r="qickdocs"></cite>.</li>
+<li>RFSoC-based reflectometry on gate-defined quantum dots has been demonstrated with QICK on a ZCU216 <cite data-r="shinozaki2025"></cite>. The same firmware concepts run on the 4x2.</li>
+</ul>
+<p>What you still need outside the board: attenuators, a directional coupler, a cryogenic amplifier, a room-temperature amplifier and, usually, filters to keep DAC images and clock spurs out of the ADC. Chapter 39 builds this setup step by step.</p>
+</div>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Sending the DAC's full output power into the fridge. Even at −10 dBm out of the DAC, 0 dB of attenuation would deliver a signal around ten million times stronger than the −100 dBm a sensor dot wants, heating the electrons and saturating the amplifiers. Always calculate the power budget (Chapter 18) before connecting cables, and add attenuation first, remove it later.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does putting the sensor in an LC resonator make it fast, when the same cable used for DC readout made it slow?</p>
+<details><summary>Show answer</summary><div>At DC the cable is a large lumped capacitance that must be charged through the sensor's high resistance (long RC time). At RF, a properly terminated coaxial cable is a transmission line with 50 Ω impedance; the resonator transforms the sensor's high resistance towards 50 Ω so changes in R appear as changes in reflection, with a bandwidth set by the resonator's quality factor (typically MHz).</div></details>
+<p>2. \(C_p = 0.4\) pF and you want \(f_0 \approx 300\) MHz. Which inductor do you need, and what sensor resistance is matched?</p>
+<details><summary>Show answer</summary><div>\(L = 1/((2\pi f_0)^2 C_p) = 1/((1.885\times10^9)^2\times 4\times10^{-13}) \approx 0.70\ \mu\)H. \(R_{\text{match}} = L/(Z_0C_p) = 7\times10^{-7}/(50\times4\times10^{-13}) = 35\) kΩ.</div></details>
+<p>3. In blockade, the magnitude \(|\Gamma|\) barely changes with frequency. Why can you still detect a signal?</p>
+<details><summary>Show answer</summary><div>The resonator is lossless at the device (\(R\to\infty\)), so all power is reflected, but the reflected phase still swings through the resonance. A small change in \(R\) or in capacitance (dispersive shift) changes the phase, which the I/Q demodulation detects.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Charge sensors (QPCs or sensor dots) detect electrons in nearby qubit dots without current through them.</li>
+<li>DC readout is limited by cable capacitance to kHz bandwidths; RF reflectometry reaches MHz.</li>
+<li>A tank circuit with \(f_0 = 1/(2\pi\sqrt{LC_p})\) transforms the sensor resistance; sensitivity peaks at \(R = L/(Z_0C_p)\).</li>
+<li>The chain is: carrier → attenuators → directional coupler → tank → cryogenic amplifier → room-temperature amplifier → digitiser → I/Q demodulation.</li>
+<li>Gate-based sensing and frequency multiplexing reduce hardware per qubit.</li>
+<li>Reflectometry readout is the best match for the 4x2's capabilities.</li>
+</ul>
+</div>

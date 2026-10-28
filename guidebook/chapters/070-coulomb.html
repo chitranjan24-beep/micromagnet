@@ -1,2 +1,166 @@
-<!--meta {"id": "coulomb", "part": "Part II \u00b7 Semiconductor quantum dots", "title": "Making a quantum dot: Coulomb blockade and the constant-interaction model"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "coulomb", "part": "Part II · Semiconductor quantum dots", "title": "Making a quantum dot: Coulomb blockade and the constant-interaction model"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The first measurements on any quantum-dot device are Coulomb peaks and Coulomb diamonds. They prove a dot has formed, tell you its charging energy, and give you the <b>lever arm</b>: the conversion factor between millivolts on a gate and micro-electronvolts in the dot. You need that number for everything after: converting pulse amplitudes from the RFSoC into energies, calibrating detuning axes, and comparing your device with papers. This chapter derives the simple model that every group uses.</p>
+</div>
+
+<p class="lede">A quantum dot is a tiny island of electrons connected to the outside world by tunnel barriers. Because the island is so small, adding even one electron costs a noticeable amount of energy. At low temperature that cost stops electrons from flowing, except at special gate voltages. That effect, Coulomb blockade, is what lets us count and control electrons one at a time.</p>
+
+<h2>The picture: an island with toll gates</h2>
+
+<p>Think of the dot as a small parking garage between two big car parks (the source and drain reservoirs). Each entrance has a narrow tunnel (the barrier). The garage is so small that each car already inside makes it noticeably harder to squeeze another one in. A gate electrode nearby acts like a pump that changes how attractive the garage is. Cars only flow through when the cost of entering from the source is low enough <i>and</i> the cost of leaving to the drain is low enough. For most gate settings, they get stuck: the garage holds a fixed number \(N\) of cars and nothing flows. Only at specific gate settings does the count alternate between \(N\) and \(N+1\), letting cars pass one by one.</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 700 250" width="700" role="img" aria-label="Circuit model of a quantum dot">
+  <rect x="30" y="80" width="110" height="80" rx="4" class="boxl"/>
+  <text class="lbl" x="85" y="118" text-anchor="middle">source</text><text class="sm" x="85" y="136" text-anchor="middle">reservoir, μ<tspan baseline-shift="sub" font-size="8">S</tspan></text>
+  <rect x="560" y="80" width="110" height="80" rx="4" class="boxl"/>
+  <text class="lbl" x="615" y="118" text-anchor="middle">drain</text><text class="sm" x="615" y="136" text-anchor="middle">reservoir, μ<tspan baseline-shift="sub" font-size="8">D</tspan></text>
+  <circle cx="350" cy="120" r="44" class="boxa"/>
+  <text class="lbl" x="350" y="116" text-anchor="middle">dot</text><text class="sm" x="350" y="134" text-anchor="middle">N electrons</text>
+  <!-- tunnel junction symbols: box with cross -->
+  <line class="ln" x1="140" y1="120" x2="220" y2="120"/>
+  <rect x="220" y="104" width="30" height="32" class="box"/><line class="ln" x1="220" y1="104" x2="250" y2="136"/><line class="ln" x1="250" y1="104" x2="220" y2="136"/>
+  <line class="ln" x1="250" y1="120" x2="306" y2="120"/>
+  <text class="sm" x="235" y="96" text-anchor="middle">R<tspan baseline-shift="sub" font-size="8">S</tspan>, C<tspan baseline-shift="sub" font-size="8">S</tspan></text>
+  <line class="ln" x1="394" y1="120" x2="450" y2="120"/>
+  <rect x="450" y="104" width="30" height="32" class="box"/><line class="ln" x1="450" y1="104" x2="480" y2="136"/><line class="ln" x1="480" y1="104" x2="450" y2="136"/>
+  <line class="ln" x1="480" y1="120" x2="560" y2="120"/>
+  <text class="sm" x="465" y="96" text-anchor="middle">R<tspan baseline-shift="sub" font-size="8">D</tspan>, C<tspan baseline-shift="sub" font-size="8">D</tspan></text>
+  <!-- gate capacitor -->
+  <line class="ln" x1="350" y1="164" x2="350" y2="188"/>
+  <line class="ln" x1="326" y1="188" x2="374" y2="188"/><line class="ln" x1="326" y1="196" x2="374" y2="196"/>
+  <line class="ln" x1="350" y1="196" x2="350" y2="222"/>
+  <text class="sm" x="382" y="196">C<tspan baseline-shift="sub" font-size="8">G</tspan></text>
+  <rect x="300" y="222" width="100" height="22" rx="3" class="boxb"/><text class="sm" x="350" y="238" text-anchor="middle">plunger gate V<tspan baseline-shift="sub" font-size="8">G</tspan></text>
+  <text class="sm" x="30" y="40">tunnel barriers: resistance R ≫ h/e² ≈ 25.8 kΩ, so electrons are well localised on the dot</text>
+  <text class="sm" x="30" y="58">total capacitance C<tspan baseline-shift="sub" font-size="8">Σ</tspan> = C<tspan baseline-shift="sub" font-size="8">S</tspan> + C<tspan baseline-shift="sub" font-size="8">D</tspan> + C<tspan baseline-shift="sub" font-size="8">G</tspan> (+ other gates)</text>
+</svg>
+</div>
+<figcaption>The circuit model of a single quantum dot. Each tunnel barrier is a resistor in parallel with a capacitor (drawn as a box with a cross). The plunger gate couples to the dot only through a capacitor. This simple model, with constant capacitances, explains most single-dot measurements <cite data-r="kouwenhoven1997,hanson2007"></cite>.</figcaption>
+</figure>
+
+<h2>Two conditions for Coulomb blockade</h2>
+<p>Blockade needs two things <cite data-r="kouwenhoven1997"></cite>:</p>
+<ol>
+<li><b>Large charging energy compared with temperature.</b> Adding one electron to an island of total capacitance \(C_\Sigma\) costs about \(E_C = e^2/C_\Sigma\). This must exceed \(k_BT\). For a disc-shaped dot of radius \(r\) in a medium of permittivity \(\varepsilon\), \(C \approx 8\varepsilon r\). With \(r = 30\) nm in silicon, \(C\approx 8\times 11.7\times 8.85\times10^{-12}\times 30\times10^{-9} \approx 2.5\times10^{-17}\) F, so \(E_C \approx 6\) meV. Nearby metal gates add capacitance and reduce this; measured values in Si/SiGe dots are typically 2–10 meV, far above \(k_BT \approx 10\ \mu\)eV.</li>
+<li><b>Opaque tunnel barriers.</b> The tunnel resistance must exceed the resistance quantum \(h/e^2 \approx 25.8\) kΩ. Otherwise quantum fluctuations of the electron number (the uncertainty principle applied to energy and the time an electron stays on the dot) wash out the discrete charge.</li>
+</ol>
+
+<h2>The constant-interaction model</h2>
+
+<p>The <dfn data-def="Model of a quantum dot in which electron–electron interactions are captured by one constant total capacitance, plus single-particle level spacings.">constant-interaction (CI) model</dfn> makes two assumptions: all Coulomb interactions are described by a single constant capacitance \(C_\Sigma\), and the single-particle levels \(E_n\) do not depend on how many electrons there are. The total energy of the dot with \(N\) electrons is then</p>
+\[ U(N) = \frac{\big[-e(N - N_0) + C_S V_S + C_D V_D + C_G V_G\big]^2}{2C_\Sigma} + \sum_{n=1}^{N} E_n , \]
+<p>where \(N_0\) is a constant offset from background charges. The first term is the classical electrostatic energy of a charged capacitor; the second is the quantum energy of the occupied orbitals.</p>
+
+<p>What matters for transport is not \(U(N)\) itself but the energy needed to add the \(N\)th electron, the <dfn data-def="The energy needed to add the Nth electron to a dot, μ(N) = U(N) − U(N−1); electrons tunnel when it lies between reservoir levels.">electrochemical potential</dfn></p>
+\[ \mu(N) = U(N) - U(N-1) = \Big(N - N_0 - \tfrac12\Big)E_C - \frac{E_C}{e}\big(C_S V_S + C_D V_D + C_G V_G\big) + E_N . \]
+<p>Two features of this formula are the keys to every measurement:</p>
+<ul>
+<li><b>Gate voltage shifts all levels linearly.</b> \(\partial\mu/\partial V_G = -e\,C_G/C_\Sigma\). The dimensionless ratio</li>
+</ul>
+\[ \alpha_G = \frac{C_G}{C_\Sigma} \]
+<p>is the <dfn data-def="The ratio α = C_G/C_Σ converting a gate-voltage change into a dot energy change (eV per V); typically 0.05–0.2 for plungers.">lever arm</dfn> of the gate. A 1 mV change on the gate moves the dot's levels by \(\alpha_G\) meV. Typical plunger lever arms are 0.05–0.2 eV/V in Si/SiGe.</p>
+<ul>
+<li><b>Levels are spaced by the addition energy.</b></li>
+</ul>
+\[ E_{\text{add}}(N) = \mu(N+1) - \mu(N) = E_C + \Delta E , \]
+<p>where \(\Delta E = E_{N+1} - E_N\) is the orbital (or valley) spacing, zero if the next electron goes into the same orbital with opposite spin. For the first few electrons in a silicon dot, \(\Delta E\) includes the valley splitting and the orbital energy, so addition energies vary from electron to electron. This "shell filling" pattern is a fingerprint of the few-electron regime.</p>
+
+<h2>Coulomb peaks: transport at small bias</h2>
+
+<p>Apply a tiny bias between source and drain so that \(\mu_S \gtrsim \mu_D\). An electron can pass through the dot only if some \(\mu(N)\) lies between them: it tunnels in from the source (the dot goes from \(N-1\) to \(N\)) and then out to the drain (back to \(N-1\)). Otherwise the electron number is fixed and no current flows. Sweeping the plunger voltage moves the ladder of \(\mu(N)\) through the bias window, so conductance appears as a series of sharp <dfn data-def="Sharp conductance peaks versus gate voltage, each marking a gate voltage where the dot's electron number can change by one.">Coulomb peaks</dfn>.</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 700 230" width="700" role="img" aria-label="Electrochemical potential ladder diagrams">
+  <g>
+    <text class="ttl" x="20" y="22">Blockade: no level in the window</text>
+    <rect x="20" y="110" width="80" height="100" class="boxl"/><line class="ln" x1="20" y1="110" x2="100" y2="110"/><text class="sm" x="24" y="104">μ<tspan baseline-shift="sub" font-size="8">S</tspan></text>
+    <rect x="128" y="40" width="10" height="170" class="box"/><rect x="214" y="40" width="10" height="170" class="box"/>
+    <line class="t1" x1="146" y1="66" x2="206" y2="66"/><text class="sm t1t" x="150" y="60">μ(N+1)</text>
+    <line class="t1" x1="146" y1="160" x2="206" y2="160"/><text class="sm t1t" x="156" y="176">μ(N)</text>
+    <line class="thin dash" x1="140" y1="114" x2="212" y2="114"/>
+    <rect x="232" y="114" width="80" height="96" class="boxl"/><line class="ln" x1="232" y1="114" x2="312" y2="114"/><text class="sm" x="290" y="108">μ<tspan baseline-shift="sub" font-size="8">D</tspan></text>
+    <text class="sm" x="146" y="128">E<tspan baseline-shift="sub" font-size="8">add</tspan> gap</text>
+  </g>
+  <g transform="translate(370,0)">
+    <text class="ttl" x="20" y="22">Peak: μ(N) inside the window</text>
+    <rect x="20" y="110" width="80" height="100" class="boxl"/><line class="ln" x1="20" y1="110" x2="100" y2="110"/><text class="sm" x="24" y="104">μ<tspan baseline-shift="sub" font-size="8">S</tspan></text>
+    <rect x="128" y="40" width="10" height="170" class="box"/><rect x="214" y="40" width="10" height="170" class="box"/>
+    <line class="t1" x1="146" y1="18" x2="206" y2="18" style="opacity:.0"/>
+    <line class="t1" x1="146" y1="112" x2="206" y2="112"/><text class="sm t1t" x="156" y="106">μ(N)</text>
+    <line class="t2" x1="104" y1="124" x2="140" y2="116"/><polygon points="140,116 132,113 134,121" class="f2"/>
+    <line class="t2" x1="212" y1="116" x2="246" y2="124"/><polygon points="246,124 238,119 237,127" class="f2"/>
+    <rect x="232" y="114" width="80" height="96" class="boxl"/><line class="ln" x1="232" y1="114" x2="312" y2="114"/><text class="sm" x="290" y="108">μ<tspan baseline-shift="sub" font-size="8">D</tspan></text>
+    <text class="sm" x="128" y="226">electrons tunnel one at a time</text>
+  </g>
+</svg>
+</div>
+<figcaption>Energy diagrams. Shaded regions are filled electron states in the reservoirs up to \(\mu_S\) and \(\mu_D\); grey bars are tunnel barriers; blue lines are the dot's electrochemical potentials. Left: no \(\mu(N)\) lies in the bias window, so the number of electrons is fixed (Coulomb blockade). Right: \(\mu(N)\) is aligned with the window, so the number alternates between \(N-1\) and \(N\) and current flows.</figcaption>
+</figure>
+
+<figure>
+<div class="figbody"><!--plot:coulomb-peaks--></div>
+<figcaption>Simulated Coulomb peaks at low bias. Between peaks, the electron number is fixed. The spacing between peaks in gate voltage is \(\Delta V_G = E_{\text{add}}/(e\alpha_G)\); here \(E_{\text{add}} = 1\) meV and \(\alpha_G = 0.1\), giving 10 mV. Peak widths are set by temperature.</figcaption>
+</figure>
+
+<p>At low bias and with weak tunnel coupling, the line shape of a single peak is set by the Fermi distribution of the reservoirs <cite data-r="kouwenhoven1997"></cite>:</p>
+\[ G(V_G) \propto \cosh^{-2}\!\Big(\frac{e\alpha_G (V_G - V_0)}{2k_B T_e}\Big) . \]
+<p>Its full width at half maximum is \(3.5\,k_BT_e/(e\alpha_G)\). If you know the lever arm, the peak width gives the <dfn data-def="The effective temperature of the electrons in the reservoirs, usually higher than the fridge temperature because of electrical noise and heating.">electron temperature</dfn> \(T_e\), a sensitive test of how well your wiring filters noise (Chapter 16).</p>
+
+<div class="box example"><span class="tag">Worked example: electron temperature</span>
+<p>A Coulomb peak has a full width at half maximum of 0.25 mV in plunger voltage. The lever arm (from diamonds, below) is 0.1 eV/V. Then \(3.5\,k_BT_e = 0.1\times 0.25\ \text{meV} = 25\ \mu\)eV, so \(k_BT_e = 7.1\ \mu\)eV and \(T_e = 7.1/86 \approx 83\) mK. If the fridge reads 15 mK, your electrons are hotter than the fridge, which is normal. If you get 300 mK, look for missing filters or noisy instruments.</p>
+</div>
+
+<h2>Coulomb diamonds: bias spectroscopy</h2>
+
+<p>Now sweep both the plunger voltage and the source–drain bias \(V_{SD}\). Current is blocked inside diamond-shaped regions where no level fits into the bias window. Each diamond corresponds to a fixed electron number.</p>
+
+<figure>
+<div class="figbody"><!--plot:coulomb-diamonds--></div>
+<figcaption>Simulated Coulomb diamonds: \(|dI/dV_{SD}|\) versus plunger voltage and bias. Dark regions are blockaded with a fixed electron number \(N\). The diamond's half-height gives the addition energy (here 1 meV), and its width in gate voltage gives \(E_{\text{add}}/(e\alpha_G)\). Real diamonds also show extra lines from excited states parallel to the edges.</figcaption>
+</figure>
+
+<p>Reading a diamond is a standard skill:</p>
+<ul>
+<li><b>Height.</b> The diamond's tips in \(V_{SD}\) are at \(\pm E_{\text{add}}/e\). This gives the addition energy directly in meV, without knowing any capacitance.</li>
+<li><b>Width.</b> The diamond's width along \(V_G\) is \(\Delta V_G = E_{\text{add}}/(e\alpha_G)\). Dividing height by width gives the lever arm: \(\alpha_G = (E_{\text{add}}/e)/\Delta V_G\).</li>
+<li><b>Slopes.</b> The two edge slopes give the ratios \(C_G/(C_G + C_S)\) and \(C_G/C_D\), from which all three capacitances follow.</li>
+<li><b>Excited states.</b> Lines inside the conducting region, parallel to the diamond edges, mark the onset of transport through excited orbital, valley or spin states. Their position in \(V_{SD}\) is their excitation energy.</li>
+</ul>
+
+<div class="box example"><span class="tag">Worked example: lever arm from a diamond</span>
+<p>A diamond reaches \(V_{SD} = \pm 4.2\) mV at its tips and is 35 mV wide in plunger voltage. Then \(E_{\text{add}} = 4.2\) meV and \(\alpha = 4.2/35 = 0.12\) eV/V. Now you can convert anything: a 2 mV pulse on this plunger shifts the dot's energy by 240 µeV, which is about 58 GHz in frequency units (1 µeV ≈ 0.242 GHz). This conversion is used constantly when designing pulse sequences.</p>
+</div>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>In modern qubit devices with many gates, groups often do not measure diamonds through the qubit dot itself, because the dots are tuned to have very opaque barriers and the current is too small to measure. Instead they measure diamonds on the <b>sensor dot</b> (Chapter 9), and for qubit dots they measure the lever arm using photon-assisted tunnelling (a microwave on a gate produces side-peaks spaced by \(hf/(e\alpha)\)) or using the thermal broadening of charge transitions with a known temperature <cite data-r="burkard2023"></cite>.</p>
+</div>
+
+<h2>The few-electron regime</h2>
+<p>Spin qubits normally use a dot holding exactly one electron (or, for some encodings, one or three). To know you have exactly one, you must see the last transition, after which no more charge transitions occur as you make the plunger more negative. In transport this is hard because tunnel rates drop as the dot empties; it is much easier with a charge sensor, which does not need current through the qubit dot. Chapter 9 explains charge sensing, and Chapter 15 describes how groups reach the single-electron regime in practice.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Coulomb peaks and diamonds are DC measurements: bias voltages and slow gate sweeps, read with a current amplifier or a lock-in. The 4x2's balun-coupled ports cannot provide the DC bias or measure DC current, so these first measurements are done with DC sources and a lock-in amplifier. Where the 4x2 becomes useful is the next step: charge sensing with RF reflectometry, which is fast enough to map charge states in milliseconds instead of minutes (Chapters 9 and 39). Note that the on-board baluns are rated from 10 MHz <cite data-r="rd4x2manual"></cite>, so "lock-in" style excitation at kHz frequencies will not pass through them.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Two neighbouring Coulomb peaks are 22 mV apart and the next pair 30 mV apart. The lever arm is 0.1 eV/V. What are the addition energies, and what might explain the difference?</p>
+<details><summary>Show answer</summary><div>\(E_{\text{add}} = 2.2\) meV and 3.0 meV. The extra 0.8 meV in the second case is the orbital or valley spacing \(\Delta E\): the corresponding electron had to occupy a new, higher state rather than the same orbital with opposite spin.</div></details>
+<p>2. Why must the tunnel resistances exceed about 26 kΩ?</p>
+<details><summary>Show answer</summary><div>The energy uncertainty of an electron that spends a time \(RC\) on the dot is about \(h/(RC)\). It must be smaller than the charging energy \(e^2/C\), giving \(R \gg h/e^2\). Otherwise the electron number is not well defined.</div></details>
+<p>3. You change the plunger by +3 mV and the lever arm is 0.08. By how much did the dot's levels move, in µeV and in GHz?</p>
+<details><summary>Show answer</summary><div>\(0.08 \times 3\) meV = 240 µeV ≈ 58 GHz (using 1 µeV ≈ 0.242 GHz).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Coulomb blockade needs \(E_C = e^2/C_\Sigma \gg k_BT\) and tunnel resistances \(\gg h/e^2\).</li>
+<li>In the constant-interaction model, the electrochemical potential \(\mu(N)\) shifts linearly with gate voltage via the lever arm \(\alpha = C_G/C_\Sigma\), and consecutive levels are spaced by \(E_{\text{add}} = E_C + \Delta E\).</li>
+<li>Coulomb peaks mark charge transitions; their width gives the electron temperature.</li>
+<li>Coulomb diamonds give \(E_{\text{add}}\) (height), the lever arm (height/width) and excited-state energies.</li>
+<li>These DC measurements use DC instruments; the 4x2 enters with RF charge sensing.</li>
+</ul>
+</div>

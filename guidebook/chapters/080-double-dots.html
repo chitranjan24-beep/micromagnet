@@ -1,2 +1,99 @@
-<!--meta {"id": "double-dots", "part": "Part II \u00b7 Semiconductor quantum dots", "title": "Double and multiple dots: charge stability diagrams and virtual gates"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "double-dots", "part": "Part II · Semiconductor quantum dots", "title": "Double and multiple dots: charge stability diagrams and virtual gates"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Every spin-qubit experiment happens inside a <b>charge stability diagram</b>: a 2D map of which charge configuration the dots are in as you vary two gate voltages. Readout points, initialisation points, manipulation points and exchange pulses are all defined as positions in this map. You will spend more time looking at these maps than at any other kind of plot, and making them fast is one of the best uses of an RFSoC. This chapter explains where their honeycomb pattern comes from, what the interdot transition is, and how virtual gates make the map easy to navigate.</p>
+</div>
+
+<h2>Two dots, two gates, many capacitances</h2>
+
+<p>Put two dots side by side, each with its own plunger gate (P1, P2), separated by a barrier gate that controls tunnelling between them. In the constant-interaction picture, three energies describe the electrostatics <cite data-r="vanderwiel2002"></cite>:</p>
+<ul>
+<li>\(E_{C1}\) and \(E_{C2}\): the charging energies of each dot.</li>
+<li>\(E_{Cm}\): the <dfn data-def="The energy cost of adding an electron to one dot due to an electron on a neighbouring dot.">mutual charging energy</dfn>, the extra cost of adding an electron to one dot because of an electron on the other. It comes from the interdot capacitance \(C_m\).</li>
+</ul>
+<p>Each plunger couples mostly to its own dot but also somewhat to the other: the lever-arm matrix</p>
+\[ \begin{pmatrix} \delta\mu_1 \\ \delta\mu_2 \end{pmatrix} = -e\begin{pmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{pmatrix}\begin{pmatrix} \delta V_{P1} \\ \delta V_{P2} \end{pmatrix} \]
+<p>has off-diagonal elements \(\alpha_{12}, \alpha_{21}\) called <dfn data-def="Coupling of a gate to dots other than the one it is designed for; corrected with virtual gates.">cross-capacitance</dfn> (or crosstalk), typically 20–60% of the diagonal ones in dense Si/SiGe devices. A compact way to write the energy of the configuration \((N_1, N_2)\) is</p>
+\[ E(N_1,N_2) = \tfrac12 E_{C1}(N_1 - n_1)^2 + \tfrac12 E_{C2}(N_2 - n_2)^2 + E_{Cm}(N_1-n_1)(N_2-n_2), \]
+<p>where \(n_1, n_2\) are the (continuous) "gate-induced charges", linear combinations of the plunger voltages. At each gate voltage the system sits in the configuration with the lowest energy.</p>
+
+<h2>The charge stability diagram</h2>
+
+<p>Plot the ground-state configuration over the \((V_{P1}, V_{P2})\) plane, and draw lines where it changes. The result is the famous honeycomb pattern of a <dfn data-def="A 2D map of the ground-state charge configuration of coupled dots versus two gate voltages.">charge stability diagram</dfn> (CSD).</p>
+
+<figure>
+<div class="figbody"><!--plot:honeycomb--></div>
+<figcaption>Simulated charge stability diagram of a double dot, as a charge sensor would see it (the gradient of the sensor signal is plotted, so transition lines are dark). Each cell is labelled \((N_1, N_2)\). Steep lines are dot-1 transitions (mostly controlled by P1), shallow lines dot-2 transitions. The short segments joining neighbouring cells along the diagonal are interdot transitions, where an electron moves between the dots and the total charge stays the same.</figcaption>
+</figure>
+
+<p>Learn to read the diagram's features:</p>
+<ul>
+<li><b>Nearly vertical lines</b>: the electron number on dot 1 changes (dot 1 exchanges an electron with its reservoir). They are not perfectly vertical because P2 also couples to dot 1.</li>
+<li><b>Nearly horizontal lines</b>: dot 2 changes.</li>
+<li><b>Short diagonal segments</b>: <dfn data-def="Boundary between charge states (N1+1, N2) and (N1, N2+1), where an electron moves from one dot to the other.">interdot transitions</dfn>, e.g. (1,0)↔(0,1). The total electron number is constant, so in transport no current flows here, but a charge sensor sees the electron move.</li>
+<li><b>Triple points</b>: the ends of each interdot segment, where three configurations are degenerate. In transport, current only flows near triple points.</li>
+<li><b>The length of the interdot segment</b> is set by the mutual charging energy. If \(E_{Cm} = 0\), the segments shrink to points and the pattern becomes a square grid (two independent dots). If the dots merge into one, the lines become parallel diagonals.</li>
+</ul>
+
+<p>Spin qubits usually work at the lowest charge cells: \((1,1)\) for two single-spin qubits, the boundary between \((1,1)\) and \((0,2)\) or \((2,0)\) for readout and singlet–triplet qubits. To be sure of the absolute numbers you must find the \((0,0)\) cell, beyond which no more lines appear.</p>
+
+<h2>The interdot transition: a charge qubit</h2>
+
+<p>Zoom in on a single interdot transition, say between \((1,0)\) and \((0,1)\). One electron is shared between two dots. Define the <dfn data-def="The energy difference between the two charge configurations at an interdot transition; the main control axis for double-dot experiments.">detuning</dfn> \(\varepsilon\) as the energy difference between the two configurations: \(\varepsilon &lt; 0\) means the electron prefers the left dot, \(\varepsilon &gt; 0\) the right. If the barrier lets the electron tunnel with amplitude \(t_c\) (the <dfn data-def="The tunnelling amplitude t_c between two dots; sets the anticrossing gap 2t_c at the interdot transition.">tunnel coupling</dfn>), the two configurations form a two-level system:</p>
+\[ H = \frac{\varepsilon}{2}\,\tau_z + t_c\,\tau_x , \qquad E_\pm = \pm\frac12\sqrt{\varepsilon^2 + 4t_c^2}, \]
+<p>where the Pauli matrices \(\tau\) act on "left/right" instead of spin. This is exactly the qubit of Chapter 2, with charge instead of spin. At \(\varepsilon = 0\) the eigenstates are bonding and antibonding combinations of left and right, separated by \(2t_c\).</p>
+
+<figure>
+<div class="figbody"><!--plot:interdot-anticrossing--></div>
+<figcaption>Energies of one electron in a double dot versus detuning. Without tunnelling (\(t_c = 0\)) the levels cross. With tunnelling they anticross with a gap of \(2t_c\). Far from \(\varepsilon = 0\) the eigenstates are localised in one dot; near zero they are spread over both.</figcaption>
+</figure>
+
+<p>Tunnel coupling depends exponentially on the barrier gate voltage, typically changing by a factor of 10 for tens of millivolts. This exponential control is central to exchange-based gates (Chapter 14). You can measure \(t_c\) from how sharp the interdot transition looks in the charge sensor: the probability of finding the electron on the right goes from 0 to 1 over a detuning range of a few \(t_c\) (or a few \(k_BT_e\), whichever is larger). The thermal-equilibrium expression is</p>
+\[ P_R(\varepsilon) = \frac12\Big[1 + \frac{\varepsilon}{\sqrt{\varepsilon^2+4t_c^2}}\tanh\Big(\frac{\sqrt{\varepsilon^2+4t_c^2}}{2k_BT_e}\Big)\Big]. \]
+<p>Fitting this to a slow scan across the transition gives \(t_c\), provided you know the lever arm of the detuning axis.</p>
+
+<div class="box example"><span class="tag">Worked example: detuning in gate voltage</span>
+<p>Detuning is usually swept by moving P1 and P2 in opposite directions along the axis perpendicular to the interdot line. If the lever arms are \(\alpha_{11} = \alpha_{22} = 0.1\) and crosstalk \(\alpha_{12} = \alpha_{21} = 0.03\), then changing \(V_{P1}\) by \(+\delta\) and \(V_{P2}\) by \(-\delta\) changes \(\mu_1 - \mu_2\) by \(-e(0.1 - 0.03 + 0.1 - 0.03)\delta = -0.14\,e\delta\). So 1 mV of this combined step moves the detuning by 140 µeV. To cross a transition with \(2t_c = 20\ \mu\)eV you need only about 0.15 mV of resolution, which is why gate-voltage noise must be in the µV range.</p>
+</div>
+
+<h2>Virtual gates</h2>
+
+<p>Because every gate affects every dot, tuning one parameter with physical gates moves all the others. The solution, now universal in multi-dot work, is to define <dfn data-def="Linear combinations of physical gate voltages chosen so that each one changes only one dot's potential (or one tunnel coupling).">virtual gates</dfn>: linear combinations of physical gates that each act on only one dot <cite data-r="hensgens2017,volk2019"></cite>. If the lever-arm matrix is \(A\) (normalised so its diagonal is 1), define</p>
+\[ \vec V' = A\,\vec V \quad\Longleftrightarrow\quad \vec V = A^{-1}\vec V' . \]
+<p>Now changing \(V'_1\) changes only \(\mu_1\). In the \((V'_1, V'_2)\) plane, the dot-1 transitions are exactly vertical and the dot-2 transitions exactly horizontal.</p>
+
+<figure>
+<div class="figbody"><!--plot:virtual-gates--></div>
+<figcaption>The same double dot plotted against physical plunger voltages (left) and virtual plunger voltages (right). Removing the cross-capacitance makes dot-1 lines vertical and dot-2 lines horizontal, so each axis controls one dot.</figcaption>
+</figure>
+
+<p>To find \(A\), measure the slopes of the transition lines in a CSD. For a dot-1 line, \(\delta\mu_1 = 0\) along the line, so its slope is \(dV_{P2}/dV_{P1} = -\alpha_{11}/\alpha_{12}\). Do the same for dot-2 lines. The same idea extends to barrier gates: virtual barriers change one tunnel coupling while compensating the plungers so that the dots' energies stay fixed. In large arrays, groups calibrate matrices of 10×10 or more, often automatically <cite data-r="zwolak2023"></cite>.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Virtual gates matter in two places in hardware:</p>
+<ul>
+<li><b>DC sources.</b> The slow gate voltages are set in virtual coordinates by your Python code, which converts them to physical voltages before sending them to the DC source.</li>
+<li><b>Fast pulses.</b> A fast pulse "on virtual plunger 1" really means playing scaled copies of a waveform on several physical gates at the same time. The HRL spinQICK firmware does this in real time with a crosstalk-compensation matrix in FPGA logic (11×11 on a ZCU216) <cite data-r="wessels2026"></cite>. The 4x2 has only two DAC outputs, so with it you can pulse at most two gates, for example P1 and P2 of a double dot. That is exactly what a detuning pulse needs. You compute the two waveforms in Python from the virtual-gate matrix and play them simultaneously on the two generators.</li>
+</ul>
+</div>
+
+<h2>Beyond two dots</h2>
+<p>Triple dots host exchange-only qubits (Chapter 13). Linear arrays of 4–12 dots host multi-qubit processors <cite data-r="philips2022"></cite>, and 2D arrays (2×2, 3×3 and larger) are under active development, especially in germanium. Their CSDs are high-dimensional, so groups take 2D slices along chosen virtual axes. Automated tuning methods, including machine-learning classifiers that recognise the charge configuration from an image of a CSD, are reviewed by Zwolak and Taylor <cite data-r="zwolak2023"></cite>. Every one of those methods needs many CSD images, quickly, which is where fast RF readout and FPGA control pay off.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In a CSD, the dot-1 lines have slope \(-4\) and the dot-2 lines have slope \(-0.25\) (in \(dV_{P2}/dV_{P1}\)). Find the normalised lever-arm matrix.</p>
+<details><summary>Show answer</summary><div>For dot-1 lines, slope \(= -\alpha_{11}/\alpha_{12} = -4\), so \(\alpha_{12}/\alpha_{11} = 0.25\). For dot-2 lines, \(\delta\mu_2 = 0\) gives slope \(= -\alpha_{21}/\alpha_{22} = -0.25\), so \(\alpha_{21}/\alpha_{22} = 0.25\). Normalised: \(A = \begin{pmatrix}1 & 0.25\\ 0.25 & 1\end{pmatrix}\).</div></details>
+<p>2. Why does no transport current flow at an interdot transition (away from the triple points), although a charge sensor sees a clear signal?</p>
+<details><summary>Show answer</summary><div>The total number of electrons is fixed there; an electron only moves between the dots and cannot pass from source to drain. A charge sensor detects the change in charge distribution regardless of current.</div></details>
+<p>3. What happens to the honeycomb if the mutual charging energy goes to zero? If the dots merge?</p>
+<details><summary>Show answer</summary><div>With \(E_{Cm} = 0\) the interdot segments vanish and the pattern becomes a grid of independent vertical and horizontal lines. If the dots merge into one large dot, both gates control the same island and the lines become parallel diagonals.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A double dot's charge configuration versus two gate voltages forms a honeycomb charge stability diagram; cells are labelled \((N_1,N_2)\).</li>
+<li>Interdot transitions keep the total charge fixed; near them the electron forms a charge two-level system with gap \(2t_c\) at zero detuning.</li>
+<li>Tunnel coupling depends exponentially on barrier voltage.</li>
+<li>Virtual gates, built from the measured lever-arm matrix, give each axis control of one dot; fast virtual pulses require simultaneous scaled pulses on several gates.</li>
+</ul>
+</div>

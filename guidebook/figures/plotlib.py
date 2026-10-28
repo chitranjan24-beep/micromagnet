@@ -1,6 +1,8 @@
 """Tiny SVG plotting helpers whose colours follow the page theme (CSS classes from style.css)."""
-import base64, io, math
+import base64, io, math, itertools
 import numpy as np
+
+_IDS = itertools.count(1)
 
 
 def _nice_ticks(lo, hi, n=5):
@@ -46,6 +48,7 @@ class Axes:
         self.xfmt = xfmt or _fmt
         self.yfmt = yfmt or _fmt
         self.legend_items = []
+        self.uid = f'k{next(_IDS)}'
 
     def X(self, x):
         x0, x1 = self.xlim
@@ -116,8 +119,8 @@ class Axes:
                 X = float(self.X(t)); out.append(f'<line class="grid" x1="{X:.1f}" x2="{X:.1f}" y1="{mt}" y2="{h - mb}"/>')
             for t in self.yticks:
                 Y = float(self.Y(t)); out.append(f'<line class="grid" x1="{ml}" x2="{w - mr}" y1="{Y:.1f}" y2="{Y:.1f}"/>')
-        out.append(f'<defs><clipPath id="c{id(self)}"><rect x="{ml}" y="{mt}" width="{w - ml - mr}" height="{h - mt - mb}"/></clipPath></defs>')
-        out.append(f'<g clip-path="url(#c{id(self)})">' + ''.join(self.parts) + '</g>')
+        out.append(f'<defs><clipPath id="{self.uid}"><rect x="{ml}" y="{mt}" width="{w - ml - mr}" height="{h - mt - mb}"/></clipPath></defs>')
+        out.append(f'<g clip-path="url(#{self.uid})">' + ''.join(self.parts) + '</g>')
         out.append(f'<rect class="thin" x="{ml}" y="{mt}" width="{w - ml - mr}" height="{h - mt - mb}" style="stroke: var(--ink-3)"/>')
         for t in self.xticks:
             X = float(self.X(t))
