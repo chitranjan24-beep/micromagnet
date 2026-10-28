@@ -817,6 +817,56 @@ def balun_pulse():
     save('balun-pulse', ax.svg(legend_pos='br'))
 
 
+# ---------------------------------------------------------------- Part X figures
+@fig
+def edsr_field_map():
+    B = np.linspace(0.30, 0.50, 220)  # applied field (T)
+    f = np.linspace(11.0, 18.0, 320)   # GHz
+    BB, FF = np.meshgrid(B, f)
+    mm1, mm2 = 0.120, 0.135            # micromagnet longitudinal field at dots (T)
+    f1 = 27.99 * (BB + mm1); f2 = 27.99 * (BB + mm2)
+    w = 0.05
+    S = np.exp(-((FF - f1) / w) ** 2) + 0.8 * np.exp(-((FF - f2) / w) ** 2)
+    rng = np.random.default_rng(1)
+    S = S + rng.normal(0, 0.08, S.shape)
+    ax = Axes(560, 340, xlim=(0.30, 0.50), ylim=(11.0, 18.0), xlabel='applied field B₀ (T)', ylabel='drive frequency (GHz)', grid=False)
+    ax.image(colormap(S[::-1], 'magma', 0, 1.0))
+    ax.text(0.40, 15.75, 'Q2', 'lbl', dx=0); ax.text(0.42, 14.6, 'Q1', 'lbl')
+    save('edsr-field-map', ax.svg())
+
+
+@fig
+def csd_noisy():
+    v1 = np.linspace(0, 32, 120); v2 = np.linspace(0, 32, 120)
+    V1, V2 = np.meshgrid(v1, v2)
+    N1, N2 = dd_ground(V1, V2, kT=0.08)
+    sig = -(0.8 * N1 + 0.5 * N2) + 0.02 * V1 + 0.012 * V2
+    rng = np.random.default_rng(4)
+    raw = sig + rng.normal(0, 0.25, sig.shape)
+    avg = sig + rng.normal(0, 0.25 / np.sqrt(30), sig.shape)
+    ax1 = Axes(330, 320, xlim=(0, 32), ylim=(0, 32), xlabel='fast axis V′P1 (mV)', ylabel='slow axis V′P2 (mV)', grid=False, title='one fast frame', mr=12)
+    ax1.image(colormap(raw[::-1], 'viridis'))
+    ax2 = Axes(330, 320, xlim=(0, 32), ylim=(0, 32), xlabel='fast axis V′P1 (mV)', ylabel='slow axis V′P2 (mV)', grid=False, title='average of 30 frames', mr=12)
+    ax2.image(colormap(avg[::-1], 'viridis'))
+    save('csd-noisy', row(ax1.svg(), ax2.svg()))
+
+
+@fig
+def st_fingerprint():
+    t = np.linspace(0, 100, 300)   # ns
+    eps = np.linspace(0, 1, 220)   # normalised exchange-pulse amplitude
+    TT, EE = np.meshgrid(t, eps)
+    J = 2 * np.pi * (0.002 + 0.15 * np.exp(4.0 * (EE - 1)))  # rad/ns, exponential in pulse amplitude
+    dBz = 2 * np.pi * 0.015
+    W = np.sqrt(J ** 2 + dBz ** 2)
+    nx = dBz / W
+    x = nx ** 2 + (1 - nx ** 2) * np.cos(W * TT)
+    P = 0.5 * (1 + x * np.exp(-(TT / 150) ** 2))
+    ax = Axes(560, 330, xlim=(0, 100), ylim=(0, 1), xlabel='exchange pulse duration (ns)', ylabel='exchange pulse amplitude (norm.)', grid=False)
+    ax.image(colormap(P[::-1], 'viridis'))
+    save('st-fingerprint', ax.svg())
+
+
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)
     for n in names:

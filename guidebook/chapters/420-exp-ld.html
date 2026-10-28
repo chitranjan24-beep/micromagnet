@@ -1,2 +1,89 @@
-<!--meta {"id": "exp-ld", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-ld", "part": "Part X · Experiments with the 4x2", "title": "Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This chapter runs your Si/SiGe micromagnet qubit: find the EDSR resonance, calibrate Rabi oscillations, measure \(T_2^*\) and \(T_2\), calibrate gates with AllXY and benchmark them. It is the sequence every single-spin qubit paper reports. The 4x2 generates the microwave drive (directly or as an IF for a mixer) and the readout; plunger pulses for initialisation and PSB or Elzerman readout come from the AWG of Architecture A (Chapter 38). The physics is in Chapters 3–5 and 12.</p>
+</div>
+
+<h2>The microwave chain</h2>
+<p>Pick the option that matches your field (Chapters 12 and 20):</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Qubit frequency</th><th>Chain from DAC_A</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>&lt; 4.9 GHz</td><td>direct, <code>nqz=1</code> → attenuators → bias tee on an EDSR gate</td><td>Requires a total field at the dot below ~0.175 T; check the micromagnet is magnetised</td></tr>
+<tr><td>4.9–9.8 GHz</td><td>direct, <code>nqz=2</code> → band-pass filter → line</td><td>Check output power per frequency; filter images</td></tr>
+<tr><td>&gt; 9.8 GHz</td><td>IF (0.5–2 GHz) → mixer with LO (locked to 10 MHz) → band-pass filter → amplifier if needed → line</td><td>Typical for micromagnet devices at 0.3–0.6 T (10–20 GHz)</td></tr>
+</tbody></table></div>
+<p>Power: aim for a few millivolts of amplitude at the gate (Chapter 12). For example, −10 dBm out of the mixer chain with 30 dB of fridge attenuation gives −40 dBm at the gate line (about 3 mV amplitude in 50 Ω, up to twice that at an open gate).</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Leaving the microwave on between experiments, or driving continuously at high power while searching for the resonance. Microwaves heat the device and the mixing chamber, which shifts qubit frequencies and broadens charge transitions. Use pulsed drive with a low duty cycle, and watch the mixing-chamber temperature and the sensor's Coulomb peak width while you increase power.</p>
+</div>
+
+<h2>Step 1: find the resonance</h2>
+<p>Sequence per shot: initialise (PSB: singlet in (2,0), then adiabatic separation to \(\ket{\uparrow\downarrow}\) or \(\ket{\downarrow\uparrow}\); Elzerman: load spin-down), apply a long, strong microwave burst (several µs) at frequency \(f\), read out. Sweep \(f\) and the applied field. Resonances appear as lines with slope \(g\mu_B/h \approx 28\) GHz/T, offset by the micromagnet's field at each dot (Chapter 12).</p>
+
+<figure>
+<div class="figbody"><!--plot:edsr-field-map--></div>
+<figcaption>Simulated EDSR spectroscopy: spin-flip probability versus applied field and drive frequency for two dots under a micromagnet that adds 120 and 135 mT along the field. Each line has a slope of 28 GHz/T; their separation (here 0.42 GHz) is what makes the qubits individually addressable.</figcaption>
+</figure>
+
+<p>Searching GHz with MHz-wide lines takes many points. Speed it up with <b>frequency chirps</b>: a burst whose frequency sweeps over, say, 50 MHz adiabatically inverts any spin whose resonance lies inside the sweep, so each point covers 50 MHz. With QICK, a chirp can be built from an envelope with a phase ramp or from a sequence of short pulses at stepped frequencies.</p>
+
+<h2>Step 2: Rabi oscillations and the chevron</h2>
+<pre><code>class RabiChevron(AveragerProgramV2):
+    def _initialize(self, cfg):
+        self.declare_gen(ch=0, nqz=1)                     # readout carrier (DAC_B)
+        self.declare_gen(ch=1, nqz=cfg['nqz'])            # EDSR drive or IF (DAC_A)
+        self.declare_readout(ch=0, length=cfg['ro_len'])
+        self.add_loop('f', cfg['nf'])                      # outer loop: frequency
+        self.add_loop('t', cfg['nt'])                      # inner loop: burst length
+        self.add_pulse(ch=1, name='mw', style='const',
+                       freq=QickSweep1D('f', cfg['f0'], cfg['f1']),
+                       length=QickSweep1D('t', 0.01, cfg['tmax']), phase=0, gain=cfg['g'])
+        self.add_pulse(ch=0, name='ro', style='const', freq=cfg['f_ro'], ro_ch=0,
+                       length=cfg['ro_len'] + cfg['tof'], phase=0, gain=cfg['g_ro'])
+        self.add_readoutconfig(ch=0, name='r', freq=cfg['f_ro'], gen_ch=0)
+        self.send_readoutconfig(ch=0, name='r', t=0)
+    def _body(self, cfg):
+        self.trigger(pins=[1], t=0)                       # AWG: initialise and move to manipulation point
+        self.delay(cfg['t_manip'])
+        self.pulse(ch=1, name='mw', t=0)
+        self.delay(cfg['t_to_ro'])                        # AWG: move to readout point
+        self.pulse(ch=0, name='ro', t=0)
+        self.trigger(ros=[0], t=cfg['tof'])</code></pre>
+<p>With an external mixer, the swept frequency is the IF, and the qubit frequency is LO + IF. Expect a chevron like Figure 3.3: the centre gives the qubit frequency, the period gives the π time. Then fix the frequency and sweep the amplitude at fixed length to calibrate gain for X and X/2 pulses with Gaussian envelopes.</p>
+
+<h2>Step 3: Ramsey and echo</h2>
+<ul>
+<li><b>Ramsey</b>: X/2 – τ – X/2 with a virtual detuning (advance the second pulse's phase by 360° × \(f_{\text{virt}}\) × τ, Chapter 35). Fit fringes for the precise qubit frequency and \(T_2^*\) (Chapter 4). In purified silicon expect up to ~20 µs; in natural silicon about 1 µs <cite data-r="yoneda2018,kawakami2014"></cite>.</li>
+<li><b>Hahn echo and CPMG</b>: X/2 – τ/2 – X – τ/2 – X/2, and versions with more π pulses. Their decays give \(T_2\) and, with different pulse numbers, the noise spectrum (Chapter 4).</li>
+</ul>
+<p>All three need only the microwave channel and readout from the 4x2, plus the AWG's fixed plunger sequence.</p>
+
+<h2>Step 4: gate calibration and benchmarking</h2>
+<ul>
+<li><b>AllXY</b> (Chapter 5): 21 pulse pairs; corrects amplitude, detuning and phase errors at a glance. spinQICK implements it <cite data-r="spinqick"></cite>.</li>
+<li><b>Randomised benchmarking</b>: random Clifford sequences of increasing length, built from X/2, Y/2 and virtual Z (phase updates); fit the decay (Figure 5.2). Generate sequences in Python and compile one QICK program per sequence, or store pulse indices in data memory and loop (Chapter 5).</li>
+</ul>
+
+<h2>Two qubits under one magnet</h2>
+<p>With both resonances known, address each qubit at its own frequency. On the 4x2, either retune DAC_A's frequency between pulses (keeping separate phase bookkeeping for each qubit, Chapter 3) or, with an IQ mixer or a wide IF band, place both IFs within the mixer's band and play them on the same generator in sequence. Calibrate crosstalk (driving Q1 slightly rotates Q2) and AC Stark shifts with Ramsey on the idle qubit while the other is driven <cite data-r="xue2022"></cite>.</p>
+
+<h2>Keeping the qubit calibrated</h2>
+<p>The qubit frequency drifts with charge noise and with microwave heating. Typical practice: repeat a short Ramsey every few minutes and correct the drive frequency; keep the average microwave power constant (add off-resonant "dummy" pulses when the qubit is idle) to stabilise heating <cite data-r="philips2022"></cite>. Real-time tracking, where the FPGA estimates the frequency from a burst of Ramsey shots and updates it immediately, is discussed in Chapter 44.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your Rabi chevron is centred at an IF of 812 MHz with an LO of 12.4 GHz (upper sideband). What is the qubit frequency? What field does that correspond to for a dot whose micromagnet adds 0.12 T?</p>
+<details><summary>Show answer</summary><div>\(f_q = 12.4 + 0.812 = 13.212\) GHz. Total field \(= 13.212/27.99 = 0.472\) T, so the applied field is about 0.352 T.</div></details>
+<p>2. Why use Gaussian rather than square pulses for X/2 when two qubits are 40 MHz apart and the Rabi frequency is 5 MHz?</p>
+<details><summary>Show answer</summary><div>A square pulse's sinc spectrum has side lobes that still carry power 40 MHz away, slightly driving the other qubit. A Gaussian's spectrum falls off much faster, reducing crosstalk (Chapter 21).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Choose the microwave chain by qubit frequency: direct (zone 1 or 2) or IF + mixer + LO; keep a few mV at the gate and watch heating.</li>
+<li>Find resonances with field–frequency spectroscopy (chirps speed it up); calibrate with a Rabi chevron and amplitude Rabi.</li>
+<li>Measure \(T_2^*\) (Ramsey with virtual detuning) and \(T_2\) (echo, CPMG); calibrate with AllXY; benchmark with RB.</li>
+<li>Address two qubits by frequency, calibrate crosstalk and Stark shifts, and recalibrate against drift.</li>
+</ul>
+</div>

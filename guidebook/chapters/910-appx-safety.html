@@ -1,2 +1,39 @@
 <!--meta {"id": "appx-safety", "part": "Back matter", "title": "Appendix B: Handling, safety and protecting the board", "numbered": false}-->
-<p class="status">This chapter is being written.</p>
+
+<p class="lede">A checklist of rules that protect the board, your device and you. Most of them come from experience of things going wrong.</p>
+
+<h2 data-nonum>B.1 Protecting the RFSoC 4x2</h2>
+<ul>
+<li><b>Attenuate first.</b> Never connect a signal of unknown power to an ADC input. Start with 20 dB of attenuation and remove it only after measuring. Respect the maximum input ratings in AMD's DS926 <cite data-r="ds926"></cite>.</li>
+<li><b>No DC on the SMA ports.</b> Use DC blocks when connecting to anything that may carry DC (bias tees, amplifier outputs during power-up, fridge lines with bias).</li>
+<li><b>ESD.</b> Wear a grounded wrist strap when touching the board or connecting cables; discharge cables before connecting. QICK's quick-start guide warns that touching exposed components with metal tools can cause immediate, permanent damage <cite data-r="qickdocs"></cite>.</li>
+<li><b>Power and cooling.</b> Use the supplied 12 V, 10 A supply; never block the fan; watch the FAIL and OVER TEMP LEDs <cite data-r="rd4x2manual"></cite>.</li>
+<li><b>Logic levels.</b> PMOD pins are 1.8 V logic; use level shifters, never connect 3.3 V or 5 V outputs to them <cite data-r="rd4x2manual"></cite>.</li>
+<li><b>Shut down cleanly</b> before switching off, to protect the SD card; keep a spare, imaged card.</li>
+<li><b>Network security.</b> Change the default <code>xilinx</code> password if the board is on a shared network.</li>
+</ul>
+
+<h2 data-nonum>B.2 Protecting the quantum device</h2>
+<ul>
+<li><b>Gate limits.</b> Set software voltage limits and ramp rates on every gate; log the maximum each gate has seen.</li>
+<li><b>Grounding.</b> Ground all device lines (with a breakout box or grounding caps) when connecting or disconnecting anything; un-ground only when everything is connected.</li>
+<li><b>Ground loops.</b> Connect instrument grounds at one point; use isolation where needed (Chapter 16).</li>
+<li><b>Microwave power.</b> Increase EDSR and readout power gradually while watching mixing-chamber temperature and sensor peak width.</li>
+<li><b>Pulse amplitudes.</b> Before applying a new pulse sequence, check its amplitude at room temperature with an oscilloscope and compute the amplitude at the device from your attenuation.</li>
+</ul>
+
+<h2 data-nonum>B.3 Around the cryostat</h2>
+<ul>
+<li><b>Superconducting magnets</b> store large energies; follow your lab's procedures for ramping and quench protection, and keep magnetic tools away.</li>
+<li><b>Cryogens and pressurised gas</b>: dry dilution refrigerators still contain helium mixtures and cold surfaces; follow the manufacturer's and your lab's safety training.</li>
+<li><b>Vibration and cables</b>: secure cables so they do not move with the pulse tube; moving cables generate noise.</li>
+</ul>
+
+<h2 data-nonum>B.4 Before every new experiment</h2>
+<ol>
+<li>Is the frequency plan written, and are filters in place for every converter input?</li>
+<li>Is the power budget computed from DAC to device and from device to ADC?</li>
+<li>Are all instruments locked to the same 10 MHz reference?</li>
+<li>Are trigger latencies and time of flight calibrated?</li>
+<li>Is the configuration (firmware, software versions, calibrations) saved with the data?</li>
+</ol>

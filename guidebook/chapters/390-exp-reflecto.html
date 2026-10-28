@@ -1,2 +1,87 @@
-<!--meta {"id": "exp-reflecto", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: RF reflectometry readout"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-reflecto", "part": "Part X · Experiments with the 4x2", "title": "Experiment: RF reflectometry readout"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This is the first real experiment to run with the 4x2, and the one it does best: fast charge sensing by RF reflectometry. Once it works, every later experiment (charge maps, spin readout, qubit control) is a matter of adding pulses before the readout. This chapter is a step-by-step procedure, from a bench test to single-electron tunnelling events, with QICK code, expected results and what goes wrong. The physics is in Chapter 9 and the signal processing in Chapter 23.</p>
+</div>
+
+<h2>Step 0: practise on the bench</h2>
+<p>Before using the fridge, build a dummy tank: a chip inductor (for example 820 nH) in series with a small capacitor and a resistor or potentiometer to ground on a small PCB, at room temperature. Its resonance and matching behave like the real thing (with lower Q), and you can change "the sensor resistance" with a screwdriver. Connect DAC_B → 20 dB → directional coupler → dummy tank; coupler output → amplifier → ADC_D. Every step below can be rehearsed this way.</p>
+
+<h2>Step 1: find the resonance</h2>
+<p>Sweep the carrier frequency and record the reflected amplitude and phase. The simplest QICK approach is a Python loop over a short program (adapted from QICK's basic tutorial <cite data-r="qickdocs"></cite>):</p>
+<pre><code>import numpy as np
+from qick.asm_v2 import AveragerProgramV2
+
+class ReflPoint(AveragerProgramV2):
+    def _initialize(self, cfg):
+        self.declare_gen(ch=0, nqz=1)                           # DAC_B
+        self.declare_readout(ch=0, length=cfg['ro_len'])        # ADC_D
+        self.add_pulse(ch=0, name='c', style='const', freq=cfg['f'], ro_ch=0,
+                       length=cfg['ro_len'] + cfg['tof'] + 0.2, phase=0, gain=cfg['g'])
+        self.add_readoutconfig(ch=0, name='r', freq=cfg['f'], gen_ch=0)
+        self.send_readoutconfig(ch=0, name='r', t=0)
+    def _body(self, cfg):
+        self.pulse(ch=0, name='c', t=0)
+        self.trigger(ros=[0], t=cfg['tof'] + 0.1)              # after time of flight + settling
+
+freqs = np.linspace(150, 350, 401)                              # MHz
+S = []
+for f in freqs:
+    cfg = dict(f=f, g=0.3, ro_len=2.0, tof=0.6)
+    iq = ReflPoint(soccfg, reps=200, final_delay=1.0, cfg=cfg).acquire(soc)
+    S.append(iq[0][0] + 1j * iq[0][1])                         # averaged I + iQ
+S = np.array(S)</code></pre>
+<p>Plot \(|S|\) and the unwrapped phase of \(S\) versus frequency. The phase has a linear slope from the cable delay (Chapter 36); subtract it. The resonance appears as a dip in \(|S|\) and a step in phase, as in Figure 9.3. The data structure of <code>acquire()</code>'s return value depends on your QICK version; print it the first time.</p>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Typical cold resonances are 100–800 MHz with loaded quality factors of 10–100. If the dip is shallow, the tank is far from matched for the present sensor resistance (Chapter 9). Note the resonance frequency at several sensor settings: the frequency shift with gate voltage tells you how much capacitance the device adds, and some groups use varactor diodes on the PCB to tune the match in situ <cite data-r="vigneau2023"></cite>.</p>
+</div>
+
+<h2>Step 2: see the sensor through the resonator</h2>
+<p>Fix the carrier at the frequency with the largest response, then sweep the sensor's plunger with your DC source and record I/Q at each point. You should see the sensor's Coulomb peaks as peaks or dips in \(|S|\) or as phase changes. Compare with a DC transport measurement of the same sweep: the two must line up, as in the Tohoku group's RFSoC demonstration <cite data-r="shinozaki2025"></cite>.</p>
+<p>To sweep the DC gate fast, let the 4x2 trigger the DC source: each shot, a PMOD pulse advances the DC source one step in a pre-loaded list, and QICK records one point. This "triggered list" mode exists in several multi-channel DC sources.</p>
+
+<h2>Step 3: choose the power</h2>
+<p>Sweep the carrier gain while measuring one Coulomb peak. The signal grows with power until the RF voltage across the sensor becomes comparable to the Coulomb peak width (a few times \(k_BT_e/e\)), after which the peak broadens and the sensitivity drops. Pick the power just below broadening. Record the resulting power at the device from your budget.</p>
+
+<h2>Step 4: measure SNR and \(t_{\min}\)</h2>
+<p>Park the sensor on the steepest flank and prepare two charge states of a nearby qubit dot (for example by stepping its plunger across a transition with the DC source or AWG). For each state record a few thousand single-shot I/Q values (<code>acquire()</code> with per-shot data, or <code>get_shots()</code>), for several integration lengths. Rotate the IQ plane, compute the separation over the standard deviation (SNR) versus integration time \(t\), and fit SNR \(= \sqrt{t/t_{\min}}\) (Chapter 9). Report \(t_{\min}\): it is the figure of merit of your readout chain.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>You measure SNR = 2.0 at 0.5 µs and 4.0 at 2 µs. Then \(t_{\min} = t/\text{SNR}^2 = 0.5/4 = 0.125\ \mu\)s (and 2/16 = 0.125 µs: consistent with white noise). SNR 6 then needs \(36\times0.125 = 4.5\ \mu\)s.</p>
+</div>
+
+<h2>Step 5: watch single electrons tunnel</h2>
+<p>Tune a qubit dot to a charge transition with a reservoir, so that an electron tunnels in and out randomly. Record a long, continuous demodulated trace: on the 4x2 the DDR4 buffer can capture about 1.94 s of decimated data <cite data-r="qickrepo"></cite>, which you can filter and downsample afterwards. The trace shows a random telegraph signal between two levels. The histograms of the dwell times in each level are exponential; their means are the tunnel-in and tunnel-out times. Changing the plunger shifts the ratio (the Fermi function, Chapter 7), and changing the barrier changes the rates exponentially. This measurement calibrates tunnel rates for Elzerman readout and loading (Chapter 41).</p>
+
+<h2>What goes wrong</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Symptom</th><th>Likely causes</th></tr></thead>
+<tbody>
+<tr><td>No resonance anywhere</td><td>Wrong frequency range (parasitics differ from design); broken bond or inductor; a line not connected; HEMT not biased</td></tr>
+<tr><td>Resonance present but no response to the sensor</td><td>Sensor not conducting; match far from the sensor's resistance; carrier power too high (peaks washed out)</td></tr>
+<tr><td>Phase of the data rotates between runs</td><td>Frequency matching not used; external source not locked</td></tr>
+<tr><td>Sharp lines in the spectrum, or "noise" at fixed frequencies</td><td>Spurs or aliases (Chapter 22); EDSR IF leaking into the ADC; ground loops</td></tr>
+<tr><td>Very noisy, broad spectrum</td><td>HEMT or room-temperature amplifier oscillating; missing attenuation; too little integration</td></tr>
+<tr><td>Signal saturates or clips</td><td>Too much gain after the HEMT; check ADC input level against full scale</td></tr>
+</tbody></table></div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Reflectometry uses exactly one DAC and one ADC, leaving DAC_A free for EDSR or for a second sensor's carrier (frequency multiplexing two tanks with two tones requires the tones on one line, which would need a multiplexed generator or a combiner of DAC_A and DAC_B outputs). ADC_C can read a second sensor or monitor the incident carrier for reference.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your resonance dip is only 1 dB deep. What does that tell you and what can you change?</p>
+<details><summary>Show answer</summary><div>The tank is far from matched for the current sensor resistance (or the sensor is not in the circuit). Change the sensor's working point (lower its resistance), change the inductor, or tune the match with a varactor; also check that you measure at the right frequency and that the sensor is connected.</div></details>
+<p>2. Why record tunnelling events with the DDR4 buffer rather than with many short readouts?</p>
+<details><summary>Show answer</summary><div>Tunnelling is random and continuous; a long unbroken record lets you measure dwell-time distributions without dead time between shots. The DDR4 buffer stores about 1.94 s continuously at the decimated rate.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Rehearse with a room-temperature dummy tank; then find the cold resonance by sweeping the carrier.</li>
+<li>Confirm sensor response with gate sweeps (DC source triggered by PMOD), choose power below broadening.</li>
+<li>Measure SNR versus integration time to get \(t_{\min}\), the figure of merit of the readout.</li>
+<li>Use the DDR4 buffer for long tunnelling records to calibrate tunnel rates.</li>
+</ul>
+</div>

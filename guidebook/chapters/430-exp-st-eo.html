@@ -1,2 +1,62 @@
-<!--meta {"id": "exp-st-eo", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: singlet\u2013triplet and exchange-only qubits"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-st-eo", "part": "Part X · Experiments with the 4x2", "title": "Experiment: singlet–triplet and exchange-only qubits"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Singlet–triplet and exchange-only qubits are controlled entirely by baseband pulses (Chapter 13), so they are the hardest fit for the 4x2's AC-coupled outputs and the clearest test of what your setup can do. This chapter describes the standard experiments for both encodings, what each requires from the hardware, and what part a 4x2 can play: full control in a modified two-channel configuration for S–T₀, readout and calibration support for exchange-only devices run from a larger controller.</p>
+</div>
+
+<h2>Singlet–triplet qubit experiments</h2>
+
+<h3>Hardware needs</h3>
+<ul>
+<li>Two fast, DC-coupled baseband channels: P1 and P2 (detuning control) or a plunger and the barrier (symmetric exchange), with sub-ns timing and ~ns rise times.</li>
+<li>PSB readout: a sensor carrier and receiver.</li>
+<li>A stable field difference \(\Delta B_z\) between the dots (micromagnet in Si).</li>
+</ul>
+<p>With the 4x2, use Architecture A (AWG for P1/P2 with the 4x2 reading out) or Architecture B (DC-coupled DAC_A and DAC_B, readout carrier from an external source) (Chapter 38).</p>
+
+<h3>The experiments</h3>
+<ol>
+<li><b>S–T₀ precession (ΔB<sub>z</sub> oscillations)</b>: initialise \(S(2,0)\), pulse quickly (diabatically with respect to \(\Delta E_Z\)) deep into \((1,1)\) where \(J\approx0\), wait \(\tau\), return and read. The singlet probability oscillates at \(\Delta E_Z/h\), giving the field difference and, from the decay, \(T_2^*\) of the S–T₀ qubit.</li>
+<li><b>Exchange oscillations</b>: prepare \(\ket{\uparrow\downarrow}\) (adiabatic separation), apply an exchange pulse of amplitude \(\varepsilon\) and duration \(\tau\), reverse the adiabatic ramp, read. The outcome oscillates at \(\sqrt{J^2+\Delta E_Z^2}/h\). A 2D map versus pulse amplitude and duration is the "fingerprint" from which \(J(\varepsilon)\) is calibrated <cite data-r="petta2005,wessels2026"></cite>.</li>
+<li><b>Exchange echo</b>: a π pulse about \(\Delta B_z\) in the middle of an exchange evolution refocuses slow detuning noise, measuring charge-noise-limited coherence of the exchange axis.</li>
+<li><b>Two-axis gates</b>: combine exchange pulses and \(\Delta B_z\) evolution for arbitrary rotations; benchmark with RB.</li>
+</ol>
+
+<figure>
+<div class="figbody"><!--plot:st-fingerprint--></div>
+<figcaption>Simulated exchange "fingerprint" of a singlet–triplet qubit: measured probability versus exchange-pulse amplitude and duration, with an exchange that grows exponentially with amplitude and a 15 MHz field difference. At small amplitude only slow \(\Delta B_z\) evolution is visible; at large amplitude, fast exchange oscillations dominate.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: timing resolution</span>
+<p>At the top of the fingerprint, \(J/h \approx 150\) MHz: a full oscillation every 6.7 ns. The 4x2's DAC sample period is 0.1 ns, and QICK envelopes are sample-accurate, so a pulse's duration can be set in 0.1 ns steps inside an envelope even though the tProcessor's scheduling grid is 2.44 ns. A 0.1 ns error is then a 5° rotation error at 150 MHz, acceptable for calibration scans and improvable with smaller \(J\) for precise gates.</p>
+</div>
+
+<h2>Exchange-only qubit experiments</h2>
+<p>HRL's RFSoC-based work on a triangular EO qubit is the reference for this encoding on QICK hardware <cite data-r="wessels2026"></cite>. The sequence of experiments was:</p>
+<ol>
+<li><b>Tune a triple dot</b> to the \((1,1,1)\) region with PSB readout on one pair.</li>
+<li><b>Exchange oscillations on each axis</b> (\(J_{12}\), \(J_{23}\), and \(J_{13}\) for the triangle), with crosstalk-compensated pulses so that pulsing one barrier does not shift the dots. Reported: \(J/h\approx 75\)–78 MHz and 21–35 oscillations before 1/e decay.</li>
+<li><b>Fingerprint plots</b> versus exchange-pulse amplitude and detuning for each axis, to set the symmetric exchange operating point.</li>
+<li><b>Pre-distortion</b> of 10 ns exchange pulses using a measured response of the amplifier chain, and a calibrated 40 ns gap between pulses.</li>
+<li><b>Exchange-angle calibration</b>, then <b>dynamical-decoupling sequences</b> (NZ1 and the new NZM1 enabled by the triangular geometry) to separate hyperfine and charge-noise contributions.</li>
+</ol>
+<p>Hardware: a ZCU216 with 14 baseband channels and 2 DDS channels, DC-coupled LMH5401 and THS3491 amplifiers, an 11 × 11 crosstalk matrix in firmware and a 20-bit DC source <cite data-r="wessels2026"></cite>.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>An EO qubit needs at least two exchange (barrier) channels and usually plunger channels for initialisation and readout, all DC-coupled: more than the 4x2's two AC-coupled outputs. Use a ZCU216-based system (or a commercial controller) for EO control. A 4x2 can still serve as a dedicated readout unit, a calibration instrument (photon-assisted tunnelling, sensor characterisation, noise spectroscopy with its ADCs and DDR4 buffer), or a development platform for QICK programs before running them on the larger board, since QICK's programming model is the same across boards <cite data-r="qickdocs"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In the S–T₀ precession experiment, why must the pulse into (1,1) be fast compared with \(h/\Delta E_Z\)?</p>
+<details><summary>Show answer</summary><div>So that the singlet state is preserved as it enters (1,1) and then precesses towards T₀ under \(\Delta E_Z\). A slow (adiabatic) pulse would instead map the singlet onto an eigenstate of \(\Delta E_Z\) (\(\ket{\uparrow\downarrow}\) or \(\ket{\downarrow\uparrow}\)), and no precession would be seen.</div></details>
+<p>2. Why does an EO qubit benefit so much from crosstalk compensation in firmware?</p>
+<details><summary>Show answer</summary><div>Each exchange pulse on a barrier also shifts neighbouring dot potentials (and other exchange couplings) through cross-capacitance, changing the qubit's operating point during the pulse. Compensating pulses on neighbouring gates, computed from a crosstalk matrix, keep the pulse acting only on the intended exchange axis. Doing it in firmware keeps programs simple and timing exact.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>S–T₀ experiments: ΔB<sub>z</sub> precession, exchange oscillations and fingerprints, exchange echo, two-axis gates; they need two fast DC-coupled channels plus PSB readout.</li>
+<li>EO experiments (HRL/spinQICK): crosstalk-compensated exchange on each axis, fingerprints, pre-distorted 10 ns pulses, exchange calibration and decoupling sequences, on a ZCU216 with 14 baseband channels.</li>
+<li>The 4x2 can run S–T₀ control only with an AWG or a DC-coupling modification; for EO it is a readout, calibration or development unit.</li>
+</ul>
+</div>

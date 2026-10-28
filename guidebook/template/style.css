@@ -132,6 +132,8 @@ pre .c { color: var(--ink-3); }
 
 /* ---------- math ---------- */
 mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 10px 0 14px !important; }
+mjx-container:not([display="true"]) { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; padding: 2px 0; }
+p code, li code, td code { overflow-wrap: anywhere; }
 .eq { display: block; overflow-x: auto; }
 
 /* ---------- boxes ---------- */

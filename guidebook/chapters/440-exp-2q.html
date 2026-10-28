@@ -1,2 +1,62 @@
-<!--meta {"id": "exp-2q", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: two-qubit gates, feedback and stabilisation"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-2q", "part": "Part X · Experiments with the 4x2", "title": "Experiment: two-qubit gates, feedback and stabilisation"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The last group of experiments goes beyond single qubits: entangling gates between two spins, and closed-loop experiments where the controller reacts to measurement results in real time. Two-qubit gates need more channels than a 4x2 has, so here the board shares the work with an AWG. Real-time feedback, on the other hand, is something an FPGA-based controller does better than a rack of separate instruments, and several useful feedback experiments fit the 4x2 well. This chapter covers both.</p>
+</div>
+
+<h2>Two-qubit gate experiments</h2>
+<p>Requirements for two LD qubits (Chapter 14): EDSR drive for both qubits (one microwave channel, frequency-multiplexed), a DC-coupled barrier pulse for exchange with plunger compensation, plunger pulses for initialisation and PSB readout, and the readout. In Architecture A the AWG provides barrier and plunger pulses (3–4 channels), the 4x2 provides the microwave drive, readout and master timing.</p>
+
+<h3>Calibration sequence</h3>
+<ol>
+<li><b>Exchange spectroscopy</b>: with a barrier pulse on during a long, weak EDSR burst, the qubit lines split by \(J/h\) (Figure 14.1). Measure \(J\) versus barrier voltage; expect an exponential dependence.</li>
+<li><b>CROT</b>: choose a J-split line and calibrate a selective π pulse whose Rabi frequency satisfies the synchronisation condition (Chapter 14).</li>
+<li><b>CZ</b>: run a Ramsey experiment on the target qubit with a shaped barrier pulse inserted between the X/2 pulses, once with the control qubit up and once down. The difference between the two fringe phases is the conditional phase; adjust the pulse amplitude or duration until it is 180°, then correct each qubit's single-qubit phase with virtual Z gates <cite data-r="xue2022,noiri2022,mills2022"></cite>.</li>
+<li><b>Bell states and tomography</b>: prepare, apply the gate, measure in several bases with single-qubit pre-rotations, reconstruct the two-qubit density matrix.</li>
+<li><b>Benchmarking</b>: two-qubit RB or gate set tomography.</li>
+</ol>
+<p>Timing between the 4x2's microwave pulses and the AWG's barrier pulse must be known to within a fraction of a nanosecond, because the CZ phase depends on the overlap of pulses and the qubits' free evolution in between. Measure the trigger latency carefully (Chapter 36).</p>
+
+<h2>Real-time feedback with the 4x2</h2>
+<p>QICK's tProcessor can read a measurement result, compare it with a threshold, and choose the next pulse, all within the same shot (Chapters 33 and 35). Several useful experiments only need the 4x2's two outputs:</p>
+
+<h3>1. Repeat-until-success initialisation</h3>
+<p>After initialising, measure; if the result indicates the wrong state, re-initialise and measure again, up to N times, before starting the experiment. This filters out initialisation errors. It needs a readout that does not itself spoil the state you keep, which is natural for Elzerman readout (a spin-down result leaves a spin-down electron) <cite data-r="elzerman2004"></cite>.</p>
+
+<h3>2. Real-time qubit-frequency tracking</h3>
+<p>Charge noise moves the qubit frequency on time scales of seconds to hours (Chapter 4). A feedback loop can track it:</p>
+<ol>
+<li>run a short burst of Ramsey shots at a fixed delay \(\tau\) and two phases of the second pulse (±90°), which gives the sign and size of the detuning;</li>
+<li>compute a frequency correction (a proportional–integral update, or a Bayesian estimate);</li>
+<li>update the drive frequency for the following experiment shots.</li>
+</ol>
+<p>The first version can run with Python updating the QICK program between short acquisitions (latency of tens of ms, enough for slow drift). A faster version computes the update in the tProcessor using its integer registers and updates the DDS frequency register directly, giving sub-millisecond response. Both use only DAC_A (drive), DAC_B and ADC_D (readout).</p>
+
+<h3>3. Adaptive readout</h3>
+<p>Integrate in several short windows and stop as soon as the accumulated signal is clearly on one side of the threshold. Shots that are easy to classify finish early, saving time on average. With QICK this is a loop of short readouts with a conditional jump.</p>
+
+<h3>4. Charge-jump detection</h3>
+<p>Monitor a reference measurement each shot (as in HRL's PSB work <cite data-r="wessels2026"></cite>); if it jumps beyond a tolerance, flag the data and trigger a recalibration routine. Detecting such events on the FPGA and pausing the experiment avoids collecting hours of useless data. QICK has been used with on-FPGA neural networks for similar real-time detection in superconducting qubits <cite data-r="qickdocs"></cite>.</p>
+
+<h3>5. Electrostatic stabilisation (needs a DC path)</h3>
+<p>Bryan, Wilson and Jiang stabilised a silicon double dot against 1/f charge noise with FPGA-based gradient-descent feedback, using fast RF reflectometry to compute gradients and updating gate voltages continuously, reaching better than −6 dB of noise suppression up to 5 kHz <cite data-r="bryan2026"></cite>. They used a commercial controller with DC-coupled outputs. With a 4x2, the measurement and computation fit, but applying the correction needs a DC-coupled output (a modified DAC, an external fast DC source with a digital interface, or an AWG whose offset can be updated quickly).</p>
+
+<div class="box example"><span class="tag">Worked example: latency budget</span>
+<p>A conditional π pulse after a 2 µs readout: the readout window ends; the readout pipeline and accumulation deliver the result to the tProcessor after a few hundred nanoseconds (measure your firmware's value with the latency method of QICK's feedback tutorial <cite data-r="qickdocs"></cite>); the jump and pulse issue take tens of nanoseconds. Total decision delay: well under 1 µs, small compared with spin \(T_1\) (ms) and comparable to the readout itself. Feedback on spin qubits is limited by readout time, not by the controller.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Which feedback experiments in this chapter can run on an unmodified 4x2 with no other pulse instrument?</p>
+<details><summary>Show answer</summary><div>Those whose actions are microwave pulses or readout decisions: frequency tracking, adaptive readout, charge-jump detection (with a fixed plunger configuration), and repeat-until-success schemes whose re-initialisation does not need baseband pulses. Anything requiring plunger or barrier pulses needs the AWG or a DC-coupled output.</div></details>
+<p>2. Why does the CZ calibration need a Ramsey experiment on the target with two different control states?</p>
+<details><summary>Show answer</summary><div>The CZ gate's essence is a phase on the target that depends on the control's state. Ramsey measures the target's phase; the difference between control-up and control-down Ramsey phases is the conditional phase, which must be 180°.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Two-qubit gates (CROT, CZ) need EDSR, barrier and plunger pulses and readout, synchronised to sub-ns; the 4x2 provides drive, readout and timing, an AWG the baseband pulses.</li>
+<li>Feedback that fits the 4x2: repeat-until-success initialisation, real-time frequency tracking, adaptive readout, charge-jump detection.</li>
+<li>Electrostatic stabilisation needs a DC-coupled actuator.</li>
+<li>Controller decision latency (well under 1 µs) is short compared with spin readout times.</li>
+</ul>
+</div>

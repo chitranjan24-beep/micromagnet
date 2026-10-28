@@ -1,2 +1,79 @@
-<!--meta {"id": "exp-csd", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: fast charge-stability maps and pulsed-gate spectroscopy"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-csd", "part": "Part X · Experiments with the 4x2", "title": "Experiment: fast charge-stability maps and pulsed-gate spectroscopy"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Charge stability diagrams are the map you navigate by (Chapter 8), and you will take thousands of them. With DC readout each takes minutes; with RF readout and fast scanning, a map can refresh several times per second, so you can tune gates while watching ("video mode"). Pulsed-gate spectroscopy then adds time resolution: it measures tunnel rates and excited-state energies by pulsing a gate during the scan. This chapter shows how to build both with the 4x2 as the measuring and timing engine, and an AWG or a triggered DC source doing the sweeping.</p>
+</div>
+
+<h2>Three ways to scan</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Method</th><th>Who sweeps</th><th>Speed</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Point by point</td><td>DC source steps both gates; 4x2 measures one point per step</td><td>ms per point (DC-source settling)</td><td>Simplest; slow but reliable</td></tr>
+<tr><td>Triggered raster</td><td>DC source runs a pre-loaded list, advanced by 4x2 PMOD triggers; 4x2 measures between triggers</td><td>~10–100 µs per point</td><td>Limited by DC source update rate and line filtering</td></tr>
+<tr><td>Video mode</td><td>AWG sweeps the fast axis (sawtooth) through a bias tee; DC source or AWG steps the slow axis; 4x2 records continuously, synchronised by trigger</td><td>µs per point, full maps in 10–100 ms</td><td>Needs fast lines and bias tees; most powerful</td></tr>
+</tbody></table></div>
+
+<h2>Video mode in detail</h2>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 250" width="760" role="img" aria-label="Video mode timing">
+  <text class="sm" x="10" y="40">fast axis (AWG → P1)</text>
+  <path class="t1" d="M170,60 L290,20 L290,60 L410,20 L410,60 L530,20 L530,60 L650,20 L650,60"/>
+  <text class="sm" x="10" y="100">slow axis (P2)</text>
+  <path class="t2" d="M170,110 L290,110 L290,100 L410,100 L410,90 L530,90 L530,80 L650,80"/>
+  <text class="sm" x="10" y="150">trigger from 4x2</text>
+  <path class="t3" d="M170,160 l0,-14 l6,0 l0,14 L290,160 l0,-14 l6,0 l0,14 L410,160 l0,-14 l6,0 l0,14 L530,160 l0,-14 l6,0 l0,14 L650,160"/>
+  <text class="sm" x="10" y="200">4x2 readout</text>
+  <g>
+    <rect x="172" y="184" width="116" height="20" class="fa1"/><rect x="292" y="184" width="116" height="20" class="fa1"/><rect x="412" y="184" width="116" height="20" class="fa1"/><rect x="532" y="184" width="116" height="20" class="fa1"/>
+    <text class="sm" x="230" y="198" text-anchor="middle">row 1</text><text class="sm" x="350" y="198" text-anchor="middle">row 2</text><text class="sm" x="470" y="198" text-anchor="middle">row 3</text><text class="sm" x="590" y="198" text-anchor="middle">row 4</text>
+  </g>
+  <text class="sm" x="170" y="236">each ramp = one row; continuous data is cut into N pixels per row and stacked into an image</text>
+</svg>
+</div>
+<figcaption>Timing of a video-mode charge-stability scan. An AWG sweeps the fast gate with a sawtooth; the slow gate steps once per ramp; the 4x2 triggers each row and records the demodulated sensor signal continuously. Cutting each row's record into pixels gives one line of the map.</figcaption>
+</figure>
+
+<p>Design rules:</p>
+<ul>
+<li><b>Ramp rate versus bandwidth</b>: each pixel needs a dwell time longer than the readout's response time (tank ring-down plus filtering). For a 100-pixel row with 2 µs per pixel, the ramp lasts 200 µs (5 kHz). A 100-row map then takes 20 ms.</li>
+<li><b>AC coupling of the fast axis</b>: a sawtooth at 5 kHz passes a PCB bias tee (with a sub-Hz corner) almost undistorted but does not pass the 4x2's 10 MHz baluns. So the fast axis comes from a DC-coupled AWG, not from the 4x2's DACs.</li>
+<li><b>Hysteresis and latency</b>: charge transitions lag the gate slightly (tunnel times), and the readout chain delays the signal. Sweep in both directions or calibrate the pixel offset.</li>
+<li><b>Recording</b>: either one QICK readout per pixel (accumulated mode, one trigger per pixel, clean timing), or one long decimated record per row into the DDR4 buffer, binned in software.</li>
+</ul>
+
+<figure>
+<div class="figbody"><!--plot:csd-noisy--></div>
+<figcaption>Simulated video-mode charge stability diagrams. A single fast frame is noisy but already shows the honeycomb; averaging 30 frames (still well under a second in total) gives a clean map. In practice one tunes gates while watching single frames and averages for the final data.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: how fast can a map be?</span>
+<p>With \(t_{\min} = 0.125\ \mu\)s (Chapter 39), a pixel SNR of 3 needs \(9\times0.125 \approx 1.1\ \mu\)s. A 128 × 128 map has 16 384 pixels: about 18 ms of integration. Overheads (ramp flyback, settling) may double it: about 25 maps per second. The same map with DC current readout at 10 ms per point would take 2.7 minutes.</p>
+</div>
+
+<h2>Turning maps into virtual gates</h2>
+<p>Fast maps make it practical to calibrate the virtual-gate matrix automatically: detect transition lines in the image (edge detection or a Hough transform), fit their slopes, build the lever-arm matrix (Chapter 8), and rescan in virtual coordinates to check that dot-1 lines are vertical and dot-2 lines horizontal. Machine-learning classifiers that identify charge states and transitions from such images are reviewed by Zwolak and Taylor <cite data-r="zwolak2023"></cite>. spinQICK includes cross-capacitance extraction and gate-vs-gate scan routines <cite data-r="spinqick"></cite>.</p>
+
+<h2>Pulsed-gate spectroscopy</h2>
+<p>Add a square-wave pulse of amplitude \(V_p\) to a plunger during a 1D or 2D scan. When the pulse frequency is low compared with the tunnel rate, a charge transition appears twice, split by \(V_p\) (the dot sees two gate voltages alternately). As the pulse frequency approaches the tunnel rate, the split lines fade, because the electron cannot follow: the fading frequency measures the tunnel rate. Excited orbital or valley states appear as extra lines between the split copies, because during the high half of the pulse an electron can tunnel into an excited state if it is below the reservoir's Fermi level; their position gives the excitation energy <cite data-r="hanson2007"></cite>. This is how valley splittings of individual dots are often first estimated.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Square pulses at kHz–MHz on a plunger need a DC-coupled source (AWG), because the 4x2's outputs only pass edges. A useful variant that the 4x2 can do itself is <b>photon-assisted tunnelling</b>: a microwave tone (hundreds of MHz to GHz) from DAC_A, through a bias tee onto a plunger, creates side-peaks of charge transitions spaced by \(hf/(e\alpha)\). Measuring the spacing versus frequency calibrates the lever arm, and the side-peak strength calibrates the microwave amplitude at the gate (Chapter 36). spinQICK has a dedicated routine (<code>gvg_pat</code>) for this <cite data-r="spinqick"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your video-mode map shows transitions shifted between left-to-right and right-to-left sweeps. Why?</p>
+<details><summary>Show answer</summary><div>Finite tunnel rates and the readout chain's response time make the measured transition lag the gate voltage. The lag reverses with sweep direction. Sweep slower, average both directions, or calibrate and correct the pixel offset.</div></details>
+<p>2. In pulsed-gate spectroscopy, the split transition lines fade when the pulse period drops below 20 µs. What is the tunnel rate, roughly?</p>
+<details><summary>Show answer</summary><div>Each half-period is 10 µs; the electron can no longer follow when the tunnel time is comparable, so \(\Gamma \sim 1/(10\ \mu\text{s}) = 100\) kHz (to within a factor of order one; fit the fading curve for a precise value).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Scan point by point, by triggered raster, or in video mode; the 4x2 measures and triggers, an AWG or DC source sweeps.</li>
+<li>Video mode with RF readout gives full maps in tens of milliseconds; design pixel dwell time from \(t_{\min}\).</li>
+<li>Fast maps enable automated virtual-gate calibration and machine-learning tuning.</li>
+<li>Pulsed-gate spectroscopy measures tunnel rates and excited states; photon-assisted tunnelling (doable from the 4x2) calibrates lever arms and microwave amplitudes.</li>
+</ul>
+</div>

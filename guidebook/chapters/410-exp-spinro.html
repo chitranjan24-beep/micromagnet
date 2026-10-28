@@ -1,2 +1,88 @@
-<!--meta {"id": "exp-spinro", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Experiment: spin readout, single shots and T1"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "exp-spinro", "part": "Part X · Experiments with the 4x2", "title": "Experiment: spin readout, single shots and T1"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Single-shot spin readout is the milestone that turns a charge device into a spin device: from here on, every experiment ends with "measure the spin". This chapter sets up energy-selective (Elzerman) and Pauli-blockade (PSB) readout with the 4x2 measuring the sensor and a DC-coupled AWG pulsing the plungers (Architecture A), then measures readout fidelity and the spin relaxation time \(T_1\). The physics is in Chapter 11.</p>
+</div>
+
+<h2>Common building block: several readout windows per shot</h2>
+<p>Spin readout signals evolve during the read phase (a blip in Elzerman readout, relaxation in PSB). Recording the sensor in several consecutive windows per shot gives you a coarse trace of every shot with the efficient accumulated readout. In QICK tProc v2, every <code>trigger()</code> of a readout inside <code>_body()</code> is counted, and the returned data has one entry per trigger per shot <cite data-r="qickrepo"></cite>:</p>
+<pre><code>class SpinReadout(AveragerProgramV2):
+    def _initialize(self, cfg):
+        self.declare_gen(ch=0, nqz=1)
+        self.declare_readout(ch=0, length=cfg['win'])               # one window, e.g. 2 µs
+        total = cfg['n_win'] * cfg['win'] + cfg['tof'] + 0.2
+        self.add_pulse(ch=0, name='c', style='const', freq=cfg['f_ro'], ro_ch=0,
+                       length=total, phase=0, gain=cfg['g_ro'])
+        self.add_readoutconfig(ch=0, name='r', freq=cfg['f_ro'], gen_ch=0)
+        self.send_readoutconfig(ch=0, name='r', t=0)
+    def _body(self, cfg):
+        self.trigger(pins=[1], t=0)                    # AWG: start the plunger sequence
+        self.delay(cfg['t_read'])                      # AWG has reached the read level
+        self.pulse(ch=0, name='c', t=0)                # one long readout carrier
+        for k in range(cfg['n_win']):                  # unrolled at compile time
+            self.trigger(ros=[0], t=cfg['tof'] + k * cfg['win'])</code></pre>
+<p>With 20 windows of 2 µs you get a 40 µs coarse trace per shot. Keep the number of unrolled triggers moderate (the tProc v2 program memory holds about 4096 instructions <cite data-r="qickdocs"></cite>). For long Elzerman reads (hundreds of µs to ms), use fewer, longer windows, or record whole traces with the DDR4 buffer.</p>
+
+<h2>Elzerman readout</h2>
+<h3>Set-up</h3>
+<ol>
+<li><b>Tunnel rates</b>: from a telegraph-signal measurement (Chapter 39), set the dot–reservoir barrier so the tunnel time is 10–100 µs: slow enough for the sensor to resolve, fast compared with \(T_1\).</li>
+<li><b>Field</b>: choose \(E_Z\) well above \(k_BT_e\) (Chapter 11), for example 0.4–0.6 T in silicon.</li>
+<li><b>Pulse</b>: AWG plays empty → load → read → empty on the plunger (Figure 11.2), with the read level positioned so the Fermi level sits between \(E_\downarrow\) and \(E_\uparrow\).</li>
+<li><b>Find the read level</b>: sweep the read-level voltage; the probability of a blip during the read window rises from zero (both levels below \(E_F\)), peaks where only spin-up can leave, and rises again to one when both levels are above \(E_F\) (any electron leaves). The plateau or peak between is the spin-selective window.</li>
+</ol>
+
+<figure>
+<div class="figbody"><!--plot:elzerman-trace--></div>
+<figcaption>Simulated Elzerman traces (repeated from Chapter 11): plunger pulse sequence and sensor signal for spin up (blip) and spin down (no blip).</figcaption>
+</figure>
+
+<h3>Analysis</h3>
+<p>For each shot, low-pass filter the window sequence and check whether the signal crosses a blip threshold in the read phase. The fraction of shots with a blip is \(P_\uparrow\) (with errors). Plot histograms of the maximum signal per shot for prepared states to choose the threshold; the spin-down histogram is a single peak, the spin-up histogram a peak at the blip level plus a tail of shots that relaxed before tunnelling.</p>
+
+<h3>T1</h3>
+<p>Load with both levels below \(E_F\) (random spin, roughly 50% up), wait a time \(\tau\) at that level, then read. The blip fraction decays as \(P_\uparrow(\tau) = A\,e^{-\tau/T_1} + B\). Repeat versus magnetic field: \(T_1\) falls steeply with field and dips at the spin–valley hot spot, which gives the valley splitting (Chapter 10) <cite data-r="elzerman2004,hanson2007"></cite>.</p>
+
+<h2>Pauli spin blockade readout</h2>
+<h3>Set-up</h3>
+<ol>
+<li><b>Find the \((1,1)\)–\((2,0)\) transition</b> in a fast CSD (Chapter 40), in virtual coordinates.</li>
+<li><b>Sequence</b>: (a) initialise in \(S(2,0)\) by waiting deep in \((2,0)\); (b) pulse into \((1,1)\) and wait long enough for the micromagnet field difference to mix \(S\) and \(T_0\) (tens of ns to µs), giving a mixed spin state; (c) pulse to a candidate readout point just across the interdot line into \((2,0)\); (d) read the sensor. As a reference, run the same sequence without the wait in \((1,1)\), so the state stays a singlet.</li>
+<li><b>Map the readout window</b>: scan the readout point over a 2D region near the transition and plot the difference between the mixed and singlet-reference signals. The PSB triangle (Figure 11.4) is where they differ. spinQICK has routines for this (measurement-window and idle-cell scans) <cite data-r="spinqick"></cite>.</li>
+<li><b>Choose the integration window</b> from single-shot data: separation grows with integration, but triplets relax to the singlet during readout (Chapter 11).</li>
+</ol>
+
+<figure>
+<div class="figbody"><!--plot:iq-blobs--></div>
+<figcaption>Single-shot I/Q readout (repeated from Chapter 23): two clouds for blocked (triplet) and unblocked (singlet) outcomes, with shots that relaxed during readout lying between them.</figcaption>
+</figure>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>HRL's spinQICK exchange-only work made every PSB measurement relative to a reference measurement immediately before each shot (initialise a singlet, measure at the readout window), to cancel slow drifts of the sensor. They reached SNR of 5–6 and a singlet assignment of 98.9% for prepared singlets <cite data-r="wessels2026"></cite>. Reference measurements cost time but make long experiments robust against sensor drift.</p>
+</div>
+
+<h2>Readout and initialisation fidelity</h2>
+<p>From histograms of prepared states, extract the overlap error and the relaxation tail. A common model fits each histogram with two Gaussians plus a "relaxation bridge" between them. Separate readout errors from initialisation errors by repeating readout twice in one shot (if the readout is non-destructive enough) or by preparing states with different methods. Report readout visibility and the conditions (integration time, field, temperature) clearly.</p>
+
+<h2>Real-time thresholding</h2>
+<p>For single-shot data, QICK's <code>acquire(..., threshold=, angle=)</code> classifies shots after rotating the IQ plane <cite data-r="qickdocs"></cite>. For feedback (for example, re-initialising until the readout says "spin down"), the tProcessor reads the result and branches (Chapter 35). Elzerman readout has the useful property that after a spin-up blip a spin-down electron reloads the dot, so readout also re-initialises.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>In this chapter the 4x2 does the readout and triggers; the AWG does the plunger pulses. The accumulated buffer (16 384 entries per readout on the standard firmware) holds shots × windows; for 20 windows per shot that is 819 shots per buffer fill, which QICK reads out in chunks during long acquisitions <cite data-r="qickrepo"></cite>. For millisecond Elzerman reads, the 1.94 s DDR4 buffer can record hundreds of complete shot traces in one go.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In an Elzerman read-level sweep, the blip probability is 0 at low read voltage, 0.4 in a middle range, and 1 at high voltage. What is happening in each range?</p>
+<details><summary>Show answer</summary><div>Low: both spin levels below \(E_F\), no electron can leave. Middle: only spin-up above \(E_F\), so only spin-up electrons leave: spin-selective readout, with ~40% of loaded spins up (plus errors). High: both levels above \(E_F\), every electron leaves.</div></details>
+<p>2. Why does PSB readout often use a reference measurement in every shot?</p>
+<details><summary>Show answer</summary><div>The sensor's working point drifts (charge noise, temperature). Comparing each measurement with a reference taken moments earlier removes slow drifts, keeping the threshold valid over long experiments.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Record several readout windows per shot; QICK returns one value per trigger.</li>
+<li>Elzerman: set tunnel rates and field, find the spin-selective read level, detect blips; measure \(T_1\) and its field dependence.</li>
+<li>PSB: initialise S(2,0), mix in (1,1), pulse to the readout window, compare with a singlet reference; map the PSB triangle.</li>
+<li>Extract fidelities from prepared-state histograms; threshold in software or in the tProcessor for feedback.</li>
+</ul>
+</div>

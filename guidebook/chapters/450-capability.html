@@ -1,2 +1,79 @@
-<!--meta {"id": "capability", "part": "Part XI \u00b7 Capability map and roadmap", "title": "What the 4x2 can and cannot do"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "capability", "part": "Part XI · Capability map and roadmap", "title": "What the 4x2 can and cannot do"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This chapter collects the whole book into one answer to your original question: of everything that semiconductor spin-qubit research groups do, what can the RFSoC 4x2 do, what can it do with help, and what needs different hardware? Use the tables to plan experiments and to explain your hardware choices to your group.</p>
+</div>
+
+<h2>The short answer</h2>
+<p>The RFSoC 4x2 with QICK is an excellent <b>readout, microwave and timing engine</b>. It does RF reflectometry readout, real-time demodulation, single-shot classification, microwave EDSR drive (directly up to a few GHz, via a mixer above), precise sequencing and real-time feedback, at a small fraction of the cost of commercial controllers. It is <b>not</b> a baseband gate-pulse instrument: its two outputs are AC-coupled through 10 MHz–10 GHz baluns, so it cannot produce the DC levels and µs–ms pulses that spin-qubit initialisation, readout, exchange and charge-state manipulation need, and two outputs are too few for multi-gate control anyway. Paired with a DC-coupled AWG and a DC source, it supports most single-qubit spin experiments; for exchange-only qubits and multi-qubit devices, groups use larger RFSoC systems (ZCU216, QICK Box, spinQICK) or commercial controllers.</p>
+
+<h2>The capability matrix</h2>
+<p>Legend: ✓ works; ◐ works with limits or extra parts; ✗ does not work. Columns: <b>4x2</b> alone; <b>4x2 + AWG</b> (Architecture A: plus DC-coupled AWG, DC source, LO/mixer); <b>mod. 4x2</b> (Architecture B: DC-coupled DAC outputs); <b>ZCU216</b> (ZCU216/QICK Box with spinQICK-style DC-coupled front end); <b>commercial</b> (integrated controller).</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Task</th><th>4x2</th><th>4x2 + AWG</th><th>mod. 4x2</th><th>ZCU216</th><th>commercial</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td colspan="7"><b>Device bring-up</b></td></tr>
+<tr><td>DC gate voltages, turn-on, pinch-off</td><td>✗</td><td>✓ (DC source)</td><td>✗</td><td>◐ (external DC source)</td><td>◐</td><td>Always a DC source; QICK can trigger it</td></tr>
+<tr><td>Transport: Coulomb peaks, diamonds (lock-in)</td><td>✗</td><td>✓ (lock-in)</td><td>◐</td><td>◐</td><td>◐</td><td>kHz excitation is blocked by baluns</td></tr>
+<tr><td colspan="7"><b>Charge sensing</b></td></tr>
+<tr><td>RF reflectometry readout</td><td>✓</td><td>✓</td><td>◐ (external carrier)</td><td>✓</td><td>✓</td><td>The 4x2's best use <cite data-r="shinozaki2025"></cite></td></tr>
+<tr><td>Gate-based dispersive sensing</td><td>✓</td><td>✓</td><td>◐</td><td>✓</td><td>✓</td><td>Same chain as reflectometry</td></tr>
+<tr><td>Frequency-multiplexed readout of several sensors</td><td>◐</td><td>◐</td><td>✗</td><td>✓</td><td>✓</td><td>4x2 standard firmware: 2 generators, 2 readouts</td></tr>
+<tr><td>Long continuous records (telegraph signals, noise)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>1.94 s DDR4 buffer</td></tr>
+<tr><td colspan="7"><b>Charge stability and tuning</b></td></tr>
+<tr><td>Point-by-point and triggered-raster CSDs</td><td>◐ (with DC source)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>4x2 measures and triggers</td></tr>
+<tr><td>Video-mode CSDs</td><td>✗</td><td>✓</td><td>✓ (2 gates)</td><td>✓</td><td>✓</td><td>Fast axis needs DC-coupled sweep</td></tr>
+<tr><td>Virtual gates (DC)</td><td>✓ (software)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>In Python</td></tr>
+<tr><td>Virtual gates for fast pulses / crosstalk compensation</td><td>✗</td><td>◐ (AWG)</td><td>◐ (2 channels)</td><td>✓ (firmware matrix)</td><td>✓</td><td>spinQICK: 11×11 matrix on ZCU216 <cite data-r="wessels2026"></cite></td></tr>
+<tr><td>Pulsed-gate spectroscopy</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Square plunger pulses</td></tr>
+<tr><td>Photon-assisted tunnelling, lever-arm calibration</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Microwave on a gate</td></tr>
+<tr><td>Automated / ML tuning</td><td>◐</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Needs fast maps <cite data-r="zwolak2023"></cite></td></tr>
+<tr><td colspan="7"><b>Spin readout</b></td></tr>
+<tr><td>Elzerman readout and T1</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Plunger levels for µs–ms</td></tr>
+<tr><td>Pauli spin blockade readout</td><td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>Plunger pulses across the interdot line</td></tr>
+<tr><td>Single-shot classification, histograms, fidelity</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>QICK thresholds and per-shot data</td></tr>
+<tr><td colspan="7"><b>Single-spin (LD) control</b></td></tr>
+<tr><td>EDSR / ESR drive &lt; 4.9 GHz</td><td>✓</td><td>✓</td><td>✗ (DACs used for gates)</td><td>✓</td><td>✓</td><td>Low-field operation</td></tr>
+<tr><td>EDSR 4.9–9.8 GHz</td><td>◐</td><td>◐</td><td>✗</td><td>◐</td><td>✓</td><td>Second Nyquist zone, reduced power</td></tr>
+<tr><td>EDSR 10–20 GHz (typical micromagnet devices)</td><td>◐ (mixer + LO)</td><td>✓ (mixer + LO)</td><td>✗</td><td>◐ (mixer + LO)</td><td>✓</td><td>4x2 supplies IF</td></tr>
+<tr><td>Rabi, Ramsey, echo, CPMG, AllXY, RB</td><td>◐ (needs readout pulses)</td><td>✓</td><td>◐</td><td>✓</td><td>✓</td><td>spinQICK has these routines <cite data-r="spinqick"></cite></td></tr>
+<tr><td>Several qubits by frequency multiplexing</td><td>◐</td><td>◐</td><td>✗</td><td>✓</td><td>✓</td><td>One drive generator on the 4x2</td></tr>
+<tr><td colspan="7"><b>Encoded qubits and two-qubit gates</b></td></tr>
+<tr><td>Singlet–triplet control</td><td>✗</td><td>✓ (AWG)</td><td>✓</td><td>✓</td><td>✓</td><td>Two fast DC-coupled gates</td></tr>
+<tr><td>Exchange-only control</td><td>✗</td><td>◐ (multi-channel AWG)</td><td>✗</td><td>✓</td><td>✓</td><td>Demonstrated with spinQICK on ZCU216 <cite data-r="wessels2026"></cite></td></tr>
+<tr><td>CZ / CROT between LD qubits</td><td>✗</td><td>◐ (AWG with 3–4 channels)</td><td>✗</td><td>✓</td><td>✓</td><td>Sub-ns synchronisation required</td></tr>
+<tr><td>Multi-qubit arrays (≥ 4 qubits)</td><td>✗</td><td>✗</td><td>✗</td><td>◐ (one or more boards)</td><td>✓</td><td>Channel count</td></tr>
+<tr><td colspan="7"><b>Real-time control</b></td></tr>
+<tr><td>Conditional pulses, active/heralded reset</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>tProcessor branching</td></tr>
+<tr><td>Real-time frequency tracking</td><td>✓</td><td>✓</td><td>◐</td><td>✓</td><td>✓</td><td>Drive + readout only</td></tr>
+<tr><td>Electrostatic feedback stabilisation</td><td>✗</td><td>◐</td><td>✓</td><td>✓</td><td>✓</td><td>Needs DC-coupled actuator <cite data-r="bryan2026"></cite></td></tr>
+<tr><td>Custom FPGA processing (matched filters, ML)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>◐ (vendor-dependent)</td><td>Open firmware</td></tr>
+<tr><td>Multi-board synchronisation</td><td>◐</td><td>◐</td><td>◐</td><td>✓</td><td>✓</td><td>XCOM, sync inputs <cite data-r="martin2026"></cite></td></tr>
+</tbody></table></div>
+
+<h2>What leading groups have that the 4x2 lacks</h2>
+<ul>
+<li><b>Channel count</b>: tens to hundreds of synchronised DC-coupled baseband channels, several microwave channels and many readout channels.</li>
+<li><b>DC-coupled, low-noise, crosstalk-compensated pulsing</b>: integrated in commercial systems and in spinQICK's ZCU216 firmware <cite data-r="wessels2026"></cite>.</li>
+<li><b>Built-in upconversion to 10–20 GHz</b> with calibrated IQ mixing.</li>
+<li><b>Mature software stacks</b> with calibration libraries, scheduling and databases.</li>
+<li><b>Cryogenic electronics and superconducting amplifiers</b> (parametric amplifiers for readout), which are independent of the controller but often present.</li>
+</ul>
+
+<h2>What the 4x2 offers that racks do not</h2>
+<ul>
+<li><b>Cost</b>: $2,499 academic for 2 DACs, 4 ADCs and an FPGA with full open-source control <cite data-r="rfsocpynq4x2"></cite>, versus tens of thousands of dollars per commercial channel group.</li>
+<li><b>Openness</b>: firmware and software can be read and changed; new ideas (custom filters, on-FPGA machine learning, new feedback schemes) can be implemented directly.</li>
+<li><b>Phase coherence by construction</b>: all channels from one clock tree; no external triggering between source and digitiser.</li>
+<li><b>A path to larger systems</b>: the same QICK programming model runs on ZCU216-based systems <cite data-r="qickdocs"></cite>, so code and skills transfer.</li>
+</ul>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Alone: reflectometry readout, single-shot analysis, microwave drive (direct to a few GHz), timing and feedback.</li>
+<li>With a DC-coupled AWG, DC source and LO/mixer: most single-spin experiments, including PSB/Elzerman readout, EDSR control and benchmarking; S–T₀ control.</li>
+<li>Exchange-only and multi-qubit work needs ZCU216-class systems or commercial controllers.</li>
+<li>Its value lies in low cost, openness, phase-coherent readout and a direct path to larger QICK systems.</li>
+</ul>
+</div>

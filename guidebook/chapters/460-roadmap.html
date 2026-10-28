@@ -1,2 +1,81 @@
-<!--meta {"id": "roadmap", "part": "Part XI \u00b7 Capability map and roadmap", "title": "Your roadmap with the board"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "roadmap", "part": "Part XI · Capability map and roadmap", "title": "Your roadmap with the board"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A plan turns this book into results. This chapter lays out a realistic sequence of stages, from reading to a working qubit measurement, with clear goals and checks for each stage, and a list of projects that suit the 4x2 and could become research contributions in their own right.</p>
+</div>
+
+<h2>Stage 0: before (or while) the board arrives</h2>
+<ul>
+<li>Read Parts I–III of this book; then Hanson et al. and Burkard et al. for depth <cite data-r="hanson2007,burkard2023"></cite>.</li>
+<li>Read the QICK documentation's getting-started and tutorial pages; if available, try the tProc v2 tutorials on the QICK emulator branch <cite data-r="qickdocs,qickrepo"></cite>.</li>
+<li>Read the SDR book's Chapters 4, 7, 9, 11 and 12 (sampling, quadrature, RF converters, figures of merit) <cite data-r="sdrbook"></cite>.</li>
+<li><b>Check</b>: you can explain Figure 1.2, a Rabi chevron, a charge stability diagram, a Nyquist zone and an I/Q demodulator without notes.</li>
+</ul>
+
+<h2>Stage 1: board bring-up (week 1–2)</h2>
+<ul>
+<li>Flash the QICK-recommended PYNQ image, boot, connect, run the base-overlay RF notebooks (Chapter 31).</li>
+<li>Install the SDR book notebooks; work through sets A, B, C, E, F (Chapter 32).</li>
+<li>Record your board's DAC output spectra and a DAC→ADC loopback transfer function (Chapters 29 and 36).</li>
+<li><b>Check</b>: a saved "board health" notebook with plots you can compare against later.</li>
+</ul>
+
+<h2>Stage 2: QICK on the bench (week 3–4)</h2>
+<ul>
+<li>Install QICK; run the bundled tProc v1 demos; build or obtain tProc v2 firmware and run tutorials 00–04 (Chapter 34).</li>
+<li>Do the bench calibrations: time of flight, frequency matching, phase versus frequency, trigger latency to an AWG (Chapter 36).</li>
+<li>Lock the board to a 10 MHz reference together with an LO; build and characterise your EDSR upconversion chain into a spectrum analyser (Chapters 20, 30, 42).</li>
+<li><b>Check</b>: loopback pulses at the expected times, stable I/Q phase across runs, a clean upconverted tone with image and LO leakage measured.</li>
+</ul>
+
+<h2>Stage 3: reflectometry rehearsal (month 2)</h2>
+<ul>
+<li>Build a room-temperature dummy tank and run the full Chapter 39 procedure on it: resonance, matching, power, SNR versus integration time.</li>
+<li>Write your frequency plan and power budget for the real fridge (Chapters 18, 22, 38).</li>
+<li><b>Check</b>: a measured \(t_{\min}\) on the dummy tank and a written plan reviewed by a senior lab member.</li>
+</ul>
+
+<h2>Stage 4: on the device (month 3 onward)</h2>
+<ul>
+<li>Connect to the fridge with conservative attenuation; find the cold resonance; read the sensor dot; measure Coulomb peaks by reflectometry and compare with DC (Chapter 39).</li>
+<li>Fast charge stability maps with the AWG or DC source sweeping (Chapter 40); calibrate virtual gates.</li>
+<li>Tunnelling records with the DDR4 buffer; tunnel rates.</li>
+<li><b>Check</b>: a sub-second CSD of the qubit dots in the few-electron regime.</li>
+</ul>
+
+<h2>Stage 5: spins</h2>
+<ul>
+<li>PSB or Elzerman readout with the AWG for plunger pulses (Chapter 41); single-shot fidelity; \(T_1\) versus field.</li>
+<li>EDSR spectroscopy, Rabi, Ramsey, echo, AllXY, RB (Chapter 42).</li>
+<li><b>Check</b>: a calibrated single-spin qubit with reported \(T_1\), \(T_2^*\), \(T_2\), readout and gate fidelities.</li>
+</ul>
+
+<h2>Stage 6: decide how to grow</h2>
+<p>With a working single-qubit setup, decide whether you need DC-coupled channels on the RFSoC itself (modification, ZCU216/QICK Box with spinQICK) or a commercial controller for multi-qubit and encoded-qubit work (Chapters 38 and 45). Keep the 4x2 as a readout or development unit.</p>
+
+<h2>Projects that suit the 4x2</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Project</th><th>Uses</th><th>Why it is interesting</th></tr></thead>
+<tbody>
+<tr><td>Real-time qubit-frequency tracking in the tProcessor</td><td>DAC_A, readout, tProc arithmetic</td><td>Fights 1/f drift; directly improves \(T_2^*\)-limited gates</td></tr>
+<tr><td>Matched-filter spin readout with the weighted buffer</td><td>Readout, weighted buffer, single-shot data</td><td>Better fidelity for free; publishable comparison with boxcar</td></tr>
+<tr><td>Adaptive (early-stopping) readout</td><td>Readout, conditional logic</td><td>Shorter average readout time</td></tr>
+<tr><td>ML classification of video-mode CSDs, possibly on the FPGA</td><td>Fast maps, Python or HLS</td><td>Automated tuning <cite data-r="zwolak2023"></cite></td></tr>
+<tr><td>Automated tank-circuit matching with a varactor</td><td>Reflectometry, DC source</td><td>Solves the most common reflectometry problem <cite data-r="shinozaki2025,shinozaki2025b"></cite></td></tr>
+<tr><td>Sensor noise spectroscopy from DDR4 records</td><td>Long records, FFT</td><td>Characterises charge noise in your heterostructure</td></tr>
+<tr><td>DC-coupled ADC input modification (following QICK-DAWG)</td><td>Hardware rework, LMH5401</td><td>Enables lock-in style kHz–MHz sensing on the board <cite data-r="qickdawg"></cite></td></tr>
+<tr><td>Porting spinQICK readout and analysis routines to 4x2 configurations</td><td>spinQICK code, Architecture A</td><td>Useful to other groups with 4x2 boards <cite data-r="spinqick"></cite></td></tr>
+</tbody></table></div>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Keep a lab notebook (electronic) for every session with: firmware and software versions, calibration values, wiring changes, device state and what you tried. Commit your measurement code to version control. Share results with the QICK and spinQICK communities: they are small, active and helpful, and your experience with the 4x2 on spin qubits is exactly what they lack.</p>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Stage 0–2: learn, bring up the board, run QICK on the bench with calibrations.</li>
+<li>Stage 3: rehearse reflectometry at room temperature; plan frequencies and power.</li>
+<li>Stage 4–5: readout, fast maps, spin readout and single-qubit control on the device.</li>
+<li>Stage 6: choose how to scale; meanwhile, pursue 4x2-friendly projects like real-time frequency tracking and optimal readout.</li>
+</ul>
+</div>

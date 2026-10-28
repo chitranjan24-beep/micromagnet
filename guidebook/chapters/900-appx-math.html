@@ -1,2 +1,66 @@
 <!--meta {"id": "appx-math", "part": "Back matter", "title": "Appendix A: Mathematics refresher", "numbered": false}-->
-<p class="status">This chapter is being written.</p>
+
+<p class="lede">The mathematics used in this book, in one place, with the identities you will reach for most often.</p>
+
+<h2 data-nonum>A.1 Complex numbers and phasors</h2>
+<ul>
+<li>\(z = x + iy = re^{i\theta}\), with \(r = |z| = \sqrt{x^2+y^2}\) and \(\theta = \operatorname{atan2}(y, x)\).</li>
+<li>Euler: \(e^{i\theta} = \cos\theta + i\sin\theta\); so \(\cos\theta = (e^{i\theta}+e^{-i\theta})/2\), \(\sin\theta = (e^{i\theta}-e^{-i\theta})/2i\).</li>
+<li>Multiplying complex numbers multiplies magnitudes and adds angles: rotating a phasor by \(\phi\) means multiplying by \(e^{i\phi}\).</li>
+<li>A sinusoid \(A\cos(\omega t+\phi) = \Re\{Ae^{i\phi}e^{i\omega t}\} = I\cos\omega t - Q\sin\omega t\) with \(I + iQ = Ae^{i\phi}\).</li>
+</ul>
+
+<h2 data-nonum>A.2 Trigonometric identities used for mixing and the RWA</h2>
+\[ \cos A\cos B = \tfrac12[\cos(A-B)+\cos(A+B)],\quad \sin A\sin B = \tfrac12[\cos(A-B)-\cos(A+B)],\quad \sin A\cos B = \tfrac12[\sin(A+B)+\sin(A-B)]. \]
+
+<h2 data-nonum>A.3 Fourier transforms</h2>
+<p>\(X(f) = \int x(t)e^{-i2\pi ft}dt\), \(x(t) = \int X(f)e^{i2\pi ft}df\). Useful pairs:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Time</th><th>Frequency</th></tr></thead>
+<tbody>
+<tr><td>Rectangle of width \(T\)</td><td>\(T\operatorname{sinc}(fT)\), \(\operatorname{sinc}(u) = \sin(\pi u)/(\pi u)\)</td></tr>
+<tr><td>Gaussian \(e^{-t^2/2\sigma^2}\)</td><td>Gaussian of width \(1/(2\pi\sigma)\)</td></tr>
+<tr><td>Decaying exponential \(e^{-|t|/\tau}\)</td><td>Lorentzian of half-width \(1/(2\pi\tau)\)</td></tr>
+<tr><td>\(\cos(2\pi f_0t)\)</td><td>Two delta functions at \(\pm f_0\)</td></tr>
+<tr><td>Convolution \(x * h\)</td><td>Product \(X\cdot H\)</td></tr>
+<tr><td>Product \(x\cdot m\)</td><td>Convolution \(X * M\) (this is why mixing shifts spectra)</td></tr>
+</tbody></table></div>
+
+<h2 data-nonum>A.4 Linear algebra for qubits</h2>
+<ul>
+<li>Hermitian: \(H = H^\dagger\) (real eigenvalues, observables). Unitary: \(U^\dagger U = I\) (evolutions, gates).</li>
+<li>Pauli matrices: \(\sigma_i^2 = I\), \(\sigma_x\sigma_y = i\sigma_z\) (cyclic), \(\{\sigma_i,\sigma_j\} = 2\delta_{ij}I\).</li>
+<li>\(e^{-i\theta\,\hat n\cdot\vec\sigma/2} = \cos(\theta/2)I - i\sin(\theta/2)\,\hat n\cdot\vec\sigma\).</li>
+<li>Tensor products: \((A\otimes B)(\ket a\otimes\ket b) = A\ket a\otimes B\ket b\); two-qubit basis \(\ket{00},\ket{01},\ket{10},\ket{11}\).</li>
+<li>Second-order perturbation theory (used for exchange): \(E_n^{(2)} = \sum_{m\ne n}|V_{mn}|^2/(E_n - E_m)\).</li>
+</ul>
+
+<h2 data-nonum>A.5 Statistics</h2>
+<ul>
+<li>Binomial estimate of a probability from \(N\) shots: \(\sigma = \sqrt{P(1-P)/N}\).</li>
+<li>Gaussian overlap error with threshold midway, SNR = \(\Delta\mu/\sigma\): \(\epsilon = \tfrac12\operatorname{erfc}(\text{SNR}/2\sqrt2)\).</li>
+<li>Averaging \(N\) independent samples reduces white noise by \(\sqrt N\).</li>
+<li>Gaussian average: \(\ev{\cos(\delta\omega\,\tau)} = e^{-\sigma^2\tau^2/2}\) for \(\delta\omega\sim\mathcal N(0,\sigma^2)\).</li>
+</ul>
+
+<h2 data-nonum>A.6 Decibels</h2>
+<ul>
+<li>Power ratio: \(10\log_{10}(P_2/P_1)\); voltage ratio: \(20\log_{10}(V_2/V_1)\).</li>
+<li>dBm: \(10\log_{10}(P/1\ \text{mW})\); in 50 Ω, 0 dBm = 0.224 V RMS = 0.316 V amplitude.</li>
+<li>Thermal noise: \(-174\) dBm/Hz at 290 K; add \(10\log_{10}B\) for bandwidth \(B\).</li>
+</ul>
+
+<h2 data-nonum>A.7 Constants and conversions</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Planck constant \(h\)</td><td>\(6.626\times10^{-34}\) J s = 4.136 µeV/GHz</td></tr>
+<tr><td>Elementary charge \(e\)</td><td>\(1.602\times10^{-19}\) C</td></tr>
+<tr><td>Boltzmann constant \(k_B\)</td><td>86.17 µeV/K (1 K ↔ 20.8 GHz)</td></tr>
+<tr><td>Bohr magneton \(\mu_B\)</td><td>57.88 µeV/T; \(\mu_B/h\) = 13.996 GHz/T</td></tr>
+<tr><td>Electron spin in Si (\(g\approx2\))</td><td>≈ 28.0 GHz/T</td></tr>
+<tr><td>Electron spin in GaAs (\(|g|\approx0.44\))</td><td>≈ 6.2 GHz/T</td></tr>
+<tr><td>1 µeV</td><td>241.8 MHz, 11.6 mK</td></tr>
+<tr><td>Resistance quantum \(h/e^2\)</td><td>25.81 kΩ</td></tr>
+<tr><td>Signal speed in typical coax</td><td>≈ 5 ns/m</td></tr>
+</tbody></table></div>

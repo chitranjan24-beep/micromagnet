@@ -1,2 +1,110 @@
-<!--meta {"id": "setup", "part": "Part X \u00b7 Experiments with the 4x2", "title": "Planning a spin-qubit setup around a 4x2"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "setup", "part": "Part X · Experiments with the 4x2", "title": "Planning a spin-qubit setup around a 4x2"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Every experiment in this part needs a concrete hardware plan: which signal comes from which instrument, through which components, at what power, triggered by what. Because the 4x2 has two AC-coupled outputs, the plan decides what you can do. This chapter gives three architectures, from "use the board as it is" to "move to a larger board", with wiring, frequency plans, power budgets and parts lists, so you can choose consciously and know what each choice costs.</p>
+</div>
+
+<h2>The constraints, restated</h2>
+<ul>
+<li>2 DAC outputs (DAC_A, DAC_B), 4 ADC inputs (QICK standard firmware reads ADC_C and ADC_D), all AC-coupled via 10 MHz–10 GHz baluns <cite data-r="rd4x2manual"></cite>.</li>
+<li>Direct synthesis to ~4.9 GHz (zone 1), with reduced power to ~9.8 GHz (zone 2); ADC zone 1 to ~2.2 GHz <cite data-r="qickrepo"></cite>.</li>
+<li>8 timed trigger outputs (1.8 V), external 10 MHz reference input.</li>
+<li>A Si/SiGe micromagnet device: many DC gates, PSB or Elzerman readout, EDSR at roughly 10–20 GHz at typical fields (Chapter 12).</li>
+</ul>
+
+<h2>Architecture A: the 4x2 as readout, microwave and timing engine (no modification)</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 400" width="900" role="img" aria-label="Architecture A wiring">
+  <rect x="20" y="20" width="200" height="170" rx="5" class="boxb"/>
+  <text class="ttl" x="32" y="42">RFSoC 4x2 + QICK</text>
+  <text class="sm" x="32" y="64">DAC_B → readout carrier</text>
+  <text class="sm" x="32" y="82">DAC_A → EDSR IF (or direct)</text>
+  <text class="sm" x="32" y="100">ADC_D ← reflected signal</text>
+  <text class="sm" x="32" y="118">ADC_C ← monitor / spare</text>
+  <text class="sm" x="32" y="136">PMOD0_0..3 → triggers</text>
+  <text class="sm" x="32" y="154">CLK IN ← 10 MHz</text>
+  <text class="sm" x="32" y="176">Pyro4 ↔ lab PC</text>
+  <rect x="20" y="220" width="200" height="70" rx="5" class="box"/><text class="ttl" x="32" y="242">10 MHz reference</text><text class="sm" x="32" y="262">Rb / OCXO + distribution</text><text class="sm" x="32" y="278">to 4x2, LO, AWG</text>
+  <rect x="20" y="310" width="200" height="70" rx="5" class="box"/><text class="ttl" x="32" y="332">Lab PC</text><text class="sm" x="32" y="352">QICK client, DC-source and</text><text class="sm" x="32" y="368">magnet drivers, data</text>
+  <rect x="270" y="20" width="200" height="80" rx="5" class="box"/><text class="ttl" x="282" y="42">Microwave LO</text><text class="sm" x="282" y="62">10–20 GHz, locked to 10 MHz</text><text class="sm" x="282" y="80">+ mixer + band-pass filter</text>
+  <rect x="270" y="120" width="200" height="80" rx="5" class="box"/><text class="ttl" x="282" y="142">DC-coupled AWG</text><text class="sm" x="282" y="162">plunger/barrier pulses,</text><text class="sm" x="282" y="180">triggered by PMOD</text>
+  <rect x="270" y="220" width="200" height="80" rx="5" class="box"/><text class="ttl" x="282" y="242">Multi-channel DC source</text><text class="sm" x="282" y="262">all gate voltages, slow</text><text class="sm" x="282" y="280">sweeps on trigger</text>
+  <rect x="270" y="320" width="200" height="60" rx="5" class="box"/><text class="ttl" x="282" y="342">RT readout chain</text><text class="sm" x="282" y="362">amplifier, filter, DC block</text>
+  <rect x="520" y="20" width="360" height="360" rx="6" class="boxa"/>
+  <text class="ttl" x="534" y="42">Dilution refrigerator</text>
+  <text class="sm" x="534" y="70">microwave line: −20…−30 dB, to EDSR gate via bias tee</text>
+  <text class="sm" x="534" y="94">fast gate lines: −10…−20 dB, to plungers via bias tees</text>
+  <text class="sm" x="534" y="118">DC lines: filtered, to all gates</text>
+  <text class="sm" x="534" y="142">readout in: −40…−60 dB, directional coupler</text>
+  <text class="sm" x="534" y="166">readout out: HEMT at 4 K</text>
+  <rect x="560" y="200" width="290" height="70" rx="4" class="boxw"/><text class="sm" x="705" y="226" text-anchor="middle">Si/SiGe device: double dot, sensor dot,</text><text class="sm" x="705" y="244" text-anchor="middle">micromagnet; sample PCB with tank circuit</text><text class="sm" x="705" y="260" text-anchor="middle">and bias tees</text>
+  <text class="sm" x="534" y="300">magnet: 0.3–0.6 T in-plane</text>
+  <g class="acc">
+    <line x1="220" y1="80" x2="270" y2="60"/><line x1="220" y1="136" x2="270" y2="160"/><line x1="220" y1="136" x2="270" y2="260"/>
+    <line x1="470" y1="60" x2="520" y2="70"/><line x1="470" y1="160" x2="520" y2="94"/><line x1="470" y1="260" x2="520" y2="118"/>
+    <line x1="220" y1="64" x2="520" y2="142"/><line x1="470" y1="350" x2="520" y2="166"/><line x1="220" y1="100" x2="270" y2="350"/>
+    <line x1="120" y1="220" x2="120" y2="190"/><line x1="220" y1="255" x2="270" y2="50"/>
+  </g>
+</svg>
+</div>
+<figcaption>Architecture A. The unmodified 4x2 generates the readout carrier, digitises and demodulates the reflected signal, provides the EDSR IF (or direct drive at low frequency), and triggers a DC-coupled AWG and the DC source. All instruments share a 10 MHz reference.</figcaption>
+</figure>
+
+<h3>What it can do</h3>
+<p>Everything in Chapters 39–42: reflectometry readout, fast charge-stability maps (with the AWG or DC source sweeping and the 4x2 recording), PSB and Elzerman readout (AWG pulses, 4x2 measuring), EDSR spectroscopy, Rabi, Ramsey, echo, AllXY and randomised benchmarking, plus real-time frequency tracking. Two-qubit gates are possible if the AWG has enough channels for plungers and barrier.</p>
+
+<h3>What it costs</h3>
+<ul>
+<li>A DC-coupled AWG with 2–4 channels and trigger input (or an integrated controller's baseband channels).</li>
+<li>A microwave LO and mixer components for EDSR above ~9.8 GHz.</li>
+<li>Calibration of trigger latency and jitter between the 4x2 and the AWG (Chapter 36).</li>
+</ul>
+
+<h3>An example frequency plan</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Signal</th><th>Choice</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Readout carrier (DAC_B, ADC_D)</td><td>≈ 200–400 MHz (set by the tank)</td><td>Zone 1 of both converters; far from \(f_s/8\) = 553 MHz and \(f_s/4\) = 1106 MHz of the ADC</td></tr>
+<tr><td>EDSR IF (DAC_A)</td><td>1.5 GHz</td><td>Images of a DSB mixer 3 GHz apart, easy to filter; check that 1.5 GHz and its harmonics do not alias near the readout carrier in the ADC (1.5 GHz is in ADC zone 1, so keep the IF out of the readout input with a low-pass filter)</td></tr>
+<tr><td>LO</td><td>qubit frequency − 1.5 GHz (e.g. 11.5 GHz for a 13 GHz qubit)</td><td>Upper sideband used; filter the lower</td></tr>
+</tbody></table></div>
+
+<h3>An example power budget for the readout</h3>
+<p>DAC_B at about −10 dBm; −20 dB at room temperature, −20 dB at 4 K, −10 dB at the still, −20 dB at the mixing chamber and a −20 dB coupler gives −100 dBm at the tank. The reflected signal (−100 dBm or a bit less) passes the coupler's through path, a HEMT (+35 dB), a room-temperature amplifier (+30 dB), and arrives at ADC_D around −35 dBm (Chapter 18). Add a low-pass filter before ADC_D to stop the EDSR IF and other signals from aliasing.</p>
+
+<h2>Architecture B: a modified 4x2 for baseband (advanced)</h2>
+<p>Make one or both DAC outputs DC-coupled (remove the output balun and capacitors and provide correct termination and a DC-coupled differential amplifier, Chapter 29). Then QICK plays plunger pulses directly. Since both DACs are then gate channels, the readout carrier must come from elsewhere: an external RF source locked to the same 10 MHz, with the 4x2's readout block demodulating it. The demodulated phase is then stable but has an arbitrary offset, which the IQ rotation removes. This architecture can run a singlet–triplet qubit (two fast gates plus readout) on a single 4x2. It carries real risk to the board, and none of the sources used for this book documents such a modification of the 4x2's DAC outputs.</p>
+
+<h2>Architecture C: grow into a ZCU216 or QICK Box</h2>
+<p>The ZCU216 has 16 DACs and 16 ADCs on connectors that can be AC- or DC-coupled, and it is the platform of spinQICK and the published RFSoC spin-qubit work <cite data-r="qickdocs,spinqick,wessels2026"></cite>. The QICK Box adds a modular front end with RF, balun and DC-coupled modules <cite data-r="arnaldi2026"></cite>. In this architecture the 4x2 remains valuable as a development, teaching and test board (same FPGA fabric and the same QICK software model <cite data-r="qickdocs"></cite>), or as a dedicated readout and microwave unit.</p>
+
+<h2>Choosing</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Goal</th><th>Architecture</th></tr></thead>
+<tbody>
+<tr><td>Learn QICK/RFSoC, fast readout, CSD mapping, EDSR single-qubit work</td><td>A</td></tr>
+<tr><td>Singlet–triplet qubit on one board, willing to rework hardware</td><td>B</td></tr>
+<tr><td>Exchange-only or multi-qubit devices, many baseband gates</td><td>C</td></tr>
+</tbody></table></div>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Parts list for Architecture A beyond the 4x2: SMA attenuators (3, 10, 20 dB), DC blocks, SMA low-pass and band-pass filters for the readout and IF bands, a room-temperature low-noise amplifier for the readout, a directional coupler and HEMT in the fridge (often already present), a microwave LO, a mixer and filter for EDSR, a PMOD level shifter and BNC adapters for triggers, a 10 MHz distribution amplifier, and short, good-quality SMA cables. Budget time to characterise each component.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In Architecture A, why must the EDSR IF be kept out of ADC_D?</p>
+<details><summary>Show answer</summary><div>Any IF leakage into the readout input is digitised; at 1.5 GHz it lies in the ADC's first zone, and its harmonics alias across the band. It can add spurs near the readout carrier or saturate the input. A low-pass filter on ADC_D (cut-off above the readout carrier, below the IF) prevents this.</div></details>
+<p>2. Why does Architecture B need an external readout source?</p>
+<details><summary>Show answer</summary><div>Both DACs are used for DC-coupled gate pulses, leaving no DAC for the readout carrier. The ADC side can still demodulate an external carrier if it is locked to the same reference.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A: unmodified 4x2 for readout, EDSR (direct or via mixer) and timing, with a DC-coupled AWG and DC source triggered by PMOD; the recommended start.</li>
+<li>B: DC-coupled DAC modification for baseband pulses; readout carrier from an external source; risky.</li>
+<li>C: ZCU216/QICK Box with spinQICK for EO and multi-qubit work; 4x2 as test or readout unit.</li>
+<li>Write a frequency plan and a power budget, filter the ADC input, and lock everything to one 10 MHz reference.</li>
+</ul>
+</div>
