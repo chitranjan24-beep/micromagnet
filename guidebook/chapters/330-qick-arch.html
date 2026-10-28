@@ -1,2 +1,107 @@
-<!--meta {"id": "qick-arch", "part": "Part IX \u00b7 QICK and spinQICK", "title": "QICK architecture"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "qick-arch", "part": "Part IX · QICK and spinQICK", "title": "QICK architecture"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>QICK turns an RFSoC board into a qubit controller. To write good experiments with it, and to understand its limits on the 4x2, you need a clear picture of its parts: the timed processor that schedules everything, the signal generators that make the pulses, the readouts that demodulate, the buffers that store results, and the Python library that ties them together. This chapter gives that picture, based on the QICK papers, documentation and firmware source <cite data-r="stefanazzi2022,ding2024,qickdocs,qickrepo"></cite>.</p>
+</div>
+
+<h2>What QICK is</h2>
+<p>The Quantum Instrumentation Control Kit was developed at Fermilab with Princeton and other partners and published in 2022 <cite data-r="stefanazzi2022"></cite>. It consists of firmware for the ZCU111, ZCU216 and RFSoC 4x2 boards, the <code>qick</code> Python package, demo notebooks, and an optional custom analog front end. It is open source (MIT licence). As of October 2026, QICK's own list counts 91 papers that used it, 59 of them on superconducting circuits and 4 on quantum dots <cite data-r="qickdocs"></cite>, and several companies sell QICK-based systems.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 360" width="900" role="img" aria-label="QICK architecture">
+  <rect x="10" y="20" width="250" height="320" rx="6" class="boxa"/>
+  <text class="ttl" x="24" y="44">Python on the PS (or PC)</text>
+  <rect x="24" y="60" width="222" height="52" rx="3" class="box"/><text class="sm" x="135" y="82" text-anchor="middle">your program class</text><text class="sm" x="135" y="98" text-anchor="middle">(AveragerProgramV2 subclass)</text>
+  <rect x="24" y="124" width="222" height="52" rx="3" class="box"/><text class="sm" x="135" y="146" text-anchor="middle">qick library: compiler/assembler,</text><text class="sm" x="135" y="162" text-anchor="middle">unit conversion, sweeps</text>
+  <rect x="24" y="188" width="222" height="52" rx="3" class="box"/><text class="sm" x="135" y="210" text-anchor="middle">QickSoc: drivers for every</text><text class="sm" x="135" y="226" text-anchor="middle">QICK block (from the .hwh)</text>
+  <rect x="24" y="252" width="222" height="70" rx="3" class="box"/><text class="sm" x="135" y="274" text-anchor="middle">acquire(): load, start,</text><text class="sm" x="135" y="290" text-anchor="middle">poll, read buffers, average,</text><text class="sm" x="135" y="306" text-anchor="middle">threshold</text>
+  <rect x="300" y="20" width="590" height="320" rx="6" class="boxb"/>
+  <text class="ttl" x="314" y="44">Firmware in the PL</text>
+  <rect x="320" y="60" width="180" height="120" rx="4" class="boxw"/>
+  <text class="ttl" x="410" y="84" text-anchor="middle">tProcessor</text>
+  <text class="sm" x="410" y="104" text-anchor="middle">program, data and</text><text class="sm" x="410" y="120" text-anchor="middle">waveform memories</text><text class="sm" x="410" y="140" text-anchor="middle">dispatcher with</text><text class="sm" x="410" y="156" text-anchor="middle">timed FIFOs</text>
+  <rect x="560" y="60" width="150" height="56" rx="4" class="box"/><text class="sm" x="635" y="84" text-anchor="middle">signal generator 0</text><text class="sm" x="635" y="100" text-anchor="middle">DDS × envelope</text>
+  <rect x="560" y="124" width="150" height="56" rx="4" class="box"/><text class="sm" x="635" y="148" text-anchor="middle">signal generator 1</text><text class="sm" x="635" y="164" text-anchor="middle">DDS × envelope</text>
+  <rect x="740" y="60" width="130" height="120" rx="4" class="boxa"/><text class="sm" x="805" y="110" text-anchor="middle">RF-DACs</text><text class="sm" x="805" y="126" text-anchor="middle">DAC_B, DAC_A</text>
+  <rect x="740" y="200" width="130" height="120" rx="4" class="boxa"/><text class="sm" x="805" y="250" text-anchor="middle">RF-ADCs</text><text class="sm" x="805" y="266" text-anchor="middle">ADC_D, ADC_C</text>
+  <rect x="560" y="200" width="150" height="56" rx="4" class="box"/><text class="sm" x="635" y="224" text-anchor="middle">readouts</text><text class="sm" x="635" y="240" text-anchor="middle">DDS mix, filter, decimate</text>
+  <rect x="560" y="264" width="150" height="56" rx="4" class="box"/><text class="sm" x="635" y="288" text-anchor="middle">buffers: accumulated,</text><text class="sm" x="635" y="304" text-anchor="middle">decimated, DDR4, MR</text>
+  <rect x="320" y="200" width="180" height="56" rx="4" class="box"/><text class="sm" x="410" y="224" text-anchor="middle">PMOD triggers,</text><text class="sm" x="410" y="240" text-anchor="middle">external start</text>
+  <rect x="320" y="264" width="180" height="56" rx="4" class="box"/><text class="sm" x="410" y="288" text-anchor="middle">DMA engines, AXI</text><text class="sm" x="410" y="304" text-anchor="middle">registers (to the PS)</text>
+  <g class="acc">
+    <line x1="500" y1="88" x2="560" y2="88"/><line x1="500" y1="152" x2="560" y2="152"/>
+    <line x1="710" y1="88" x2="740" y2="100"/><line x1="710" y1="152" x2="740" y2="140"/>
+    <line x1="740" y1="240" x2="710" y2="228"/><line x1="635" y1="256" x2="635" y2="264"/>
+    <line x1="500" y1="170" x2="560" y2="220"/><line x1="410" y1="180" x2="410" y2="200"/>
+    <line x1="560" y1="240" x2="500" y2="175"/>
+    <line x1="260" y1="292" x2="320" y2="292"/>
+  </g>
+  <text class="sm" x="520" y="200">trigger</text><text class="sm" x="508" y="262">feedback</text>
+</svg>
+</div>
+<figcaption>QICK's structure on the 4x2 (simplified). Python compiles a program and loads it into the tProcessor's memories by DMA. The tProcessor's dispatcher sends timed commands to the signal generators (which feed the DACs), triggers the readouts and PMOD outputs, and can read readout results back for feedback. Buffers collect results, which Python reads back <cite data-r="qickdocs"></cite>.</figcaption>
+</figure>
+
+<h2>The tProcessor: a clock for everything</h2>
+<p>The <dfn data-def="QICK's timed processor: a small custom CPU in the FPGA that schedules pulses and readouts with clock-cycle precision.">tProcessor</dfn> is a small custom processor in the FPGA. Its key idea is the separation of <i>execution</i> from <i>timing</i>: instructions run as fast as the processor can go, but the commands they issue (play this pulse, trigger that readout, set this pin) carry a timestamp and are queued in FIFOs. A <b>dispatcher</b> compares each timestamp with a running time counter and releases the command exactly when its time comes <cite data-r="qickdocs"></cite>. So you program a timeline, and loops, branches and arithmetic happen "ahead of time", as long as the processor stays ahead of the schedule.</p>
+
+<p>Two generations exist:</p>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>tProc v1 (<code>axis_tproc64x32_x8</code>)</th><th>tProc v2 (<code>qick_processor</code>)</th></tr></thead>
+<tbody>
+<tr><td>Instructions / data</td><td>64-bit instructions, 32-bit registers</td><td>72-bit instructions, 32-bit data; 5-stage pipeline, one instruction per cycle</td></tr>
+<tr><td>Timing</td><td>Time registers per channel</td><td>48-bit absolute time counter; reference time; signed output times</td></tr>
+<tr><td>Extras</td><td>Basic branching</td><td>Call stack, pseudo-random number generator (LFSR), ports for readout data and external peripherals</td></tr>
+<tr><td>Python API</td><td><code>AveragerProgram</code>, <code>RAveragerProgram</code>, <code>NDAveragerProgram</code></td><td><code>AveragerProgramV2</code>, sweeps with <code>QickSweep1D</code> / <code>QickSpan</code></td></tr>
+</tbody></table></div>
+<p>The QICK repository provides both tProc v1 and tProc v2 standard firmware for the 4x2 <cite data-r="qickrepo"></cite>. New work should use tProc v2; spinQICK V2 is built on it <cite data-r="spinqick"></cite>. In the 4x2 tProc v2 standard design, the processor is configured with 5 waveform output ports, 14 trigger outputs, 3 input ports, a program memory of \(2^{12}\) = 4096 instructions and a data memory of \(2^{14}\) words <cite data-r="qickrepo"></cite>.</p>
+
+<h2>Signal generators</h2>
+<p>A signal generator turns a timed command (frequency, phase, gain, envelope address, length, mode) into DAC samples. The flagship <b>SG-v6</b> generator, used for both DACs in the 4x2 standard firmware, has <cite data-r="qickdocs,qickrepo"></cite>:</p>
+<ul>
+<li>a 32-bit DDS for frequency and phase, computing 16 samples per fabric clock cycle;</li>
+<li>envelope memory for complex (I/Q) envelopes of up to 65 536 samples (about 6.7 µs at 9.8304 GSPS on the 4x2);</li>
+<li>output styles: <code>const</code> (DDS × constant), <code>arb</code> (DDS × stored envelope), <code>flat_top</code> (stored rise and fall around a constant middle), plus a periodic mode for continuous tones;</li>
+<li>a queue for upcoming pulses, so back-to-back pulses play seamlessly.</li>
+</ul>
+<p>Other generator types appear in firmware for larger boards: <code>sg_int4_v2</code> (4× interpolated, longer envelopes at lower bandwidth), <code>sg_mux8</code> and <code>sg_mixmux8</code> (up to 8 simultaneous fixed tones on one DAC, for multiplexed readout) <cite data-r="qickdocs"></cite>.</p>
+
+<h2>Readouts and buffers</h2>
+<p>A readout block takes the full-rate ADC stream, mixes it with its own DDS, filters and decimates (by 8 on the 4x2) <cite data-r="qickrepo"></cite>. Variants differ in who configures them: <code>axis_readout_v2</code> is configured from Python before a run; <code>axis_dyn_readout_v1</code> (in the 4x2 tProc v2 firmware) can be reconfigured by the tProcessor shot by shot, so readout frequency and phase can change during a sequence <cite data-r="qickdocs,qickrepo"></cite>.</p>
+<p>After the readout come the buffers <cite data-r="qickdocs"></cite>:</p>
+<ul>
+<li><b>Average buffer</b>: on each trigger, accumulates the samples of the readout window into one I/Q value (the accumulated buffer), and can also store the decimated samples themselves (the decimated buffer).</li>
+<li><b>Weighted buffer</b>: applies a weighting function during accumulation (matched filtering, Chapter 23).</li>
+<li><b>DDR4 buffer</b>: streams decimated data into the 4 GB PL DDR4 for long records.</li>
+<li><b>Multi-rate (MR) buffer</b>: captures short raw records.</li>
+<li><b>Time tagger</b>: records the times of threshold crossings (used for photon counting).</li>
+</ul>
+
+<h2>Feedback</h2>
+<p>Each readout's accumulated result can be sent to a tProcessor input port. A program can wait for it, read it into registers (I and Q), compare it with a threshold and jump. The QICK tutorials show conditional pulses and active reset built this way, after measuring the readout latency so that the program waits long enough before reading <cite data-r="qickdocs"></cite>. The total latency from the end of a readout window to a conditional pulse is a few hundred nanoseconds, set by the readout pipeline and the processor.</p>
+
+<h2>The Python side</h2>
+<ul>
+<li><code>QickSoc</code> (on the board) loads the firmware, configures clocks and converters, and creates drivers for every QICK block. It is also a <code>QickConfig</code>: a description of the firmware (channels, clocks, memory sizes) that can be sent to a remote PC.</li>
+<li>Program classes such as <code>AveragerProgramV2</code> describe an experiment: in <code>_initialize()</code> you declare channels and define pulses and readouts; in <code>_body()</code> you write one shot's timeline. Loops and sweeps (<code>add_loop</code>, <code>QickSweep1D</code>) run in hardware.</li>
+<li><code>acquire()</code> returns accumulated results (averaged, or per shot with thresholding); <code>acquire_decimated()</code> returns time traces <cite data-r="qickdocs"></cite>.</li>
+<li>Units are human-friendly: frequencies in MHz, times in µs, phases in degrees, gains from −1 to 1. The library converts and quantises them; <code>get_pulse_param()</code> returns the values actually used.</li>
+</ul>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why can a tProcessor program contain loops and arithmetic without disturbing pulse timing?</p>
+<details><summary>Show answer</summary><div>Because commands carry timestamps and wait in FIFOs; the dispatcher releases them at their scheduled times. The processor only needs to issue each command before its time arrives.</div></details>
+<p>2. What is the difference between the accumulated and decimated buffers?</p>
+<details><summary>Show answer</summary><div>The accumulated buffer stores one integrated I/Q value per readout trigger (per shot); the decimated buffer stores the time-domain I/Q samples within the readout window, for looking at waveforms.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>QICK = firmware (tProcessor, generators, readouts, buffers) + Python library + demos, open source.</li>
+<li>The tProcessor schedules timestamped commands; tProc v2 has a 48-bit time counter, 72-bit instructions, a call stack and an RNG.</li>
+<li>SG-v6 generators: 32-bit DDS, 16 samples/cycle, 65 536-sample envelopes, const/arb/flat-top pulses.</li>
+<li>Readouts mix, filter, decimate; buffers accumulate, store traces, or capture long records; results can feed back to the tProcessor.</li>
+<li>Python describes experiments in <code>_initialize()</code> and <code>_body()</code>, with sweeps in hardware and human units.</li>
+</ul>
+</div>

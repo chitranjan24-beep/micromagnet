@@ -1,2 +1,84 @@
-<!--meta {"id": "qick-cal", "part": "Part IX \u00b7 QICK and spinQICK", "title": "Calibrations: loopback, time of flight, frequency and phase"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "qick-cal", "part": "Part IX · QICK and spinQICK", "title": "Calibrations: loopback, time of flight, frequency and phase"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Before the qubit can tell you anything, the controller must be calibrated: when does a pulse actually arrive at the ADC, what power comes out of each DAC at each frequency, how do generator and readout phases relate, how large is a pulse at the device, how late is an external instrument. Uncalibrated offsets look like physics (a shifted resonance, a "decay" of contrast, a wrong Rabi frequency). This chapter lists the calibrations an RFSoC-based spin-qubit setup needs, how to do each, and how often.</p>
+</div>
+
+<h2>1. Loopback and output power</h2>
+<p><b>What</b>: the power each DAC delivers versus frequency and gain, and what each ADC reports for a known input.</p>
+<p><b>How</b>: DAC → spectrum analyser (or power meter) for output power; DAC → known attenuator → ADC for the loopback response. Sweep frequency across your bands, in the Nyquist zones you will use. Record DAC output in dBm versus QICK gain at your working frequencies.</p>
+<p><b>Why</b>: every power budget (Chapter 18) starts from these numbers. Zone-2 power in particular varies strongly with frequency (Chapter 19).</p>
+<p><b>When</b>: once, then after firmware or hardware changes.</p>
+
+<h2>2. Time of flight</h2>
+<p><b>What</b>: the delay between a generator pulse starting and its arrival in the readout data, through converters, FPGA pipelines and cables.</p>
+<p><b>How</b>: play a short pulse and record a decimated trace with the readout triggered at t = 0 (as in Chapter 34's loopback). The pulse appears after a delay: that is the time of flight. Repeat with the real fridge cabling, since metres of cable add 5 ns per metre. Then set your readout trigger time to this delay plus the resonator ring-up time.</p>
+<p><b>When</b>: once per wiring configuration. QICK's documentation includes a dedicated page on timing and the tutorials show how pulse and trigger times relate <cite data-r="qickdocs"></cite>.</p>
+
+<h2>3. Frequency matching</h2>
+<p><b>What</b>: ensuring the readout's demodulation frequency equals the generator's carrier frequency exactly. Generators and readouts run on different clocks, so their frequency grids differ; a mismatch of a few Hz rotates the demodulated phase slowly, making each run's I/Q land at a different angle <cite data-r="qickdocs"></cite>.</p>
+<p><b>How</b>: pass <code>ro_ch</code> to <code>add_pulse()</code> and <code>gen_ch</code> to <code>add_readoutconfig()</code>, or round the frequency first with <code>soccfg.adcfreq(f, gen_ch=..., ro_ch=...)</code>. On the 4x2, the generator's own step is 2.3 Hz and the common step 20.6 Hz; without matching, a 100 MHz readout would be off by about 9 Hz, rotating the phase once every 0.1 s <cite data-r="qickdocs"></cite>.</p>
+<p><b>When</b>: always, in every program. It costs nothing.</p>
+
+<h2>4. Phase offset between generator and readout</h2>
+<p><b>What</b>: even with matched frequencies, the demodulated signal has a fixed phase offset that depends on the frequency (through the time of flight: phase = 360° × f × delay) and on the state of the clock dividers after power-up. QICK's older demo describes this as a constant phase difference "randomly determined each time the board clocks are initialized" <cite data-r="qickrepo"></cite>.</p>
+<p><b>How</b>: measure the loopback (or the reflected signal off-resonance) phase versus frequency; the slope gives the electrical delay, the intercept the offset. Subtract it, or simply rotate the IQ plane as part of readout calibration (Chapter 23).</p>
+<p><b>When</b>: after each power cycle if you rely on absolute phase. For charge-state readout, rotating the IQ plane on your measured data (two charge states) does the job automatically.</p>
+
+<h2>5. Readout working point</h2>
+<p><b>What</b>: carrier frequency, power, integration window and IQ rotation that maximise SNR for your sensor.</p>
+<p><b>How</b>: sweep carrier frequency across the tank resonance with the sensor on and off a Coulomb peak; choose the frequency of maximum difference. Sweep power to find where the signal stops growing without heating (Coulomb peaks broaden). Record single-shot data for the two charge states and choose the window length and threshold (Chapter 23).</p>
+<p><b>When</b>: after tuning the sensor; re-check daily, since sensor drift changes the optimum.</p>
+
+<h2>6. Amplitude at the device</h2>
+<p><b>What</b>: the actual voltage a gate sees for a given QICK gain (or AWG amplitude), after attenuation, reflections and frequency-dependent losses.</p>
+<p><b>How</b>, for baseband pulses: apply a square pulse of known nominal amplitude to a plunger and observe how far a charge transition shifts in a CSD measured during the pulse; with the lever arm this gives the real amplitude. For microwaves: photon-assisted tunnelling side-peaks spaced by \(hf/(e\alpha)\) give the amplitude at frequency \(f\) through their strength (Bessel-function dependence), and the measured Rabi frequency versus gain gives the drive's linear range.</p>
+<p><b>When</b>: once per cooldown and per frequency band.</p>
+
+<h2>7. Channel skew and external trigger latency</h2>
+<p><b>What</b>: relative delays between DAC_A and DAC_B outputs (different tiles and paths), and between a QICK PMOD trigger and an external AWG's output.</p>
+<p><b>How</b>: send simultaneous edges on all channels into a fast oscilloscope with matched cables; measure offsets. For the external AWG, trigger it from a PMOD pin and measure the delay from the PMOD edge (or from a reference QICK pulse) to the AWG output. Compensate in the QICK program (shift times) or in the AWG sequence.</p>
+<p><b>When</b>: once per configuration; re-check if you change instruments or cables. Lock everything to the same 10 MHz reference to keep jitter low (Chapter 30).</p>
+
+<h2>8. IQ mixer calibration (if you upconvert)</h2>
+<p><b>What</b>: LO leakage and the unwanted sideband from an external IQ mixer.</p>
+<p><b>How</b>: with a spectrum analyser at the mixer output, adjust small DC offsets on I and Q to minimise LO leakage, then adjust the relative amplitude and phase of I and Q to minimise the image. With a double-sideband mixer and a filter, check the filter's suppression instead.</p>
+<p><b>When</b>: after any change of LO frequency, IF or power; re-check weekly, since offsets drift with temperature.</p>
+
+<h2>9. Pulse distortion</h2>
+<p><b>What</b>: the impulse response of the baseband chain (amplifiers, filters, bias tees, cables), needed for pre-distortion (Chapter 21).</p>
+<p><b>How</b>: measure the step response of the room-temperature chain with a sampling oscilloscope, as HRL did for their spinQICK setup <cite data-r="wessels2026"></cite>; fit a small number of filter terms; verify on the qubit (for example with exchange-pulse sequences whose result depends on pulse shape).</p>
+<p><b>When</b>: once per hardware configuration.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Calibration</th><th>How often</th><th>Typical time</th></tr></thead>
+<tbody>
+<tr><td>Loopback / output power</td><td>once; after changes</td><td>1 hour</td></tr>
+<tr><td>Time of flight</td><td>per wiring setup</td><td>10 minutes</td></tr>
+<tr><td>Frequency matching</td><td>every program (automatic)</td><td>0</td></tr>
+<tr><td>Phase offset / IQ rotation</td><td>each boot or each readout calibration</td><td>minutes</td></tr>
+<tr><td>Readout working point</td><td>after sensor tuning; daily check</td><td>15–60 minutes</td></tr>
+<tr><td>Amplitude at device</td><td>per cooldown and band</td><td>hours</td></tr>
+<tr><td>Channel skew, trigger latency</td><td>per configuration</td><td>30 minutes</td></tr>
+<tr><td>IQ mixer</td><td>per LO/IF change; weekly</td><td>15 minutes</td></tr>
+<tr><td>Pulse distortion</td><td>per hardware configuration</td><td>hours</td></tr>
+</tbody></table></div>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Keep calibrations as code and data, not as notes: a Python file or configuration object with every number (time of flight, phase offsets, gains per dBm, trigger latencies), version-controlled and saved with every dataset. spinQICK uses typed configuration models for this purpose <cite data-r="spinqick"></cite>. Six months later, when a result looks strange, you will want to know exactly what the calibration was.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your demodulated phase changes by 36° when you move the readout from 200 MHz to 210 MHz. What electrical delay does that imply?</p>
+<details><summary>Show answer</summary><div>Phase slope = 360° × Δf × τ, so τ = 36°/(360° × 10 MHz) = 10 ns (modulo full turns: the true delay could be 10 ns + n × 100 ns; measure at finer frequency steps to resolve the ambiguity).</div></details>
+<p>2. Why does an unmatched generator/readout frequency pair cause problems only between runs, not within one run?</p>
+<details><summary>Show answer</summary><div>A few-Hz mismatch rotates the phase by only a tiny amount during a µs readout, so within a shot it is invisible, but over seconds between runs it accumulates to large angles, so different runs' I/Q values appear rotated relative to each other.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Calibrate output power, time of flight, frequency matching, phase offsets, readout working point, device amplitudes, channel skew and trigger latency, IQ mixers and pulse distortion.</li>
+<li>Frequency matching is a one-line habit; phase offsets change at power-up; device amplitudes need the qubit device itself.</li>
+<li>Store calibrations as versioned data next to your measurements.</li>
+</ul>
+</div>

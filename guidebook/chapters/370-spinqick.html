@@ -1,2 +1,83 @@
-<!--meta {"id": "spinqick", "part": "Part IX \u00b7 QICK and spinQICK", "title": "spinQICK, remote control and lab software"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "spinqick", "part": "Part IX · QICK and spinQICK", "title": "spinQICK, remote control and lab software"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>QICK was developed mainly by and for superconducting-qubit groups. HRL Laboratories' spinQICK adds what gate-defined spin qubits need: charge-stability scans, Pauli-blockade readout set-up, single-spin and exchange-only control, exchange calibration, crosstalk compensation, and a configuration system for many gates. Even if your hardware differs from HRL's, its code is the best public reference for how spin-qubit experiments map onto QICK. This chapter describes spinQICK, how a QICK board is run remotely from a lab PC, and how it fits with other lab software <cite data-r="spinqick,wessels2026"></cite>.</p>
+</div>
+
+<h2>What spinQICK is</h2>
+<p>spinQICK (version 3.0.0 at the time of writing) is "an open-source extension to QICK designed to control electrostatically confined solid-state spin-qubits", built on QICK's tProc v2 API and some custom low-level QICK assembly <cite data-r="spinqick"></cite>. Its experiments cover:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Area</th><th>Examples of spinQICK experiments (function names in the code)</th></tr></thead>
+<tbody>
+<tr><td>Electrostatic tune-up</td><td><code>gate_turn_on</code>, <code>gate_action</code>, gate-vs-gate scans with DC sources (<code>gvg_dc</code>), with baseband pulses (<code>gvg_baseband</code>) and photon-assisted tunnelling (<code>gvg_pat</code>), cross-capacitance extraction (<code>get_cross_caps</code>)</td></tr>
+<tr><td>Charge sensor</td><td><code>dcs_stability</code>, <code>retune_dcs</code>, readout noise measurements</td></tr>
+<tr><td>PSB readout</td><td><code>psb_config</code>, measurement-window and idle-cell scans, <code>meashist</code> (single-shot histograms), <code>flush_window_scan</code></td></tr>
+<tr><td>Single-spin (LD) control</td><td><code>time_rabi</code>, <code>amplitude_rabi</code>, <code>rabi_chevron</code>, <code>ramsey_experiment</code>, <code>spin_echo</code>, <code>allxy</code></td></tr>
+<tr><td>Exchange-only control</td><td>exchange calibrations (<code>course_cal</code>, <code>fine_cal</code>), fingerprint scans (<code>do_fingerprint</code>), exchange voltage calculations</td></tr>
+<tr><td>System calibration</td><td><code>calibrate_baseband_voltage</code>, <code>measure_bandwidth</code>, ADC trigger offset sweeps</td></tr>
+<tr><td>Two-qubit (LD)</td><td>programs in <code>ld_2_qubit</code></td></tr>
+</tbody></table></div>
+<p>Its demo notebooks walk through configuration, DC voltage source set-up, charge stability, crosstalk compensation, PSB, coherent LD control and coherent EO control <cite data-r="spinqick"></cite>.</p>
+
+<h3>Structure</h3>
+<ul>
+<li><code>core</code>: pulse construction for LD and EO qubits, readout utilities, the <code>dot_experiment</code> base class, data handling.</li>
+<li><code>experiments</code>: the user-facing experiments listed above.</li>
+<li><code>qick_code_v2</code>: the QICK programs (tProc v2) underneath each experiment.</li>
+<li><code>models</code>: Pydantic models for hardware and experiment configuration, giving type-checked parameters for every gate and qubit.</li>
+<li><code>helper_functions</code>, <code>backends</code>: file management, hardware maps, plotting, analysis, and data back-ends including netCDF4 and QCoDeS.</li>
+</ul>
+
+<h3>Hardware it expects</h3>
+<p>spinQICK targets the ZCU216 (16 DAC outputs), with TI LMH5401 DC-coupled differential amplifiers on the DACs, an LMH6401 variable-gain amplifier for the ADC, optional THS3491 amplifiers, a PMOD level shifter for triggers, and a precision DC source such as a QDevil QDAC or Basel LNHR. Alternatively, Real Digital's QICK Box with "DC Out" and "DC In" modules provides the DC-coupled front end <cite data-r="spinqick"></cite>. Its recommended firmware is a ZCU216 tProc v2 build with 16 full-speed outputs and 11-channel crosstalk compensation, which needs HRL's fork of QICK and the <code>XtalkSoc</code> class <cite data-r="spinqick"></cite>.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>spinQICK is not written for the 4x2, and most of its experiments assume DC-coupled baseband outputs on many gates. What you can reuse on a 4x2:</p>
+<ul>
+<li>its <b>structure and configuration models</b>, as a template for your own code;</li>
+<li>its <b>readout and analysis code</b> (histograms, thresholds, noise measurements), which only need a readout channel;</li>
+<li>its <b>QICK programs</b> as worked examples of PSB, Rabi, Ramsey, echo and AllXY sequences, adapted to two generators plus an external AWG for plunger pulses;</li>
+<li>everything, if you move to a ZCU216 or a QICK Box later.</li>
+</ul>
+</div>
+
+<h2>Running QICK remotely with Pyro4</h2>
+<p>In most labs the analysis, plotting and instrument control run on a lab PC, not on the board. QICK supports this with Pyro4 (Python Remote Objects): a <b>name server</b> runs on the PC (or the board), a <b>QICK server</b> runs on the board and publishes the <code>QickSoc</code>, and <b>clients</b> on the PC obtain a proxy object and a copy of the board's configuration <cite data-r="qickdocs"></cite>:</p>
+<pre><code># on the PC: start a name server
+#   python -m Pyro4.naming -n 0.0.0.0 -p 8888
+# on the board (in a notebook or service):
+from qick.pyro import start_server
+start_server(ns_host='&lt;pc-ip&gt;', ns_port=8888, proxy_name='rfsoc4x2')
+# on the PC (client):
+from qick.pyro import make_proxy
+soc, soccfg = make_proxy(ns_host='&lt;pc-ip&gt;', ns_port=8888, proxy_name='rfsoc4x2')
+prog = MyExperiment(soccfg, reps=1000, final_delay=10, cfg=cfg)   # compiled on the PC
+data = prog.acquire(soc)                                         # run on the board</code></pre>
+<p>Programs are compiled on the PC using the configuration copy and executed on the board. The QICK team distinguishes Pyro4 (software, over Ethernet, flexible) from XCOM (hardware, low-latency links between boards) <cite data-r="qickdocs"></cite>. spinQICK's documentation shows the same pattern with <code>XtalkSoc</code> for its crosstalk firmware <cite data-r="spinqick"></cite>.</p>
+
+<h2>Fitting into lab software</h2>
+<ul>
+<li><b>QCoDeS</b> (Python measurement framework from Copenhagen/Microsoft) is widely used in spin-qubit labs for instrument drivers and data storage; spinQICK includes a QCoDeS data back-end <cite data-r="spinqick"></cite>. A QICK board can be wrapped as a QCoDeS instrument or used alongside one that controls your DC sources and magnet.</li>
+<li><b>Qibolab / Qibosoq</b>: an open-source stack that drives QICK boards as part of a hybrid quantum operating system, with calibration routines in Qibocal <cite data-r="qickdocs"></cite>.</li>
+<li><b>Your own scripts</b>: many groups write thin Python classes that combine a DC-source driver, the QICK proxy and a data-saving layer. Start simple, and save the full configuration (including calibrations) with every dataset.</li>
+</ul>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Mixing library versions between the PC client and the board server. Pyro sends compiled programs and configuration objects between the two; different QICK versions can produce subtle errors. Pin the same QICK version on both, as spinQICK does by pinning <code>qick[full]==0.2.436</code> <cite data-r="spinqick"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Which spinQICK capabilities depend on DC-coupled baseband outputs and therefore would not work on a stock 4x2?</p>
+<details><summary>Show answer</summary><div>Anything that pulses gates to charge-state points: baseband gate-vs-gate scans, PSB readout pulses (measurement and idle windows), exchange pulses and EO control, LD sequences that move between load/manipulate/readout points, and crosstalk-compensated virtual pulses.</div></details>
+<p>2. In a Pyro4 setup, where is a program compiled and where does it run?</p>
+<details><summary>Show answer</summary><div>Compiled on the PC using a copy of the board's configuration (<code>soccfg</code>); executed on the board by the QICK server through the proxy <code>soc</code>.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>spinQICK (HRL) extends QICK with spin-qubit tune-up, PSB readout, LD and EO control, exchange calibration, crosstalk compensation and typed configuration.</li>
+<li>It targets a ZCU216 (or QICK Box) with DC-coupled amplifiers; on a 4x2 its readout, analysis and program structure are reusable references.</li>
+<li>Pyro4 runs QICK remotely: name server, board server, PC client; pin library versions.</li>
+<li>QICK integrates with QCoDeS, Qibolab/Qibosoq and custom lab code.</li>
+</ul>
+</div>

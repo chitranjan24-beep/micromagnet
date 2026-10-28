@@ -1,2 +1,83 @@
-<!--meta {"id": "pynq-hw", "part": "Part VIII \u00b7 PYNQ", "title": "Talking to hardware from Python, and the SDR book labs"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "pynq-hw", "part": "Part VIII · PYNQ", "title": "Talking to hardware from Python, and the SDR book labs"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>QICK hides most hardware details, but when something does not work, or when you want to test the converters directly, you will drop down to PYNQ's lower-level tools: reading registers, capturing raw ADC data, changing converter settings, checking clock lock. This chapter shows those tools with short examples, then maps the AMD SDR book's nine sets of hands-on notebooks onto what a qubit experimentalist should learn from each.</p>
+</div>
+
+<h2>Registers: MMIO</h2>
+<p>Every AXI-Lite peripheral in the PL appears as a block of 32-bit registers at a physical address (Chapter 25). PYNQ's <code>MMIO</code> class maps such a block into Python:</p>
+<pre><code>from pynq import MMIO
+regs = MMIO(base_addr, 0x1000)   # base address and size, from the overlay's ip_dict
+regs.write(0x10, 12345)           # write register at offset 0x10
+value = regs.read(0x14)           # read register at offset 0x14
+</code></pre>
+<p>Overlay drivers do this for you; for example <code>ol.ip_dict</code> lists each block's base address, and many drivers expose a <code>register_map</code> with named fields (the 4x2 base overlay has a <code>register_map_intro</code> notebook) <cite data-r="rfsocpynq4x2"></cite>. Each access from Python costs of order a microsecond, so MMIO is for configuration, never for timing.</p>
+
+<h2>Bulk data: allocate and DMA</h2>
+<p>DMA engines need physically contiguous memory that both Linux and the PL can access. PYNQ provides it with <code>allocate</code>, which returns a NumPy array backed by such memory:</p>
+<pre><code>import numpy as np
+from pynq import allocate
+buf = allocate(shape=(16384,), dtype=np.int32)
+dma = ol.axi_dma_0                 # a DMA engine in the overlay (name depends on the design)
+dma.recvchannel.transfer(buf)      # PL → memory
+dma.recvchannel.wait()
+data = np.array(buf)               # copy out, then free
+buf.freebuffer()
+</code></pre>
+<p>QICK uses this mechanism internally for loading tProcessor programs and envelopes and for reading readout buffers <cite data-r="qickrepo"></cite>.</p>
+
+<h2>The RF data converters: <code>xrfdc</code></h2>
+<p>The <code>xrfdc</code> driver exposes the RF Data Converter IP as tiles and blocks with properties you can read and set. A few examples:</p>
+<pre><code>rf = ol.usp_rf_data_converter_0           # name in QICK's and most designs
+dac = rf.dac_tiles[0].blocks[0]           # DAC tile 0 (AMD tile 228), block 0 = DAC_B on the 4x2
+print(dac.NyquistZone)                    # 1 or 2 (QICK sets this through set_nyquist)
+adc = rf.adc_tiles[0].blocks[0]           # ADC tile 0 (AMD tile 224), block 0 = ADC_D
+print(adc.MixerSettings)                  # mixer configuration of the hardened DDC
+print(rf.adc_tiles[0].PLLLockStatus)      # 2 means locked in the RFDC driver's convention
+</code></pre>
+<p>Properties correspond to the settings described in AMD's PG269 product guide <cite data-r="pg269"></cite>. With QICK loaded, prefer QICK's own methods, which keep its cached settings consistent (Chapter 26).</p>
+
+<h2>The clocks: <code>xrfclk</code></h2>
+<p>The <code>xrfclk</code> package programs the LMK and LMX clock chips from configuration files (exported from TI's TICS Pro tool), which is how PYNQ sets up the 4x2's sampling clocks at start-up <cite data-r="rd4x2manual"></cite>. QICK calls it when it configures clocks, for example when you request an external reference <cite data-r="qickrepo"></cite>. You rarely need it directly unless you change sample rates.</p>
+
+<h2>A first hardware test without QICK</h2>
+<div class="box lab"><span class="tag">In the lab</span>
+<p>With the base overlay and its RF notebooks: connect DAC_B → 20 dB attenuator → ADC_D. Play a tone at 200 MHz, capture a buffer of ADC samples, plot it and its spectrum. Then sweep the tone from 10 MHz to 2 GHz and record the received power: this is your loopback transfer function, including both baluns. Repeat with the 20 dB attenuator replaced by a known filter to see the effect. Keep the notebook: it is your board's health check.</p>
+</div>
+
+<h2>The SDR book's notebook labs, mapped for qubit work</h2>
+<p>The AMD SDR book comes with nine sets of notebooks, installable on the 4x2 with pip from the Strathclyde repository (<code>pip install</code> the release archive, then <code>python -m rfsoc_book install</code>) <cite data-r="rfsocbookrepo"></cite>. Notebooks marked "RFSoC" in the book need the board; the rest run anywhere <cite data-r="sdrbook"></cite>. Not all are equally relevant to qubits:</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Set</th><th>Topic</th><th>Notebooks</th><th>Value for qubit work</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>Jupyter and PYNQ</td><td>jupyter lab, visualisation, PYNQ introduction, overlays</td><td><b>Essential.</b> Do all four first.</td></tr>
+<tr><td>B</td><td>DSP fundamentals</td><td>sampling, quantisation, ADCs and DACs, filter design</td><td><b>Essential.</b> The basis of Chapters 19–21.</td></tr>
+<tr><td>C</td><td>Spectrum</td><td>exploring the spectrum, RFSoC spectrum analyser, Fourier, DFT, FFT</td><td><b>Very useful.</b> The spectrum analyser is a debugging tool you will reuse.</td></tr>
+<tr><td>D</td><td>Communications</td><td>baseband modulation, EVM and BER, pulse shaping</td><td>Useful for pulse shaping and matched filtering (readout); skip BER details.</td></tr>
+<tr><td>E</td><td>Complex frequency domain</td><td>AM, QAM, complex QAM</td><td><b>Essential.</b> I/Q modulation and demodulation (Chapter 20).</td></tr>
+<tr><td>F</td><td>Frequency planning</td><td>frequency planning, RFSoC frequency planner</td><td><b>Very useful.</b> Use the planner for your readout and drive frequencies.</td></tr>
+<tr><td>G</td><td>Radio demonstrator</td><td>radio system, observe the pipeline, "Hello World" transmit/receive</td><td>Useful to see a complete DAC→ADC system with FPGA processing.</td></tr>
+<tr><td>H</td><td>Forward error correction</td><td>SD-FEC hardware blocks</td><td>Not needed for qubit control.</td></tr>
+<tr><td>I</td><td>OFDM</td><td>OFDM fundamentals and transceiver</td><td>Optional; relevant ideas for frequency-multiplexed readout.</td></tr>
+</tbody></table></div>
+
+<div class="box example"><span class="tag">Suggested order</span>
+<p>Week 1: Sets A and B. Week 2: Sets C and E, plus the 4x2 base RF notebooks. Week 3: Set F with your planned frequencies, Set G to see a full radio pipeline, then install QICK (Chapter 34). This gives you the SDR intuition the QICK documentation assumes.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does <code>allocate()</code> exist instead of just using a NumPy array?</p>
+<details><summary>Show answer</summary><div>DMA engines need physically contiguous memory at a known physical address; ordinary NumPy arrays live in virtual memory that may be scattered. <code>allocate()</code> provides contiguous, DMA-accessible buffers that still behave like NumPy arrays.</div></details>
+<p>2. Which SDR book notebook sets would you skip if short of time, and why?</p>
+<details><summary>Show answer</summary><div>H (FEC) and most of I (OFDM) and D's BER material: they concern data communications, not qubit control or readout.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>MMIO for registers (slow, configuration only); <code>allocate</code> + DMA for bulk data.</li>
+<li><code>xrfdc</code> exposes converter tiles and blocks; <code>xrfclk</code> programs clock chips; prefer QICK's methods once QICK is loaded.</li>
+<li>Build a DAC→ADC loopback test as your board health check.</li>
+<li>From the SDR book labs, sets A, B, C, E and F matter most for qubit work.</li>
+</ul>
+</div>

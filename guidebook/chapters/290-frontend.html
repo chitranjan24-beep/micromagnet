@@ -1,2 +1,109 @@
-<!--meta {"id": "frontend", "part": "Part VII \u00b7 The RFSoC 4x2 board", "title": "The analog front end: baluns, limits, protection and modifications"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "frontend", "part": "Part VII · The RFSoC 4x2 board", "title": "The analog front end: baluns, limits, protection and modifications"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The few millimetres of circuit between each SMA connector and the RFSoC chip decide what the 4x2 can and cannot do for spin qubits. They make the board excellent for RF and microwave signals and unable to produce DC levels or long baseband pulses. This chapter explains that circuit, shows what it does to typical gate pulses, lists the ways around it (from external instruments to board modifications that others have published), and covers how to protect the converters.</p>
+</div>
+
+<h2>What is between the SMA and the chip</h2>
+
+<p>Each of the six RF ports has the same passive network: decoupling capacitors and a MACOM MABA-011118 transformer balun, under an RF shield, with no active components <cite data-r="rd4x2manual"></cite>. For the ADC inputs, the QICK-DAWG team identified the parts as the balun plus two 100 nF capacitors (C302 and C303 on the schematic for one channel), together forming a high-pass filter <cite data-r="qickdawg"></cite>.</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 210" width="760" role="img" aria-label="4x2 RF port network">
+  <rect x="20" y="70" width="80" height="50" rx="4" class="box"/><text class="sm" x="60" y="92" text-anchor="middle">SMA</text><text class="sm" x="60" y="108" text-anchor="middle">50 Ω, single</text>
+  <line class="ln" x1="100" y1="95" x2="190" y2="95"/>
+  <rect x="190" y="60" width="140" height="70" rx="4" class="boxw"/><text class="sm" x="260" y="86" text-anchor="middle">balun</text><text class="sm" x="260" y="102" text-anchor="middle">MABA-011118</text><text class="sm" x="260" y="118" text-anchor="middle">10 MHz–10 GHz</text>
+  <line class="ln" x1="330" y1="80" x2="420" y2="80"/><line class="ln" x1="330" y1="110" x2="420" y2="110"/>
+  <line class="ln" x1="420" y1="68" x2="420" y2="92"/><line class="ln" x1="428" y1="68" x2="428" y2="92"/>
+  <line class="ln" x1="420" y1="98" x2="420" y2="122"/><line class="ln" x1="428" y1="98" x2="428" y2="122"/>
+  <text class="sm" x="390" y="56">2 × 100 nF</text>
+  <line class="ln" x1="428" y1="80" x2="540" y2="80"/><line class="ln" x1="428" y1="110" x2="540" y2="110"/>
+  <text class="sm" x="460" y="74">P</text><text class="sm" x="460" y="126">N</text>
+  <rect x="540" y="50" width="190" height="90" rx="4" class="boxb"/><text class="sm" x="635" y="84" text-anchor="middle">RFSoC ADC input or</text><text class="sm" x="635" y="100" text-anchor="middle">DAC output (differential)</text><text class="sm" x="635" y="116" text-anchor="middle">with on-chip termination</text>
+  <text class="sm" x="20" y="170">Schematic only. The exact order and values of parts, and how the converter's DC bias and termination are provided,</text>
+  <text class="sm" x="20" y="186">are in the board schematic. Both the capacitors and the transformer block DC.</text>
+</svg>
+</div>
+<figcaption>The passive network on each 4x2 RF port: a balun converting the single-ended 50 Ω SMA signal to the chip's differential pins, and series DC-blocking capacitors <cite data-r="rd4x2manual,qickdawg"></cite>.</figcaption>
+</figure>
+
+<h3>What the balun's rating means</h3>
+<p>A transformer balun couples energy magnetically, so it has a lower frequency limit set by its winding inductance and an upper limit set by parasitic capacitance and the length of its windings. Its rated band, 10 MHz to 10 GHz for this part, is where insertion loss and amplitude/phase balance meet the manufacturer's specifications; outside the band, the response degrades smoothly rather than stopping abruptly. The QICK-DAWG documentation describes the stock ADC path as having a "1 GHz high-pass" behaviour for its purposes <cite data-r="qickdawg"></cite>, which disagrees with the 10 MHz rating in Real Digital's manual <cite data-r="rd4x2manual"></cite>. The rated part number supports the 10 MHz figure; the difference may come from how "too much attenuation" was defined for their kHz-range photodiode signals. Measure your own board: a swept tone from a DAC into an ADC (or a VNA on each port) gives the real transfer function in a few minutes.</p>
+
+<h2>What AC coupling does to pulses</h2>
+
+<p>As a first approximation, treat the port as a first-order high-pass with a 10 MHz corner, time constant \(\tau = 1/(2\pi\times10\ \text{MHz}) \approx 16\) ns. A step in voltage becomes a spike that decays with \(\tau\); a pulse becomes a positive spike at its start and a negative spike at its end; any signal with no frequency components below ~10 MHz passes nearly unchanged.</p>
+
+<figure>
+<div class="figbody"><!--plot:balun-pulse--></div>
+<figcaption>Simulated effect of a first-order 10 MHz high-pass (an approximation of the 4x2's RF ports) on three signals. A 200 ns square pulse becomes two spikes: the flat top is lost within tens of ns. A 10 ns pulse keeps its shape better but gains an undershoot. A 200 MHz microwave burst passes almost unchanged. Real baluns have more complex responses; measure yours.</figcaption>
+</figure>
+
+<p>Consequences for the signals of Chapter 1:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Signal</th><th>Through a stock 4x2 port</th></tr></thead>
+<tbody>
+<tr><td>Readout carrier (100 MHz–1 GHz) and reflected signal</td><td>Passes. Ideal use.</td></tr>
+<tr><td>Microwave EDSR bursts (GHz carrier)</td><td>Passes, up to the DAC's useful frequency range.</td></tr>
+<tr><td>Fast exchange pulses (~10 ns)</td><td>Distorted: droop and undershoot of tens of percent. Partially correctable by pre-distortion; not ideal.</td></tr>
+<tr><td>Detuning and readout-level pulses (µs–ms)</td><td>Do not pass: only edges get through.</td></tr>
+<tr><td>DC gate voltages, slow ramps</td><td>Blocked.</td></tr>
+<tr><td>Lock-in excitation at kHz–MHz</td><td>Strongly attenuated below ~10 MHz.</td></tr>
+</tbody></table></div>
+
+<h2>Ways around the AC coupling</h2>
+
+<h3>1. Keep baseband pulses on another instrument</h3>
+<p>Use a DC-coupled AWG for gate pulses, triggered by a QICK PMOD output (through a level shifter), with both instruments locked to the same 10 MHz reference. The 4x2 does readout, microwaves and timing. This needs no modification and is the recommended starting point (Chapter 38). The cost is trigger jitter and latency between the two instruments, which you must calibrate.</p>
+
+<h3>2. Use signals that survive AC coupling</h3>
+<p>Some useful baseband experiments only need signals without a slow component:</p>
+<ul>
+<li><b>Fast charge-stability maps with sinusoidal or triangular sweeps</b> at tens of MHz superimposed on DC gate voltages (through bias tees on the PCB), with the readout synchronised to the sweep phase (Chapter 40).</li>
+<li><b>Photon-assisted tunnelling and lever-arm calibration</b> with microwaves on a gate.</li>
+<li><b>Charge noise spectroscopy and sensor characterisation</b> at high frequency.</li>
+<li><b>Short, balanced (zero-mean) pulse pairs</b>, for example a +A pulse immediately followed by a −A pulse of equal area, which suffer less droop.</li>
+</ul>
+
+<h3>3. Modify the board</h3>
+<p>Others have removed the balun and capacitors from 4x2 ports to make them DC-coupled:</p>
+<ul>
+<li><b>ADC inputs (published)</b>: the QICK-DAWG team removed the balun and replaced the two capacitors with 0 Ω resistors or wire, then drove the ADC's differential input with a TI LMH5401 fully differential amplifier evaluation board. The ADC's input common-mode voltage must be set correctly: they used \(V_{cm} = 0.7\) V for the 4x2 (the same as the ZCU216; the ZCU111 needs 1.2 V), with amplifier supplies of +3.2 V and −1.8 V <cite data-r="qickdawg"></cite>.</li>
+<li><b>DAC outputs (not documented for the 4x2 in the sources used here)</b>: on the ZCU216, whose DAC outputs are brought out differentially, HRL's spinQICK setup uses LMH5401 modules to convert the differential DAC outputs to DC-coupled single-ended signals, followed by THS3491 amplifiers <cite data-r="spinqick,wessels2026"></cite>. Doing the same on a 4x2 requires removing the output balun and capacitors <i>and</i> providing the RF-DAC outputs with the DC termination and bias they need (RF-DAC outputs are current-mode outputs whose termination and supply requirements are specified in AMD's PG269 and DS926). Get this wrong and you can damage the DAC. Study the schematic and AMD's documentation, and ideally ask the Real Digital, PYNQ or QICK communities before attempting it.</li>
+</ul>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Modifying the board without measuring first. Rework under RF shields on a 1517-ball BGA board is delicate, can damage pads, and is irreversible in practice. Before any modification, measure each port's transfer function and noise, keep the measurements, and practise the soldering on a scrap board. Consider whether option 1 or a different board meets your needs.</p>
+</div>
+
+<h3>4. Use a board designed for it</h3>
+<p>The ZCU216 brings out its 16 DACs and 16 ADCs through connectors to which you attach either baluns or DC-coupled networks; QICK's documentation notes that the ZCU216 "allows for flexibility in AC- or DC-coupling your signals" <cite data-r="qickdocs"></cite>. The QICK Box (an RF front end with DC-coupled and RF modules for the ZCU216) <cite data-r="arnaldi2026"></cite> and spinQICK's recommended QICK Box configuration with "DC In" and "DC Out" modules <cite data-r="spinqick"></cite> are built for exactly this. Chapter 45 compares the options.</p>
+
+<h2>Protecting the converters</h2>
+<ul>
+<li><b>Never exceed the ADC's absolute maximum input power</b>, given in DS926 <cite data-r="ds926"></cite>. Full scale is of order +1 dBm; inputs well above it can cause permanent damage. When looping a DAC into an ADC, or connecting an amplified readout signal, start with 10–20 dB of attenuation.</li>
+<li><b>Watch for amplifier oscillations and switching transients</b>: a room-temperature amplifier that oscillates, or the connection of a charged cable, can deliver far more than the steady-state power.</li>
+<li><b>ESD</b>: the SMA centre pins connect (through passives) to the chip. Discharge yourself and cables before connecting, and use DC blocks and limiters at inputs exposed to unknown equipment (Appendix B).</li>
+<li><b>Do not apply DC</b> to the SMA ports. The capacitors block it in steady state, but switching a DC voltage on or off produces a step that passes through.</li>
+</ul>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>A useful first-week exercise: (1) connect DAC_B to a spectrum analyser and record output power versus frequency from 10 MHz to 10 GHz at fixed gain, in Nyquist zones 1 and 2; (2) connect DAC_B through a 20 dB attenuator to ADC_D and measure the loopback transfer function and its phase; (3) send a 1 µs square pulse into an oscilloscope (50 Ω input) and record what comes out. You will then know your board's front end better than any data sheet can tell you.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A 1 µs plunger pulse of 20 mV is played through a stock 4x2 DAC port. What arrives at the gate, roughly?</p>
+<details><summary>Show answer</summary><div>A positive spike of up to 20 mV at the start, decaying within a few tens of ns, near-zero during the pulse, and a negative spike at the end. The intended 1 µs level is lost.</div></details>
+<p>2. Why is removing a DAC output balun riskier than removing an ADC input balun?</p>
+<details><summary>Show answer</summary><div>The RF-DAC is a current-mode output that needs a specific DC termination and bias; the stock output network provides part of that. Removing it without providing the correct termination can stress or damage the DAC. ADC inputs need a correct common-mode voltage, which is easier to supply with a differential amplifier, and that modification has been published.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Each RF port has DC-blocking capacitors and a 10 MHz–10 GHz balun; the result is AC coupling with a corner near 10 MHz (measure your board).</li>
+<li>RF readout and microwave bursts pass; µs–ms baseband pulses and DC do not; 10 ns pulses are distorted.</li>
+<li>Workarounds: external DC-coupled AWG; AC-compatible signals; board modification (published for ADC inputs with LMH5401 and \(V_{cm}\) = 0.7 V); or a ZCU216/QICK Box.</li>
+<li>Protect the converters: respect DS926 maximum ratings, attenuate first, avoid ESD and DC steps.</li>
+</ul>
+</div>

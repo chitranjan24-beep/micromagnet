@@ -1,2 +1,148 @@
-<!--meta {"id": "qick-4x2", "part": "Part IX \u00b7 QICK and spinQICK", "title": "QICK on the 4x2: firmware, channels and numbers"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "qick-4x2", "part": "Part IX · QICK and spinQICK", "title": "QICK on the 4x2: firmware, channels and numbers"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This chapter is the practical bridge between the board and QICK: which firmware to use, how to install the library, what the configuration printout means line by line, which SMA connector is which channel, and the numbers that set the limits of your experiments (sample rates, frequency steps, memory sizes, buffer lengths). All values are from the QICK source and documentation as of October 2026 (software 0.2.436); check your own printout, because they change between firmware builds <cite data-r="qickrepo,qickdocs"></cite>.</p>
+</div>
+
+<h2>Two firmware families</h2>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>tProc v1 standard firmware</th><th>tProc v2 standard firmware</th></tr></thead>
+<tbody>
+<tr><td>Where to get it</td><td>Bundled with the QICK library (<code>qick_4x2.bit</code>, used by default when you call <code>QickSoc()</code> without a path)</td><td>Build from <code>firmware/projects/qick_tprocv2_4x2_standard</code> (Vivado 2023.1), or obtain a pre-built file from the QICK team or community</td></tr>
+<tr><td>Python API</td><td><code>AveragerProgram</code>, <code>RAveragerProgram</code>, <code>NDAveragerProgram</code> (QICK's tprocv1 tutorials and <code>qick_demos</code>)</td><td><code>AveragerProgramV2</code> (QICK tutorials 00–15, spinQICK V2)</td></tr>
+<tr><td>Readouts</td><td><code>axis_readout_v2</code>, configured from Python</td><td><code>axis_dyn_readout_v1</code>, reconfigurable by the tProcessor</td></tr>
+<tr><td>Recommended for</td><td>Getting started immediately</td><td>New projects, spinQICK, advanced timing</td></tr>
+</tbody></table></div>
+<p>The firmware type bundled with the library was checked from its hardware description, which instantiates the tProc v1 core (<code>axis_tproc64x32_x8</code>) <cite data-r="qickrepo"></cite>. The QICK tutorials state that the tProc v2 notebooks "must be run with a tProc v2 firmware" <cite data-r="qickdocs"></cite>. A software emulator of the firmware (QickEmu) is under development on a separate branch of the QICK repository and lets you try the v2 tutorials without a board.</p>
+
+<h2>Installing QICK on the board</h2>
+<ol>
+<li>Flash the PYNQ image QICK supports (for the 4x2, PYNQ 3.0.1; PYNQ 3.1 is not supported at the time of writing) <cite data-r="qickdocs"></cite>.</li>
+<li>Copy or clone the QICK repository onto the board (for example into <code>/home/xilinx/jupyter_notebooks/qick</code>).</li>
+<li>Open <code>qick_demos/000_Install_qick_package.ipynb</code> and run it. It installs the library with <code>pip3 install --no-index --no-build-isolation -e ../</code>: the options let it work without internet and stop pip from replacing the board's PYNQ library <cite data-r="qickrepo"></cite>.</li>
+<li>Restart the kernel, then create the SoC object:</li>
+</ol>
+<pre><code>from qick import *
+soc = QickSoc()          # default: bundled tProc v1 firmware for this board
+# soc = QickSoc('/home/xilinx/firmware/qick_4x2_tprocv2.bit')  # your tProc v2 build
+soccfg = soc
+print(soccfg)</code></pre>
+
+<h2>Reading the configuration printout</h2>
+<p>This is the printout of the 4x2 standard firmware from QICK's demo notebook (software 0.2.381, tProc v1 firmware), abridged <cite data-r="qickrepo"></cite>:</p>
+<pre><code>QICK running on RFSoC4x2, software version 0.2.381
+Firmware configuration (built Mon Dec 15 20:44:36 2025):
+  Global clocks (MHz): tProc dispatcher timing 409.600, RF reference 491.520
+  Groups of related clocks: [tProc clock, DAC tile 0, DAC tile 2], [ADC tile 0]
+  DAC output power mode: 20mA
+  2 signal generator channels:
+  0: axis_signal_gen_v6 - fs=9830.400 Msps, fabric=614.400 MHz
+     envelope memory: 65536 complex samples (6.667 us)
+     32-bit DDS, range=9830.400 MHz
+     DAC tile 0, blk 0 is DAC_B
+  1: axis_signal_gen_v6 - fs=9830.400 Msps, fabric=614.400 MHz
+     ...  DAC tile 2, blk 0 is DAC_A
+  2 readout channels:
+  0: axis_readout_v2 - configured by PYNQ
+     fs=4423.680 Msps, decimated=552.960 MHz, 32-bit DDS, range=4423.680 MHz
+     axis_avg_buffer v1.2 (has edge counter, no weights)
+     memory 16384 accumulated, 4096 decimated (7.407 us)
+     triggered by output 7, pin 14, feedback to tProc input 0
+     ADC tile 0, blk 0 is ADC_D
+  1: ...  ADC tile 0, blk 2 is ADC_C
+  8 digital output pins: PMOD0_0 ... PMOD0_7
+  tProc: axis_tproc64x32_x8 ("v1") rev 4, program memory 1024 words, data memory 1024 words
+     external start pin: PMOD1_0
+  DDR4 memory buffer: 1073741824 samples (1.942 sec), 256 samples/transfer
+  MR buffer: 8192 samples (1.852 us), wired to readouts [0, 1]</code></pre>
+
+<p>Line by line:</p>
+<ul>
+<li><b>tProc dispatcher timing 409.6 MHz</b>: the tProcessor's time grid, 2.44 ns per tick.</li>
+<li><b>RF reference 491.52 MHz</b>: the reference the converter tiles multiply (×20 for the DACs, ×9 for the ADCs).</li>
+<li><b>Groups of related clocks</b>: the tProcessor and both DAC tiles share one clock group; the ADC tile is in another. Timing between groups has fixed but calibration-dependent offsets.</li>
+<li><b>DAC output power mode 20 mA</b>: the RF-DAC current setting (the other legacy option is 32 mA; Gen3 also allows finer VOP control).</li>
+<li><b>Generators</b>: two SG-v6 generators at 9830.4 MSPS, 16 samples per 614.4 MHz cycle; 65 536-sample envelopes (6.667 µs); 32-bit DDS spanning the full 9830.4 MHz (both Nyquist zones). Generator 0 is <b>DAC_B</b>, generator 1 is <b>DAC_A</b>.</li>
+<li><b>Readouts</b>: two readouts at 4423.68 MSPS, decimated to 552.96 MSPS; each has 16 384 accumulated entries and 4096 decimated samples (7.4 µs); triggered by tProc output pins 14 and 15; their results can feed tProc inputs 0 and 1 for feedback. Readout 0 is <b>ADC_D</b>, readout 1 is <b>ADC_C</b>.</li>
+<li><b>Digital outputs</b>: PMOD0_0–PMOD0_7, timed by the tProcessor. External start: PMOD1_0.</li>
+<li><b>DDR4 and MR buffers</b>: a 1.07-billion-sample capture (1.94 s) and an 8192-sample raw capture, both wired to the two readouts.</li>
+</ul>
+<p>The tProc v2 firmware has a different processor and readout type and somewhat different memory sizes, but the same generator count, DACs and sample rates: its block design contains two SG-v6 generators and three dynamic readouts, with the RF data converter set to 9.8304 GSPS (DAC) and 4.42368 GSPS (ADC) <cite data-r="qickrepo"></cite>.</p>
+
+<h2>The connector map</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Board SMA</th><th>QICK channel (standard firmware)</th><th>Typical use in a spin-qubit setup</th></tr></thead>
+<tbody>
+<tr><td>DAC_B</td><td>generator 0</td><td>Readout carrier (reflectometry)</td></tr>
+<tr><td>DAC_A</td><td>generator 1</td><td>EDSR drive (direct or as IF for a mixer), or a second gate</td></tr>
+<tr><td>ADC_D</td><td>readout 0</td><td>Reflected readout signal</td></tr>
+<tr><td>ADC_C</td><td>readout 1</td><td>Second sensor, monitor, or loopback reference</td></tr>
+<tr><td>ADC_A, ADC_B</td><td>not used by standard firmware</td><td>Available for custom firmware</td></tr>
+<tr><td>CLK IN</td><td><code>external_clk=True</code></td><td>10 MHz lab reference</td></tr>
+<tr><td>PMOD0_0–7</td><td>trigger outputs</td><td>Trigger AWG, DC source, scope (via level shifter)</td></tr>
+</tbody></table></div>
+
+<h2>The numbers that limit your experiments</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value on the 4x2 (standard firmware)</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>DAC rate, zone 1 limit</td><td>9830.4 MSPS, 4915 MHz</td><td>Direct synthesis up to ~4.9 GHz (zone 2 with <code>nqz=2</code>)</td></tr>
+<tr><td>ADC rate, Nyquist</td><td>4423.68 MSPS, 2212 MHz</td><td>Readout carriers below ~2.2 GHz in zone 1</td></tr>
+<tr><td>Generator frequency step</td><td>2.3 Hz (common step with a readout: 20.6 Hz)</td><td>Fine enough for any qubit or resonator</td></tr>
+<tr><td>Phase resolution</td><td>360°/2<sup>32</sup></td><td>Virtual Z gates with negligible error</td></tr>
+<tr><td>Gain resolution</td><td>about 1/32 766</td><td>Fine amplitude calibration</td></tr>
+<tr><td>Time grid</td><td>2.44 ns (409.6 MHz)</td><td>Pulse start times on this grid; sample-level detail inside envelopes</td></tr>
+<tr><td>Envelope memory</td><td>65 536 samples = 6.67 µs per generator</td><td>Long shaped sequences need loops or constant segments</td></tr>
+<tr><td>Accumulated buffer</td><td>16 384 entries per readout</td><td>Shots × sweep points per acquisition chunk</td></tr>
+<tr><td>Decimated buffer</td><td>4096 samples = 7.4 µs</td><td>Trace length for debugging</td></tr>
+<tr><td>DDR4 buffer</td><td>~1.07 × 10<sup>9</sup> samples = 1.94 s</td><td>Long continuous records (tunnelling statistics, noise)</td></tr>
+</tbody></table></div>
+<p>The frequency steps are from QICK's frequency-matching documentation for the 4x2 <cite data-r="qickdocs"></cite>; the others from the firmware printout and documentation <cite data-r="qickrepo,qickdocs"></cite>.</p>
+
+<h2>A first loopback test</h2>
+<p>Connect DAC_B → 20 dB attenuator → ADC_D. The following tProc v2 program (adapted from QICK's basic sequencing tutorial <cite data-r="qickdocs"></cite>) plays a 100 ns pulse at 200 MHz and records the averaged I/Q trace:</p>
+<pre><code>from qick import *
+from qick.asm_v2 import AveragerProgramV2
+import numpy as np, matplotlib.pyplot as plt
+
+soc = QickSoc('qick_4x2_tprocv2.bit')     # path to your tProc v2 firmware
+GEN, RO = 0, 0                              # DAC_B and ADC_D on the 4x2
+
+class Loopback(AveragerProgramV2):
+    def _initialize(self, cfg):
+        self.declare_gen(ch=GEN, nqz=1)
+        self.declare_readout(ch=RO, length=cfg['ro_len'])
+        self.add_pulse(ch=GEN, name='p', style='const', freq=cfg['f'],
+                       ro_ch=RO, length=cfg['len'], phase=0, gain=0.5)
+        self.add_readoutconfig(ch=RO, name='ro', freq=cfg['f'], gen_ch=GEN)
+        self.send_readoutconfig(ch=RO, name='ro', t=0)
+    def _body(self, cfg):
+        self.pulse(ch=GEN, name='p', t=0)
+        self.trigger(ros=[RO], pins=[0], t=cfg['trig'])
+
+cfg = dict(f=200.0, len=0.1, ro_len=1.0, trig=0.0)     # MHz and µs
+prog = Loopback(soc, reps=1, final_delay=1.0, cfg=cfg)
+iq = prog.acquire_decimated(soc, rounds=100)
+t = prog.get_time_axis(ro_index=0)
+plt.plot(t, np.abs(iq[0].dot([1, 1j]))); plt.xlabel('time (µs)'); plt.show()</code></pre>
+<p>With the trigger at 0, the pulse appears some hundreds of nanoseconds into the trace: that offset is the time of flight through the converters and cables (Chapter 36). Move <code>trig</code> so that the readout window covers the pulse, then switch to <code>acquire()</code> for one I/Q value per shot.</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Copying demo notebooks written for other boards without changing channel numbers. Many QICK demos assume ZCU216 or ZCU111 channel numbers (for example "generator 6"); on the 4x2 standard firmware there are only generators 0 and 1. QICK's quick-start guide warns about this for the 4x2 <cite data-r="qickdocs"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. You want a 6.2 GHz tone from DAC_A. What do you set, and what should you check?</p>
+<details><summary>Show answer</summary><div>Generator 1 with <code>declare_gen(ch=1, nqz=2)</code> and <code>freq=6200</code>. Check the actual output power with a spectrum analyser (it is reduced and frequency-dependent in zone 2), and check images and spurs.</div></details>
+<p>2. A sweep of 101 frequency points with 1000 shots each, using accumulated readout, needs how many accumulated-buffer entries per readout if every shot is stored? What does that imply?</p>
+<details><summary>Show answer</summary><div>101 000, more than the 16 384 entries of the standard firmware's buffer. QICK must split the acquisition into chunks (it reads the buffer as it fills), or you average in hardware and store fewer entries.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>The QICK library bundles tProc v1 firmware for the 4x2; tProc v2 firmware must be built or obtained separately and is recommended for new work.</li>
+<li>Install with the <code>000_Install_qick_package</code> notebook on PYNQ 3.0.1; QICK does not support PYNQ 3.1 yet.</li>
+<li>Generator 0 = DAC_B, generator 1 = DAC_A, readout 0 = ADC_D, readout 1 = ADC_C; PMOD0_0–7 triggers.</li>
+<li>Key limits: 9830.4/4423.68 MSPS, 2.3 Hz frequency steps, 2.44 ns time grid, 6.7 µs envelopes, 16 384-entry accumulated buffers, 1.94 s DDR4 capture.</li>
+</ul>
+</div>

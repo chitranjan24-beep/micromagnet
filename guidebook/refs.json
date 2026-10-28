@@ -1,59 +1,286 @@
 {
-  "rfsocpynq4x2": {"text": "RFSoC-PYNQ team, <i>RFSoC 4x2 Overview</i> (board page, accessed Oct 2026).", "url": "https://www.rfsoc-pynq.io/rfsoc_4x2_overview.html", "short": "RFSoC-PYNQ 4x2 overview page"},
-  "rd4x2manual": {"text": "Real Digital, <i>RFSoC 4x2 Reference Manual</i>, revision A6, and board schematic (Gen3 V1).", "url": "https://www.realdigital.org/hardware/rfsoc-4x2", "short": "Real Digital RFSoC 4x2 Reference Manual"},
-  "sdrbook": {"text": "L. H. Crockett, D. Northcote, R. W. Stewart (eds.), <i>Software Defined Radio with Zynq UltraScale+ RFSoC</i>, 1st ed., Strathclyde Academic Media (2023). Free PDF from the book website.", "url": "https://www.rfsocbook.com", "short": "Crockett, Northcote, Stewart, SDR with RFSoC (2023)"},
-  "ds926": {"text": "AMD, <i>Zynq UltraScale+ RFSoC Data Sheet: DC and AC Switching Characteristics</i> (DS926).", "url": "https://docs.amd.com/r/en-US/ds926-zynq-ultrascale-plus-rfsoc", "short": "AMD DS926 data sheet"},
-  "pg269": {"text": "AMD, <i>Zynq UltraScale+ RFSoC RF Data Converter LogiCORE IP Product Guide</i> (PG269).", "url": "https://docs.amd.com/r/en-US/pg269-rf-data-converter", "short": "AMD PG269"},
-  "ug1085": {"text": "AMD, <i>Zynq UltraScale+ Device Technical Reference Manual</i> (UG1085).", "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm", "short": "AMD UG1085"},
-  "qickrepo": {"text": "QICK collaboration, <i>openquantumhardware/qick</i> (firmware, software, demos; software version 0.2.436 used here).", "url": "https://github.com/openquantumhardware/qick", "short": "QICK GitHub repository"},
-  "qickdocs": {"text": "QICK collaboration, <i>QICK documentation</i> (docs.qick.dev), including the tProc v2 reference and tutorials 00–15.", "url": "https://docs.qick.dev", "short": "QICK documentation"},
-  "stefanazzi2022": {"text": "L. Stefanazzi <i>et al.</i>, “The QICK (Quantum Instrumentation Control Kit): Readout and control for qubits and detectors,” <i>Rev. Sci. Instrum.</i> <b>93</b>, 044709 (2022); arXiv:2110.00557.", "url": "https://arxiv.org/abs/2110.00557", "short": "Stefanazzi et al., QICK, RSI 2022"},
-  "ding2024": {"text": "C. Ding <i>et al.</i>, “Experimental advances with the QICK (Quantum Instrumentation Control Kit) for superconducting quantum hardware,” <i>Phys. Rev. Research</i> <b>6</b>, 013305 (2024); arXiv:2311.17171.", "url": "https://arxiv.org/abs/2311.17171", "short": "Ding et al., PRR 2024"},
-  "arnaldi2026": {"text": "L. Arnaldi <i>et al.</i>, “The QICK Box: A Modular RF Front-End System for Quantum Control and Readout,” arXiv:2610.03609 (2026).", "url": "https://arxiv.org/abs/2610.03609", "short": "Arnaldi et al., QICK Box (2026)"},
-  "martin2026": {"text": "D. Martin <i>et al.</i>, “XCOM: Full Mesh Network Synchronization and Low-Latency Communication for QICK,” arXiv:2603.18977 (2026).", "url": "https://arxiv.org/abs/2603.18977", "short": "Martin et al., XCOM (2026)"},
-  "spinqick": {"text": "HRL Laboratories, <i>spinQICK</i>: open-source extension of QICK for electrostatically confined spin qubits (v3.0.0).", "url": "https://github.com/HRL-Laboratories/spinqick", "short": "spinQICK repository"},
-  "wessels2026": {"text": "A. L. Wessels, M. G. Bimstefer, J. D. Broz, A. Senanian, A. E. Oriani, “Demonstrating RFSoC-based Control of a Fully Connected Exchange-Only Qubit,” arXiv:2610.31998 (2026).", "url": "https://arxiv.org/abs/2610.31998", "short": "Wessels et al., RFSoC EO qubit (2026)"},
-  "shinozaki2025": {"text": "M. Shinozaki <i>et al.</i>, “RFSoC-based radio-frequency reflectometry in gate-defined bilayer graphene quantum devices,” arXiv:2502.15239 (2025).", "url": "https://arxiv.org/abs/2502.15239", "short": "Shinozaki et al., RFSoC reflectometry (2025)"},
-  "shinozaki2025b": {"text": "M. Shinozaki <i>et al.</i>, “Perfect impedance matching unlocks sensitive radio-frequency reflectometry in 2D material quantum dots,” arXiv:2512.02225 (2025).", "url": "https://arxiv.org/abs/2512.02225", "short": "Shinozaki et al., impedance matching (2025)"},
-  "qickdawg": {"text": "E. G. Riendeau <i>et al.</i>, “QICK-DAWG: A Quantum Sensing Control Framework for Quantum Defects,” arXiv:2311.18253 (2023), and the QICK-DAWG RFSoC 4x2 installation guide.", "url": "https://qick-dawg.readthedocs.io/en/latest/installation/Readme.html", "short": "QICK-DAWG (2023)"},
-  "bryan2026": {"text": "J. Bryan, T. J. Wilson, H.-W. Jiang, “Real-Time FPGA-Based Multi-Parameter Feedback Stabilization of a Silicon Double Quantum Dot,” arXiv:2608.10325 (2026).", "url": "https://arxiv.org/abs/2608.10325", "short": "Bryan et al., FPGA feedback (2026)"},
-  "lossdiv1998": {"text": "D. Loss and D. P. DiVincenzo, “Quantum computation with quantum dots,” <i>Phys. Rev. A</i> <b>57</b>, 120 (1998); arXiv:cond-mat/9701055.", "url": "https://arxiv.org/abs/cond-mat/9701055", "short": "Loss & DiVincenzo, PRA 1998"},
-  "hanson2007": {"text": "R. Hanson, L. P. Kouwenhoven, J. R. Petta, S. Tarucha, L. M. K. Vandersypen, “Spins in few-electron quantum dots,” <i>Rev. Mod. Phys.</i> <b>79</b>, 1217 (2007); arXiv:cond-mat/0610433.", "url": "https://arxiv.org/abs/cond-mat/0610433", "short": "Hanson et al., RMP 2007"},
-  "vanderwiel2002": {"text": "W. G. van der Wiel <i>et al.</i>, “Electron transport through double quantum dots,” <i>Rev. Mod. Phys.</i> <b>75</b>, 1 (2002).", "url": "https://doi.org/10.1103/RevModPhys.75.1", "short": "van der Wiel et al., RMP 2002"},
-  "zwanenburg2013": {"text": "F. A. Zwanenburg <i>et al.</i>, “Silicon quantum electronics,” <i>Rev. Mod. Phys.</i> <b>85</b>, 961 (2013); arXiv:1206.5202.", "url": "https://arxiv.org/abs/1206.5202", "short": "Zwanenburg et al., RMP 2013"},
-  "burkard2023": {"text": "G. Burkard, T. D. Ladd, A. Pan, J. M. Nichol, J. R. Petta, “Semiconductor spin qubits,” <i>Rev. Mod. Phys.</i> <b>95</b>, 025003 (2023); arXiv:2112.08863.", "url": "https://arxiv.org/abs/2112.08863", "short": "Burkard et al., RMP 2023"},
-  "chatterjee2021": {"text": "A. Chatterjee <i>et al.</i>, “Semiconductor qubits in practice,” <i>Nat. Rev. Phys.</i> <b>3</b>, 157 (2021); arXiv:2005.06564.", "url": "https://arxiv.org/abs/2005.06564", "short": "Chatterjee et al., Nat Rev Phys 2021"},
-  "vigneau2023": {"text": "F. Vigneau <i>et al.</i>, “Probing quantum devices with radio-frequency reflectometry,” <i>Appl. Phys. Rev.</i> <b>10</b>, 021305 (2023); arXiv:2202.10516.", "url": "https://arxiv.org/abs/2202.10516", "short": "Vigneau et al., APR 2023"},
-  "zwolak2023": {"text": "J. P. Zwolak and J. M. Taylor, “Colloquium: Advances in automation of quantum dot devices control,” <i>Rev. Mod. Phys.</i> <b>95</b>, 011006 (2023); arXiv:2112.09362.", "url": "https://arxiv.org/abs/2112.09362", "short": "Zwolak & Taylor, RMP 2023"},
-  "scappucci2021": {"text": "G. Scappucci <i>et al.</i>, “The germanium quantum information route,” <i>Nat. Rev. Mater.</i> <b>6</b>, 926 (2021); arXiv:2004.08133.", "url": "https://arxiv.org/abs/2004.08133", "short": "Scappucci et al., Nat Rev Mater 2021"},
-  "elzerman2004": {"text": "J. M. Elzerman <i>et al.</i>, “Single-shot read-out of an individual electron spin in a quantum dot,” <i>Nature</i> <b>430</b>, 431 (2004); arXiv:cond-mat/0411232.", "url": "https://arxiv.org/abs/cond-mat/0411232", "short": "Elzerman et al., Nature 2004"},
-  "petta2005": {"text": "J. R. Petta <i>et al.</i>, “Coherent manipulation of coupled electron spins in semiconductor quantum dots,” <i>Science</i> <b>309</b>, 2180 (2005).", "url": "https://doi.org/10.1126/science.1116955", "short": "Petta et al., Science 2005"},
-  "koppens2006": {"text": "F. H. L. Koppens <i>et al.</i>, “Driven coherent oscillations of a single electron spin in a quantum dot,” <i>Nature</i> <b>442</b>, 766 (2006); arXiv:cond-mat/0608459.", "url": "https://arxiv.org/abs/cond-mat/0608459", "short": "Koppens et al., Nature 2006"},
-  "tokura2006": {"text": "Y. Tokura, W. G. van der Wiel, T. Obata, S. Tarucha, “Coherent single electron spin control in a slanting Zeeman field,” <i>Phys. Rev. Lett.</i> <b>96</b>, 047202 (2006); arXiv:cond-mat/0510411.", "url": "https://arxiv.org/abs/cond-mat/0510411", "short": "Tokura et al., PRL 2006"},
-  "pioro2008": {"text": "M. Pioro-Ladrière <i>et al.</i>, “Electrically driven single-electron spin resonance in a slanting Zeeman field,” <i>Nat. Phys.</i> <b>4</b>, 776 (2008); arXiv:0805.1083.", "url": "https://arxiv.org/abs/0805.1083", "short": "Pioro-Ladrière et al., Nat Phys 2008"},
-  "kawakami2014": {"text": "E. Kawakami <i>et al.</i>, “Electrical control of a long-lived spin qubit in a Si/SiGe quantum dot,” <i>Nat. Nanotechnol.</i> <b>9</b>, 666 (2014); arXiv:1404.5402.", "url": "https://arxiv.org/abs/1404.5402", "short": "Kawakami et al., Nat Nano 2014"},
-  "yoneda2018": {"text": "J. Yoneda <i>et al.</i>, “A quantum-dot spin qubit with coherence limited by charge noise and fidelity higher than 99.9%,” <i>Nat. Nanotechnol.</i> <b>13</b>, 102 (2018); arXiv:1708.01454.", "url": "https://arxiv.org/abs/1708.01454", "short": "Yoneda et al., Nat Nano 2018"},
-  "xue2022": {"text": "X. Xue <i>et al.</i>, “Quantum logic with spin qubits crossing the surface code threshold,” <i>Nature</i> <b>601</b>, 343 (2022); arXiv:2107.00628.", "url": "https://arxiv.org/abs/2107.00628", "short": "Xue et al., Nature 2022"},
-  "noiri2022": {"text": "A. Noiri <i>et al.</i>, “Fast universal quantum gate above the fault-tolerance threshold in silicon,” <i>Nature</i> <b>601</b>, 338 (2022).", "url": "https://doi.org/10.1038/s41586-021-04182-y", "short": "Noiri et al., Nature 2022"},
-  "mills2022": {"text": "A. R. Mills <i>et al.</i>, “Two-qubit silicon quantum processor with operation fidelity exceeding 99%,” <i>Sci. Adv.</i> <b>8</b>, eabn5130 (2022); arXiv:2111.11937.", "url": "https://arxiv.org/abs/2111.11937", "short": "Mills et al., Sci Adv 2022"},
-  "philips2022": {"text": "S. G. J. Philips <i>et al.</i>, “Universal control of a six-qubit quantum processor in silicon,” <i>Nature</i> <b>609</b>, 919 (2022); arXiv:2202.09252.", "url": "https://arxiv.org/abs/2202.09252", "short": "Philips et al., Nature 2022"},
-  "divincenzo2000": {"text": "D. P. DiVincenzo, D. Bacon, J. Kempe, G. Burkard, K. B. Whaley, “Universal quantum computation with the exchange interaction,” <i>Nature</i> <b>408</b>, 339 (2000); arXiv:quant-ph/0005116.", "url": "https://arxiv.org/abs/quant-ph/0005116", "short": "DiVincenzo et al., Nature 2000"},
-  "weinstein2023": {"text": "A. J. Weinstein <i>et al.</i>, “Universal logic with encoded spin qubits in silicon,” <i>Nature</i> <b>615</b>, 817 (2023); arXiv:2202.03605.", "url": "https://arxiv.org/abs/2202.03605", "short": "Weinstein et al., Nature 2023"},
-  "reilly2007": {"text": "D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Fast single-charge sensing with an rf quantum point contact,” <i>Appl. Phys. Lett.</i> <b>91</b>, 162101 (2007); arXiv:0707.2946.", "url": "https://arxiv.org/abs/0707.2946", "short": "Reilly et al., APL 2007"},
-  "barthel2009": {"text": "C. Barthel, D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Rapid single-shot measurement of a singlet-triplet qubit,” <i>Phys. Rev. Lett.</i> <b>103</b>, 160503 (2009); arXiv:0902.0227.", "url": "https://arxiv.org/abs/0902.0227", "short": "Barthel et al., PRL 2009"},
-  "connors2020": {"text": "E. J. Connors, J. Nelson, J. M. Nichol, “Rapid high-fidelity spin-state readout in Si/SiGe quantum dots via rf reflectometry,” <i>Phys. Rev. Applied</i> <b>13</b>, 024019 (2020); arXiv:1910.08755.", "url": "https://arxiv.org/abs/1910.08755", "short": "Connors et al., PR Applied 2020"},
-  "harveycollard2018": {"text": "P. Harvey-Collard <i>et al.</i>, “High-fidelity single-shot readout for a spin qubit via an enhanced latching mechanism,” <i>Phys. Rev. X</i> <b>8</b>, 021046 (2018); arXiv:1703.02651.", "url": "https://arxiv.org/abs/1703.02651", "short": "Harvey-Collard et al., PRX 2018"},
-  "seedhouse2021": {"text": "A. E. Seedhouse <i>et al.</i>, “Pauli blockade in silicon quantum dots with spin-orbit control,” <i>PRX Quantum</i> <b>2</b>, 010303 (2021); arXiv:2004.07078.", "url": "https://arxiv.org/abs/2004.07078", "short": "Seedhouse et al., PRX Quantum 2021"},
-  "hensgens2017": {"text": "T. Hensgens <i>et al.</i>, “Quantum simulation of a Fermi–Hubbard model using a semiconductor quantum dot array,” <i>Nature</i> <b>548</b>, 70 (2017); arXiv:1702.07511.", "url": "https://arxiv.org/abs/1702.07511", "short": "Hensgens et al., Nature 2017"},
-  "volk2019": {"text": "C. Volk <i>et al.</i>, “Loading a quantum-dot based ‘Qubyte’ register,” <i>npj Quantum Inf.</i> <b>5</b>, 29 (2019); arXiv:1901.00426.", "url": "https://arxiv.org/abs/1901.00426", "short": "Volk et al., npj QI 2019"},
-  "nielsenchuang": {"text": "M. A. Nielsen and I. L. Chuang, <i>Quantum Computation and Quantum Information</i>, 10th anniversary ed., Cambridge University Press (2010).", "short": "Nielsen & Chuang"},
-  "pozar": {"text": "D. M. Pozar, <i>Microwave Engineering</i>, 4th ed., Wiley (2012).", "short": "Pozar, Microwave Engineering"},
-  "pobell": {"text": "F. Pobell, <i>Matter and Methods at Low Temperatures</i>, 3rd ed., Springer (2007).", "short": "Pobell, Low Temperatures"},
-  "krinner2019": {"text": "S. Krinner <i>et al.</i>, “Engineering cryogenic setups for 100-qubit scale superconducting circuit systems,” <i>EPJ Quantum Technol.</i> <b>6</b>, 2 (2019).", "url": "https://doi.org/10.1140/epjqt/s40507-019-0072-0", "short": "Krinner et al., EPJ QT 2019"},
-  "ihn": {"text": "T. Ihn, <i>Semiconductor Nanostructures: Quantum States and Electronic Transport</i>, Oxford University Press (2010).", "short": "Ihn, Semiconductor Nanostructures"},
-  "kouwenhoven1997": {"text": "L. P. Kouwenhoven <i>et al.</i>, “Electron transport in quantum dots,” in <i>Mesoscopic Electron Transport</i>, NATO ASI Series E 345, Kluwer (1997).", "short": "Kouwenhoven et al., 1997"},
-  "pynq": {"text": "AMD/Xilinx, <i>PYNQ: Python productivity for Zynq</i> (framework documentation and RFSoC-PYNQ notebooks).", "url": "https://www.pynq.io", "short": "PYNQ"},
-  "krantz2019": {"text": "P. Krantz <i>et al.</i>, “A quantum engineer's guide to superconducting qubits,” <i>Appl. Phys. Rev.</i> <b>6</b>, 021318 (2019). (Used here only for general control-electronics concepts.)", "url": "https://arxiv.org/abs/1904.06560", "short": "Krantz et al., APR 2019"},
-  "levitt": {"text": "M. H. Levitt, <i>Spin Dynamics: Basics of Nuclear Magnetic Resonance</i>, 2nd ed., Wiley (2008).", "short": "Levitt, Spin Dynamics"},
-  "vandersypen2005": {"text": "L. M. K. Vandersypen and I. L. Chuang, “NMR techniques for quantum control and computation,” <i>Rev. Mod. Phys.</i> <b>76</b>, 1037 (2005).", "url": "https://doi.org/10.1103/RevModPhys.76.1037", "short": "Vandersypen & Chuang, RMP 2005"}
+ "rfsocpynq4x2": {
+  "text": "RFSoC-PYNQ team, <i>RFSoC 4x2 Overview</i> (board page, accessed Oct 2026).",
+  "url": "https://www.rfsoc-pynq.io/rfsoc_4x2_overview.html",
+  "short": "RFSoC-PYNQ 4x2 overview page"
+ },
+ "rd4x2manual": {
+  "text": "Real Digital, <i>RFSoC 4x2 Reference Manual</i>, revision A6, and board schematic (Gen3 V1).",
+  "url": "https://www.realdigital.org/hardware/rfsoc-4x2",
+  "short": "Real Digital RFSoC 4x2 Reference Manual"
+ },
+ "sdrbook": {
+  "text": "L. H. Crockett, D. Northcote, R. W. Stewart (eds.), <i>Software Defined Radio with Zynq UltraScale+ RFSoC</i>, 1st ed., Strathclyde Academic Media (2023). Free PDF from the book website.",
+  "url": "https://www.rfsocbook.com",
+  "short": "Crockett, Northcote, Stewart, SDR with RFSoC (2023)"
+ },
+ "ds926": {
+  "text": "AMD, <i>Zynq UltraScale+ RFSoC Data Sheet: DC and AC Switching Characteristics</i> (DS926).",
+  "url": "https://docs.amd.com/r/en-US/ds926-zynq-ultrascale-plus-rfsoc",
+  "short": "AMD DS926 data sheet"
+ },
+ "pg269": {
+  "text": "AMD, <i>Zynq UltraScale+ RFSoC RF Data Converter LogiCORE IP Product Guide</i> (PG269).",
+  "url": "https://docs.amd.com/r/en-US/pg269-rf-data-converter",
+  "short": "AMD PG269"
+ },
+ "ug1085": {
+  "text": "AMD, <i>Zynq UltraScale+ Device Technical Reference Manual</i> (UG1085).",
+  "url": "https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm",
+  "short": "AMD UG1085"
+ },
+ "qickrepo": {
+  "text": "QICK collaboration, <i>openquantumhardware/qick</i> (firmware, software, demos; software version 0.2.436 used here).",
+  "url": "https://github.com/openquantumhardware/qick",
+  "short": "QICK GitHub repository"
+ },
+ "qickdocs": {
+  "text": "QICK collaboration, <i>QICK documentation</i> (docs.qick.dev), including the tProc v2 reference and tutorials 00–15.",
+  "url": "https://docs.qick.dev",
+  "short": "QICK documentation"
+ },
+ "stefanazzi2022": {
+  "text": "L. Stefanazzi <i>et al.</i>, “The QICK (Quantum Instrumentation Control Kit): Readout and control for qubits and detectors,” <i>Rev. Sci. Instrum.</i> <b>93</b>, 044709 (2022); arXiv:2110.00557.",
+  "url": "https://arxiv.org/abs/2110.00557",
+  "short": "Stefanazzi et al., QICK, RSI 2022"
+ },
+ "ding2024": {
+  "text": "C. Ding <i>et al.</i>, “Experimental advances with the QICK (Quantum Instrumentation Control Kit) for superconducting quantum hardware,” <i>Phys. Rev. Research</i> <b>6</b>, 013305 (2024); arXiv:2311.17171.",
+  "url": "https://arxiv.org/abs/2311.17171",
+  "short": "Ding et al., PRR 2024"
+ },
+ "arnaldi2026": {
+  "text": "L. Arnaldi <i>et al.</i>, “The QICK Box: A Modular RF Front-End System for Quantum Control and Readout,” arXiv:2610.03609 (2026).",
+  "url": "https://arxiv.org/abs/2610.03609",
+  "short": "Arnaldi et al., QICK Box (2026)"
+ },
+ "martin2026": {
+  "text": "D. Martin <i>et al.</i>, “XCOM: Full Mesh Network Synchronization and Low-Latency Communication for QICK,” arXiv:2603.18977 (2026).",
+  "url": "https://arxiv.org/abs/2603.18977",
+  "short": "Martin et al., XCOM (2026)"
+ },
+ "spinqick": {
+  "text": "HRL Laboratories, <i>spinQICK</i>: open-source extension of QICK for electrostatically confined spin qubits (v3.0.0).",
+  "url": "https://github.com/HRL-Laboratories/spinqick",
+  "short": "spinQICK repository"
+ },
+ "wessels2026": {
+  "text": "A. L. Wessels, M. G. Bimstefer, J. D. Broz, A. Senanian, A. E. Oriani, “Demonstrating RFSoC-based Control of a Fully Connected Exchange-Only Qubit,” arXiv:2610.31998 (2026).",
+  "url": "https://arxiv.org/abs/2610.31998",
+  "short": "Wessels et al., RFSoC EO qubit (2026)"
+ },
+ "shinozaki2025": {
+  "text": "M. Shinozaki <i>et al.</i>, “RFSoC-based radio-frequency reflectometry in gate-defined bilayer graphene quantum devices,” arXiv:2502.15239 (2025).",
+  "url": "https://arxiv.org/abs/2502.15239",
+  "short": "Shinozaki et al., RFSoC reflectometry (2025)"
+ },
+ "shinozaki2025b": {
+  "text": "M. Shinozaki <i>et al.</i>, “Perfect impedance matching unlocks sensitive radio-frequency reflectometry in 2D material quantum dots,” arXiv:2512.02225 (2025).",
+  "url": "https://arxiv.org/abs/2512.02225",
+  "short": "Shinozaki et al., impedance matching (2025)"
+ },
+ "qickdawg": {
+  "text": "E. G. Riendeau <i>et al.</i>, “QICK-DAWG: A Quantum Sensing Control Framework for Quantum Defects,” arXiv:2311.18253 (2023), and the QICK-DAWG RFSoC 4x2 installation guide.",
+  "url": "https://qick-dawg.readthedocs.io/en/latest/installation/Readme.html",
+  "short": "QICK-DAWG (2023)"
+ },
+ "bryan2026": {
+  "text": "J. Bryan, T. J. Wilson, H.-W. Jiang, “Real-Time FPGA-Based Multi-Parameter Feedback Stabilization of a Silicon Double Quantum Dot,” arXiv:2608.10325 (2026).",
+  "url": "https://arxiv.org/abs/2608.10325",
+  "short": "Bryan et al., FPGA feedback (2026)"
+ },
+ "lossdiv1998": {
+  "text": "D. Loss and D. P. DiVincenzo, “Quantum computation with quantum dots,” <i>Phys. Rev. A</i> <b>57</b>, 120 (1998); arXiv:cond-mat/9701055.",
+  "url": "https://arxiv.org/abs/cond-mat/9701055",
+  "short": "Loss & DiVincenzo, PRA 1998"
+ },
+ "hanson2007": {
+  "text": "R. Hanson, L. P. Kouwenhoven, J. R. Petta, S. Tarucha, L. M. K. Vandersypen, “Spins in few-electron quantum dots,” <i>Rev. Mod. Phys.</i> <b>79</b>, 1217 (2007); arXiv:cond-mat/0610433.",
+  "url": "https://arxiv.org/abs/cond-mat/0610433",
+  "short": "Hanson et al., RMP 2007"
+ },
+ "vanderwiel2002": {
+  "text": "W. G. van der Wiel <i>et al.</i>, “Electron transport through double quantum dots,” <i>Rev. Mod. Phys.</i> <b>75</b>, 1 (2002).",
+  "url": "https://doi.org/10.1103/RevModPhys.75.1",
+  "short": "van der Wiel et al., RMP 2002"
+ },
+ "zwanenburg2013": {
+  "text": "F. A. Zwanenburg <i>et al.</i>, “Silicon quantum electronics,” <i>Rev. Mod. Phys.</i> <b>85</b>, 961 (2013); arXiv:1206.5202.",
+  "url": "https://arxiv.org/abs/1206.5202",
+  "short": "Zwanenburg et al., RMP 2013"
+ },
+ "burkard2023": {
+  "text": "G. Burkard, T. D. Ladd, A. Pan, J. M. Nichol, J. R. Petta, “Semiconductor spin qubits,” <i>Rev. Mod. Phys.</i> <b>95</b>, 025003 (2023); arXiv:2112.08863.",
+  "url": "https://arxiv.org/abs/2112.08863",
+  "short": "Burkard et al., RMP 2023"
+ },
+ "chatterjee2021": {
+  "text": "A. Chatterjee <i>et al.</i>, “Semiconductor qubits in practice,” <i>Nat. Rev. Phys.</i> <b>3</b>, 157 (2021); arXiv:2005.06564.",
+  "url": "https://arxiv.org/abs/2005.06564",
+  "short": "Chatterjee et al., Nat Rev Phys 2021"
+ },
+ "vigneau2023": {
+  "text": "F. Vigneau <i>et al.</i>, “Probing quantum devices with radio-frequency reflectometry,” <i>Appl. Phys. Rev.</i> <b>10</b>, 021305 (2023); arXiv:2202.10516.",
+  "url": "https://arxiv.org/abs/2202.10516",
+  "short": "Vigneau et al., APR 2023"
+ },
+ "zwolak2023": {
+  "text": "J. P. Zwolak and J. M. Taylor, “Colloquium: Advances in automation of quantum dot devices control,” <i>Rev. Mod. Phys.</i> <b>95</b>, 011006 (2023); arXiv:2112.09362.",
+  "url": "https://arxiv.org/abs/2112.09362",
+  "short": "Zwolak & Taylor, RMP 2023"
+ },
+ "scappucci2021": {
+  "text": "G. Scappucci <i>et al.</i>, “The germanium quantum information route,” <i>Nat. Rev. Mater.</i> <b>6</b>, 926 (2021); arXiv:2004.08133.",
+  "url": "https://arxiv.org/abs/2004.08133",
+  "short": "Scappucci et al., Nat Rev Mater 2021"
+ },
+ "elzerman2004": {
+  "text": "J. M. Elzerman <i>et al.</i>, “Single-shot read-out of an individual electron spin in a quantum dot,” <i>Nature</i> <b>430</b>, 431 (2004); arXiv:cond-mat/0411232.",
+  "url": "https://arxiv.org/abs/cond-mat/0411232",
+  "short": "Elzerman et al., Nature 2004"
+ },
+ "petta2005": {
+  "text": "J. R. Petta <i>et al.</i>, “Coherent manipulation of coupled electron spins in semiconductor quantum dots,” <i>Science</i> <b>309</b>, 2180 (2005).",
+  "url": "https://doi.org/10.1126/science.1116955",
+  "short": "Petta et al., Science 2005"
+ },
+ "koppens2006": {
+  "text": "F. H. L. Koppens <i>et al.</i>, “Driven coherent oscillations of a single electron spin in a quantum dot,” <i>Nature</i> <b>442</b>, 766 (2006); arXiv:cond-mat/0608459.",
+  "url": "https://arxiv.org/abs/cond-mat/0608459",
+  "short": "Koppens et al., Nature 2006"
+ },
+ "tokura2006": {
+  "text": "Y. Tokura, W. G. van der Wiel, T. Obata, S. Tarucha, “Coherent single electron spin control in a slanting Zeeman field,” <i>Phys. Rev. Lett.</i> <b>96</b>, 047202 (2006); arXiv:cond-mat/0510411.",
+  "url": "https://arxiv.org/abs/cond-mat/0510411",
+  "short": "Tokura et al., PRL 2006"
+ },
+ "pioro2008": {
+  "text": "M. Pioro-Ladrière <i>et al.</i>, “Electrically driven single-electron spin resonance in a slanting Zeeman field,” <i>Nat. Phys.</i> <b>4</b>, 776 (2008); arXiv:0805.1083.",
+  "url": "https://arxiv.org/abs/0805.1083",
+  "short": "Pioro-Ladrière et al., Nat Phys 2008"
+ },
+ "kawakami2014": {
+  "text": "E. Kawakami <i>et al.</i>, “Electrical control of a long-lived spin qubit in a Si/SiGe quantum dot,” <i>Nat. Nanotechnol.</i> <b>9</b>, 666 (2014); arXiv:1404.5402.",
+  "url": "https://arxiv.org/abs/1404.5402",
+  "short": "Kawakami et al., Nat Nano 2014"
+ },
+ "yoneda2018": {
+  "text": "J. Yoneda <i>et al.</i>, “A quantum-dot spin qubit with coherence limited by charge noise and fidelity higher than 99.9%,” <i>Nat. Nanotechnol.</i> <b>13</b>, 102 (2018); arXiv:1708.01454.",
+  "url": "https://arxiv.org/abs/1708.01454",
+  "short": "Yoneda et al., Nat Nano 2018"
+ },
+ "xue2022": {
+  "text": "X. Xue <i>et al.</i>, “Quantum logic with spin qubits crossing the surface code threshold,” <i>Nature</i> <b>601</b>, 343 (2022); arXiv:2107.00628.",
+  "url": "https://arxiv.org/abs/2107.00628",
+  "short": "Xue et al., Nature 2022"
+ },
+ "noiri2022": {
+  "text": "A. Noiri <i>et al.</i>, “Fast universal quantum gate above the fault-tolerance threshold in silicon,” <i>Nature</i> <b>601</b>, 338 (2022).",
+  "url": "https://doi.org/10.1038/s41586-021-04182-y",
+  "short": "Noiri et al., Nature 2022"
+ },
+ "mills2022": {
+  "text": "A. R. Mills <i>et al.</i>, “Two-qubit silicon quantum processor with operation fidelity exceeding 99%,” <i>Sci. Adv.</i> <b>8</b>, eabn5130 (2022); arXiv:2111.11937.",
+  "url": "https://arxiv.org/abs/2111.11937",
+  "short": "Mills et al., Sci Adv 2022"
+ },
+ "philips2022": {
+  "text": "S. G. J. Philips <i>et al.</i>, “Universal control of a six-qubit quantum processor in silicon,” <i>Nature</i> <b>609</b>, 919 (2022); arXiv:2202.09252.",
+  "url": "https://arxiv.org/abs/2202.09252",
+  "short": "Philips et al., Nature 2022"
+ },
+ "divincenzo2000": {
+  "text": "D. P. DiVincenzo, D. Bacon, J. Kempe, G. Burkard, K. B. Whaley, “Universal quantum computation with the exchange interaction,” <i>Nature</i> <b>408</b>, 339 (2000); arXiv:quant-ph/0005116.",
+  "url": "https://arxiv.org/abs/quant-ph/0005116",
+  "short": "DiVincenzo et al., Nature 2000"
+ },
+ "weinstein2023": {
+  "text": "A. J. Weinstein <i>et al.</i>, “Universal logic with encoded spin qubits in silicon,” <i>Nature</i> <b>615</b>, 817 (2023); arXiv:2202.03605.",
+  "url": "https://arxiv.org/abs/2202.03605",
+  "short": "Weinstein et al., Nature 2023"
+ },
+ "reilly2007": {
+  "text": "D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Fast single-charge sensing with an rf quantum point contact,” <i>Appl. Phys. Lett.</i> <b>91</b>, 162101 (2007); arXiv:0707.2946.",
+  "url": "https://arxiv.org/abs/0707.2946",
+  "short": "Reilly et al., APL 2007"
+ },
+ "barthel2009": {
+  "text": "C. Barthel, D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Rapid single-shot measurement of a singlet-triplet qubit,” <i>Phys. Rev. Lett.</i> <b>103</b>, 160503 (2009); arXiv:0902.0227.",
+  "url": "https://arxiv.org/abs/0902.0227",
+  "short": "Barthel et al., PRL 2009"
+ },
+ "connors2020": {
+  "text": "E. J. Connors, J. Nelson, J. M. Nichol, “Rapid high-fidelity spin-state readout in Si/SiGe quantum dots via rf reflectometry,” <i>Phys. Rev. Applied</i> <b>13</b>, 024019 (2020); arXiv:1910.08755.",
+  "url": "https://arxiv.org/abs/1910.08755",
+  "short": "Connors et al., PR Applied 2020"
+ },
+ "harveycollard2018": {
+  "text": "P. Harvey-Collard <i>et al.</i>, “High-fidelity single-shot readout for a spin qubit via an enhanced latching mechanism,” <i>Phys. Rev. X</i> <b>8</b>, 021046 (2018); arXiv:1703.02651.",
+  "url": "https://arxiv.org/abs/1703.02651",
+  "short": "Harvey-Collard et al., PRX 2018"
+ },
+ "seedhouse2021": {
+  "text": "A. E. Seedhouse <i>et al.</i>, “Pauli blockade in silicon quantum dots with spin-orbit control,” <i>PRX Quantum</i> <b>2</b>, 010303 (2021); arXiv:2004.07078.",
+  "url": "https://arxiv.org/abs/2004.07078",
+  "short": "Seedhouse et al., PRX Quantum 2021"
+ },
+ "hensgens2017": {
+  "text": "T. Hensgens <i>et al.</i>, “Quantum simulation of a Fermi–Hubbard model using a semiconductor quantum dot array,” <i>Nature</i> <b>548</b>, 70 (2017); arXiv:1702.07511.",
+  "url": "https://arxiv.org/abs/1702.07511",
+  "short": "Hensgens et al., Nature 2017"
+ },
+ "volk2019": {
+  "text": "C. Volk <i>et al.</i>, “Loading a quantum-dot based ‘Qubyte’ register,” <i>npj Quantum Inf.</i> <b>5</b>, 29 (2019); arXiv:1901.00426.",
+  "url": "https://arxiv.org/abs/1901.00426",
+  "short": "Volk et al., npj QI 2019"
+ },
+ "nielsenchuang": {
+  "text": "M. A. Nielsen and I. L. Chuang, <i>Quantum Computation and Quantum Information</i>, 10th anniversary ed., Cambridge University Press (2010).",
+  "short": "Nielsen & Chuang"
+ },
+ "pozar": {
+  "text": "D. M. Pozar, <i>Microwave Engineering</i>, 4th ed., Wiley (2012).",
+  "short": "Pozar, Microwave Engineering"
+ },
+ "pobell": {
+  "text": "F. Pobell, <i>Matter and Methods at Low Temperatures</i>, 3rd ed., Springer (2007).",
+  "short": "Pobell, Low Temperatures"
+ },
+ "krinner2019": {
+  "text": "S. Krinner <i>et al.</i>, “Engineering cryogenic setups for 100-qubit scale superconducting circuit systems,” <i>EPJ Quantum Technol.</i> <b>6</b>, 2 (2019).",
+  "url": "https://doi.org/10.1140/epjqt/s40507-019-0072-0",
+  "short": "Krinner et al., EPJ QT 2019"
+ },
+ "ihn": {
+  "text": "T. Ihn, <i>Semiconductor Nanostructures: Quantum States and Electronic Transport</i>, Oxford University Press (2010).",
+  "short": "Ihn, Semiconductor Nanostructures"
+ },
+ "kouwenhoven1997": {
+  "text": "L. P. Kouwenhoven <i>et al.</i>, “Electron transport in quantum dots,” in <i>Mesoscopic Electron Transport</i>, NATO ASI Series E 345, Kluwer (1997).",
+  "short": "Kouwenhoven et al., 1997"
+ },
+ "pynq": {
+  "text": "AMD/Xilinx, <i>PYNQ: Python productivity for Zynq</i> (framework documentation and RFSoC-PYNQ notebooks).",
+  "url": "https://www.pynq.io",
+  "short": "PYNQ"
+ },
+ "krantz2019": {
+  "text": "P. Krantz <i>et al.</i>, “A quantum engineer's guide to superconducting qubits,” <i>Appl. Phys. Rev.</i> <b>6</b>, 021318 (2019). (Used here only for general control-electronics concepts.)",
+  "url": "https://arxiv.org/abs/1904.06560",
+  "short": "Krantz et al., APR 2019"
+ },
+ "levitt": {
+  "text": "M. H. Levitt, <i>Spin Dynamics: Basics of Nuclear Magnetic Resonance</i>, 2nd ed., Wiley (2008).",
+  "short": "Levitt, Spin Dynamics"
+ },
+ "vandersypen2005": {
+  "text": "L. M. K. Vandersypen and I. L. Chuang, “NMR techniques for quantum control and computation,” <i>Rev. Mod. Phys.</i> <b>76</b>, 1037 (2005).",
+  "url": "https://doi.org/10.1103/RevModPhys.76.1037",
+  "short": "Vandersypen & Chuang, RMP 2005"
+ },
+ "rfsocbookrepo": {
+  "text": "Strathclyde SDR group, <i>RFSoC-Book</i>: companion Jupyter notebooks for the SDR book (supports ZCU208, ZCU216, ZCU111, RFSoC 4x2, RFSoC 2x2; PYNQ ≥ 2.7).",
+  "url": "https://github.com/strath-sdr/RFSoC-Book",
+  "short": "RFSoC-Book notebooks"
+ }
 }

@@ -1,2 +1,77 @@
-<!--meta {"id": "pynq", "part": "Part VIII \u00b7 PYNQ", "title": "PYNQ: Linux, Jupyter, overlays and first boot"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "pynq", "part": "Part VIII · PYNQ", "title": "PYNQ: Linux, Jupyter, overlays and first boot"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>PYNQ is the software layer that makes the 4x2 usable from Python. It boots Linux on the ARM cores, runs a Jupyter server you open in your browser, loads FPGA designs at run time, and gives Python objects for every hardware block. QICK is a Python package built on top of it. Understanding PYNQ means you can set up the board on your network, install software, move files, recover from mistakes, and know which problems belong to Linux, which to PYNQ and which to QICK <cite data-r="pynq,sdrbook"></cite>.</p>
+</div>
+
+<h2>What PYNQ is</h2>
+<p><dfn data-def="Python Productivity for Zynq: AMD's open-source framework providing Linux, Jupyter and Python APIs for Zynq-based boards, including overlay loading and hardware access.">PYNQ</dfn> ("Python productivity for Zynq") is an open-source framework from AMD consisting of:</p>
+<ul>
+<li>a <b>Linux image</b> (Ubuntu-based) for the board's ARM cores, distributed as an SD-card image per board;</li>
+<li>a <b>Jupyter</b> server (JupyterLab) on the board, so the board is programmed from a browser;</li>
+<li>the <b><code>pynq</code> Python package</b>, which loads overlays and provides drivers: MMIO register access, DMA buffers, GPIO, interrupts, clock control, and RFSoC-specific packages <code>xrfdc</code> (RF data converters) and <code>xrfclk</code> (clock chips);</li>
+<li><b>example notebooks</b> and a base overlay for each board.</li>
+</ul>
+<p>The RFSoC-specific parts (board images, base overlays and notebooks for the 4x2, 2x2 and ZCU111) live in the RFSoC-PYNQ project <cite data-r="rfsocpynq4x2"></cite>. The SDR book's Notebook Set A introduces Jupyter, plotting and the PYNQ framework on RFSoC boards <cite data-r="sdrbook"></cite>.</p>
+
+<h2>Jupyter in two minutes</h2>
+<p>A <b>notebook</b> is a document of cells. Code cells run Python on the board when you press Shift+Enter, and their output (text, plots) appears below. Markdown cells hold notes. The <b>kernel</b> is the Python process that keeps your variables between cells; restarting it clears everything, including the connection to the hardware. JupyterLab adds a file browser, terminals (a Linux shell on the board) and text editors in the same browser tab.</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Running two notebooks that both create a <code>QickSoc</code> (or load overlays) at the same time. Each one reprograms the PL and expects to own it. Use one notebook per board at a time, or run QICK as a server (Pyro4, Chapter 37) and connect clients to it.</p>
+</div>
+
+<h2>The boot process and the SD card</h2>
+<ol>
+<li>At power-on, the boot ROM reads the boot mode switch (set to SD) and loads a first-stage boot loader from the SD card's boot partition.</li>
+<li>The boot loader configures the PS, loads a default bitstream into the PL (the green DONE LED) and starts U-Boot, which starts the Linux kernel.</li>
+<li>Linux mounts the SD card's root file system, starts networking (Ethernet and the USB "gadget" at 192.168.3.1), the Jupyter server and the OLED status display.</li>
+</ol>
+<p>The SD card is the board's disk. Keep a spare card with a known-good image, and back up your notebooks regularly: SD cards wear out and can be corrupted by switching power off during writes. Shut the board down cleanly (<code>sudo shutdown -h now</code> in a terminal, or the Jupyter menu) before switching it off.</p>
+
+<h2>Networking for a lab</h2>
+<ul>
+<li><b>USB gadget</b>: plug the micro-USB 3.0 cable into a PC; the board appears as a network adapter and is at <code>192.168.3.1</code>. Fine for first use.</li>
+<li><b>Ethernet with DHCP</b>: the board gets an address from your network; the OLED shows it.</li>
+<li><b>Static IP / private network</b>: many labs put instruments on a separate network switch with fixed addresses, connected to the measurement PC through a second network card. This avoids IT restrictions and keeps measurement traffic local. QICK's quick-start guide explains static IP configuration <cite data-r="qickdocs"></cite>.</li>
+<li><b>SSH</b>: log in with <code>ssh xilinx@&lt;board-ip&gt;</code> (default user <code>xilinx</code>, password <code>xilinx</code>) for a shell; copy files with <code>scp</code>. Change the default password if the board is on a shared network.</li>
+</ul>
+
+<h2>Overlays in practice</h2>
+<p>An overlay is a <code>.bit</code> plus <code>.hwh</code> (Chapter 27). Loading one in Python takes a few seconds:</p>
+<pre><code>from pynq import Overlay
+ol = Overlay("base.bit")      # programs the PL with the base design
+print(ol.ip_dict.keys())      # names of the IP blocks in the design
+</code></pre>
+<p>PYNQ parses the <code>.hwh</code> and attaches a Python driver to each IP block (generic or specialised), so <code>ol.&lt;block_name&gt;</code> gives you an object with its registers. When QICK starts, it does the same with its own bitstream and builds higher-level objects (generators, readouts, tProcessor) from what it finds <cite data-r="qickrepo"></cite>.</p>
+
+<h2>The 4x2 base overlay and its notebooks</h2>
+<p>The PYNQ image ships a base overlay with the RF data converters, the PL DDR4 controller, two PMOD I/O processors (small MicroBlaze CPUs), and GPIO for the LEDs, buttons, switches and SYZYGY port <cite data-r="rfsocpynq4x2"></cite>. Its notebooks are a good first tour:</p>
+<ul>
+<li><code>01_rf_dataconverter_introduction</code>, <code>02_rf_spectrum_analysis</code>, <code>03_rf_spectrum_sweep</code>: generate tones, capture ADC data, compute and plot spectra.</li>
+<li><code>buttons_leds_switches</code>, <code>pl_ddr4</code>, <code>register_map_intro</code>, <code>syzygy_loopback</code>: board I/O and register access.</li>
+</ul>
+<p>Run them before installing QICK: they confirm that your converters, clocks and network work, and they show the same hardware through PYNQ's lower-level API.</p>
+
+<h2>Installing software on the board</h2>
+<p>The board runs a normal Linux with Python and <code>pip</code>, so packages are installed as on any Linux machine (with internet access through your network, or by copying wheel files). QICK is installed with pip from its repository, and its first demo notebook automates this <cite data-r="qickrepo"></cite>. QICK states which PYNQ image versions it supports; at the time of writing it recommends PYNQ 3.0.1 for the 4x2 and does not yet support PYNQ 3.1 <cite data-r="qickdocs"></cite>. Check the QICK quick-start page before updating the SD image.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>A clean setup sequence: (1) flash the PYNQ image QICK recommends; (2) boot, connect over USB, run the base-overlay RF notebooks with a DAC looped back into an ADC through a 20 dB attenuator; (3) set up Ethernet and SSH; (4) install QICK and run its first demo. Chapter 34 continues from step 4.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Which part of the system answers when you open <code>http://192.168.3.1/lab</code>?</p>
+<details><summary>Show answer</summary><div>The Jupyter server running under Linux on the board's ARM cores (the PS), reached through the USB Ethernet gadget.</div></details>
+<p>2. You restart the Jupyter kernel in the middle of a QICK session. What is lost?</p>
+<details><summary>Show answer</summary><div>All Python variables, including the <code>QickSoc</code> object; you must recreate it (which reloads or reconnects to the firmware). The PL keeps its configuration until reprogrammed, but the Python side forgets it.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>PYNQ = Linux image + Jupyter + Python package for overlays and hardware access + example notebooks.</li>
+<li>Boot from SD; connect at 192.168.3.1 (USB) or the OLED-reported IP (Ethernet); SSH as <code>xilinx</code>.</li>
+<li><code>Overlay()</code> programs the PL and maps IP blocks to Python objects.</li>
+<li>Run the base overlay RF notebooks first; install the QICK-recommended PYNQ image (3.0.1 for the 4x2 at the time of writing).</li>
+</ul>
+</div>

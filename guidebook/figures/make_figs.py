@@ -789,6 +789,34 @@ def optimal_weights():
     save('optimal-weights', ax.svg(legend_pos='tr'))
 
 
+# ---------------------------------------------------------------- Part VII figures
+def highpass(x, dt, fc):
+    tau = 1 / (2 * np.pi * fc)
+    a = tau / (tau + dt)
+    y = np.zeros_like(x)
+    for i in range(1, len(x)):
+        y[i] = a * (y[i - 1] + x[i] - x[i - 1])
+    return y
+
+
+@fig
+def balun_pulse():
+    dt = 0.05e-9
+    t = np.arange(0, 400e-9, dt)
+    sq = np.where((t > 50e-9) & (t < 250e-9), 1.0, 0.0)
+    sh = np.where((t > 50e-9) & (t < 60e-9), 1.0, 0.0)
+    burst = np.where((t > 280e-9) & (t < 380e-9), np.sin(2 * np.pi * 200e6 * t), 0.0)
+    fc = 10e6
+    T = t * 1e9
+    ax = Axes(640, 340, xlim=(0, 400), ylim=(-2.0, 1.25), xlabel='time (ns)', ylabel='amplitude (norm.)')
+    ax.line(T, sq, 'thin dash', None)
+    ax.line(T, highpass(sq, dt, fc), 't1', '200 ns square pulse after 10 MHz high-pass')
+    ax.line(T, highpass(sh, dt, fc) - 0.0, 't2', '10 ns pulse after the same high-pass')
+    ax.line(T, highpass(burst, dt, fc), 't3', '200 MHz burst (passes almost unchanged)')
+    ax.text(150, 1.05, 'input square pulse (dashed)', 'sm', anchor='middle')
+    save('balun-pulse', ax.svg(legend_pos='br'))
+
+
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)
     for n in names:

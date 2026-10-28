@@ -1,2 +1,132 @@
-<!--meta {"id": "board-tour", "part": "Part VII \u00b7 The RFSoC 4x2 board", "title": "A tour of the RFSoC 4x2 board"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "board-tour", "part": "Part VII · The RFSoC 4x2 board", "title": "A tour of the RFSoC 4x2 board"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This chapter is the reference for your hardware: every connector, chip, LED and switch on the RFSoC 4x2 that matters for qubit work, with what it does and where its limits are. Keep it open the first time you set up the board. All facts come from the RFSoC-PYNQ board pages and Real Digital's reference manual (revision A6) and schematic <cite data-r="rfsocpynq4x2,rd4x2manual"></cite>.</p>
+</div>
+
+<h2>The board in one paragraph</h2>
+<p>The RFSoC 4x2 was developed by the AMD PYNQ team with Real Digital as a low-cost academic RFSoC platform. It is built around a Zynq UltraScale+ RFSoC Gen3 <b>XCZU48DR-1FFVG1517E</b> with a quad-core ARM Cortex-A53 processing system and UltraScale+ programmable logic. The chip has 8 RF-ADCs and 8 RF-DACs; the board brings out <b>4 ADCs (5 GSPS) and 2 DACs (9.85 GSPS)</b> on SMA connectors through baluns, hence the name "4x2". It has 8 GB of DDR4 (4 GB for the PS, 4 GB for the PL), a QSFP28 port, Gigabit Ethernet, USB 3.0, a micro-SD boot card, PMOD and SYZYGY expansion connectors and a small OLED display. It is sold only to universities and research institutes, through the AMD University Program, at an academic price of $2,499 (2026) <cite data-r="rfsocpynq4x2"></cite>. Its schematics, bill of materials and PCB files are open source.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 420" width="900" role="img" aria-label="RFSoC 4x2 functional diagram">
+  <rect x="300" y="110" width="300" height="200" rx="6" class="boxb"/>
+  <text class="ttl" x="450" y="140" text-anchor="middle">XCZU48DR RFSoC</text>
+  <text class="sm" x="450" y="160" text-anchor="middle">4× Cortex-A53 + UltraScale+ PL</text>
+  <rect x="320" y="176" width="125" height="40" class="box"/><text class="sm" x="382" y="200" text-anchor="middle">8 RF-DACs (2 used)</text>
+  <rect x="455" y="176" width="125" height="40" class="box"/><text class="sm" x="517" y="200" text-anchor="middle">8 RF-ADCs (4 used)</text>
+  <rect x="320" y="226" width="260" height="34" class="box"/><text class="sm" x="450" y="247" text-anchor="middle">fabric, DSP, BRAM/URAM, transceivers</text>
+  <rect x="320" y="268" width="260" height="30" class="box"/><text class="sm" x="450" y="288" text-anchor="middle">PS peripherals: Ethernet, USB, SD, DP</text>
+  <!-- left: RF -->
+  <rect x="20" y="40" width="230" height="130" rx="4" class="box"/>
+  <text class="ttl" x="32" y="62">RF ports (SMA, 50 Ω)</text>
+  <text class="sm" x="32" y="84">DAC_A (tile 230), DAC_B (tile 228)</text>
+  <text class="sm" x="32" y="102">ADC_A, ADC_B (tile 226)</text>
+  <text class="sm" x="32" y="120">ADC_C, ADC_D (tile 224)</text>
+  <text class="sm" x="32" y="142">each: 2 × 100 nF + MABA-011118 balun</text>
+  <text class="sm" x="32" y="158">(10 MHz–10 GHz), no active parts</text>
+  <line class="acc" x1="250" y1="105" x2="320" y2="190"/>
+  <rect x="20" y="190" width="230" height="110" rx="4" class="box"/>
+  <text class="ttl" x="32" y="212">Clocks</text>
+  <text class="sm" x="32" y="232">Si5395 (48 MHz xtal): PS/PL clocks</text>
+  <text class="sm" x="32" y="250">LMK04828 jitter cleaner + 160 MHz VCXO</text>
+  <text class="sm" x="32" y="268">2 × LMX2594: ADC and DAC sample clocks</text>
+  <text class="sm" x="32" y="286">SMA: CLK IN, SYNC IN, PPS</text>
+  <line class="acc" x1="250" y1="245" x2="300" y2="245"/>
+  <rect x="20" y="320" width="230" height="80" rx="4" class="box"/>
+  <text class="ttl" x="32" y="342">Power</text>
+  <text class="sm" x="32" y="362">12 V, 10 A barrel; LM25069 protection</text>
+  <text class="sm" x="32" y="380">(10.7–13.3 V); fan and heatsink required</text>
+  <!-- right -->
+  <rect x="650" y="40" width="230" height="110" rx="4" class="box"/>
+  <text class="ttl" x="662" y="62">Memory</text>
+  <text class="sm" x="662" y="82">4 GB DDR4-2400 on PS (Linux)</text>
+  <text class="sm" x="662" y="100">4 GB DDR4-2400 on PL</text>
+  <text class="sm" x="662" y="118">(QICK long capture buffer)</text>
+  <text class="sm" x="662" y="136">micro-SD: boot + file system</text>
+  <line class="acc" x1="650" y1="95" x2="600" y2="150"/>
+  <rect x="650" y="166" width="230" height="110" rx="4" class="box"/>
+  <text class="ttl" x="662" y="188">Communication</text>
+  <text class="sm" x="662" y="208">Gigabit Ethernet (RJ45)</text>
+  <text class="sm" x="662" y="226">micro-USB 3.0 ("Ethernet gadget")</text>
+  <text class="sm" x="662" y="244">micro-USB 2.0: UART console + JTAG</text>
+  <text class="sm" x="662" y="262">QSFP28 (100 Gb/s), 2 × USB 3.0 host</text>
+  <line class="acc" x1="650" y1="220" x2="600" y2="280"/>
+  <rect x="650" y="292" width="230" height="108" rx="4" class="box"/>
+  <text class="ttl" x="662" y="314">User I/O</text>
+  <text class="sm" x="662" y="334">30-pin Pmod+ (2 × PMOD or 22 GPIO)</text>
+  <text class="sm" x="662" y="352">SYZYGY standard port</text>
+  <text class="sm" x="662" y="370">buttons, switches, LEDs, RGB LEDs</text>
+  <text class="sm" x="662" y="388">16×2 OLED (shows IP address)</text>
+  <line class="acc" x1="650" y1="345" x2="600" y2="300"/>
+</svg>
+</div>
+<figcaption>Functional overview of the RFSoC 4x2 (not a physical layout). Tile numbers and parts from the Real Digital reference manual <cite data-r="rd4x2manual"></cite>.</figcaption>
+</figure>
+
+<h2>RF connectors</h2>
+<p>Six SMA connectors carry the RF signals: <b>DAC_A, DAC_B</b> (outputs) and <b>ADC_A–ADC_D</b> (inputs). Each passes through decoupling capacitors and a MACOM MABA-011118 balun, under an RF shield, with no active components in the path <cite data-r="rd4x2manual"></cite>. Practically:</p>
+<ul>
+<li>All ports are single-ended 50 Ω and <b>AC-coupled</b>. The balun is rated 10 MHz–10 GHz; below 10 MHz transmission falls off.</li>
+<li>The ADCs have a 6 GHz RF input bandwidth according to Real Digital <cite data-r="rd4x2manual"></cite>; the DACs run up to 9.85 GSPS.</li>
+<li>There is no on-board amplification, filtering or protection. External attenuators, filters, amplifiers and DC blocks are your responsibility.</li>
+</ul>
+<p>Chapter 29 treats the analog front end in depth, including how others have modified it.</p>
+
+<h2>Clocking hardware</h2>
+<p>A Skyworks Si5395 jitter-attenuating clock multiplier, driven by a 48 MHz crystal, generates most PS and PL clocks. A TI LMK04828 jitter cleaner, using a 10 MHz clock from the Si5395 and a 160 MHz VCXO, drives two TI LMX2594 RF synthesisers, which produce the ADC and DAC sampling (reference) clocks. PYNQ programs the LMK and LMXs at start-up. SMA inputs for an external reference clock (CLK IN) and a synchronisation signal (SYNC IN) go to the LMK, and a PPS (pulse-per-second) input is provided <cite data-r="rd4x2manual"></cite>. Chapter 30 explains how to lock the board to a lab 10 MHz reference.</p>
+
+<h2>Memory and storage</h2>
+<ul>
+<li><b>PS DDR4</b>, 4 GB, 64-bit, 2400 MT/s: Linux, Python, your data.</li>
+<li><b>PL DDR4</b>, 4 GB, 64-bit, 2400 MT/s: available to FPGA designs; QICK uses it for a capture buffer of about 1.07 billion samples (about 1.94 s at the decimated rate) <cite data-r="qickrepo"></cite>.</li>
+<li><b>micro-SD card</b> (16 GB or more): holds the PYNQ Linux image, boot files and your notebooks. Set the BOOT switch to "SD" to boot from it.</li>
+</ul>
+
+<h2>Communication ports</h2>
+<ul>
+<li><b>Gigabit Ethernet</b> (TI DP83867 PHY on the PS): the normal link to your lab network or PC; supports IEEE 1588 time stamping <cite data-r="rd4x2manual"></cite>.</li>
+<li><b>Micro-USB 3.0 device port</b>: the board appears to a PC as a USB network adapter ("Ethernet gadget") at 192.168.3.1, useful for a first connection without a network <cite data-r="rfsocpynq4x2"></cite>.</li>
+<li><b>Micro-USB 2.0 "PROG UART"</b>: an FTDI chip providing a serial console (to watch Linux boot) and JTAG for Vivado debugging.</li>
+<li><b>QSFP28</b>: up to 100 Gb/s Ethernet from the PL transceivers; unused by standard QICK, but a path for high-throughput streaming in custom designs.</li>
+<li><b>Two USB 3.0 host ports</b> (for keyboards, storage, USB instruments) and <b>Mini DisplayPort</b>.</li>
+</ul>
+
+<h2>User I/O: PMOD, SYZYGY, buttons and LEDs</h2>
+<p>The <b>Pmod+</b> header is a 30-pin, 100-mil connector with 22 FPGA signals (routed as differential pairs), 4 ground and 4 supply pins. Two standard 12-pin PMOD modules (PMOD A and B) fit in marked positions, or the whole connector can be used. Signals are rated up to about 50 MHz <cite data-r="rd4x2manual"></cite>. QICK uses PMOD0_0–PMOD0_7 as tProcessor-controlled trigger outputs and PMOD1_0 as an external start input <cite data-r="qickrepo"></cite>.</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Assuming PMOD outputs are 3.3 V or 5 V TTL. The manual states that FPGA I/O uses the LVCMOS18 standard unless noted otherwise, and the PMOD pins carry no exception, so treat them as <b>1.8 V logic</b> <cite data-r="rd4x2manual"></cite>. Many instruments' trigger inputs expect TTL thresholds and need a level shifter; spinQICK's hardware list includes a PMOD level shifter "to buffer the trigger pulses for improved stability" <cite data-r="spinqick"></cite>. Never connect a 5 V signal to a PMOD pin.</p>
+</div>
+
+<p>The <b>SYZYGY</b> port is a 40-pin Samtec connector with 32 differential FPGA signals (up to 500 MHz), a clock, I²C and supplies, for plug-in boards such as fast DACs or ADCs. The board also has 5 PL push-buttons, 4 slide switches, 4 white LEDs and 2 RGB LEDs on the PL, one push-button and two LEDs on the PS, and a 16×2 OLED display that shows the IP address after boot.</p>
+
+<h2>Power, heat and status LEDs</h2>
+<p>Power comes from a 12 V, 10 A supply (included). An LM25069 protection circuit switches on only between 10.7 and 13.3 V and shuts down on over-power (about 110 W). The RFSoC can dissipate more than 20 W, so a heatsink and fan are mandatory; a yellow "FAIL" LED indicates a stuck fan and a red "OVER TEMP" LED a die over-temperature, which resets the chip <cite data-r="rd4x2manual"></cite>. Nine INA220 monitors measure the critical supply rails and are readable over I²C.</p>
+<p>The converter supplies come from switching regulators followed by low-dropout regulators (LDOs) to keep the ADC and DAC rails quiet <cite data-r="rd4x2manual"></cite>. Even so, a board next to sensitive measurements should have its own clean power and a single, well-defined ground connection to the rest of the setup.</p>
+
+<h2>First boot</h2>
+<ol>
+<li>Write the latest RFSoC 4x2 PYNQ image to the micro-SD card (or use the supplied card), insert it, set BOOT to SD.</li>
+<li>Connect the micro-USB 3.0 cable to your PC (or Ethernet to your network) and the 12 V supply; switch on.</li>
+<li>All ten power LEDs light; after about 40 seconds the DONE and INIT LEDs turn green; the four white user LEDs flash and stay on; the OLED shows the network address.</li>
+<li>Browse to <code>http://192.168.3.1/lab</code> (or the IP shown) and log in with the password <code>xilinx</code>.</li>
+</ol>
+<p>These steps follow the official getting-started guide <cite data-r="rfsocpynq4x2"></cite>. Note that QICK recommends specific PYNQ image versions for each board (for the 4x2, PYNQ 3.0.1 at the time of writing) and does not yet support PYNQ 3.1 <cite data-r="qickdocs,qickrepo"></cite>. Chapter 31 covers PYNQ itself, and Chapter 34 installs QICK.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Which four facts about the 4x2's RF ports most affect spin-qubit use?</p>
+<details><summary>Show answer</summary><div>Only 2 DAC and 4 ADC ports are available; every port is AC-coupled through capacitors and a balun (10 MHz–10 GHz); there is no on-board amplification, filtering or protection; outputs are single-ended 50 Ω.</div></details>
+<p>2. You need to trigger a DC source that expects a 3.3 V TTL trigger. What do you connect?</p>
+<details><summary>Show answer</summary><div>A level shifter (for example a PMOD level-shifter module) between a QICK PMOD trigger output (1.8 V logic) and the instrument's trigger input, with a shared ground.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>XCZU48DR Gen3 RFSoC; 4 ADC (5 GSPS) and 2 DAC (9.85 GSPS) SMA ports through 10 MHz–10 GHz baluns.</li>
+<li>Si5395 + LMK04828 + 2 × LMX2594 clocking with external reference and sync inputs.</li>
+<li>4 GB PS + 4 GB PL DDR4; micro-SD boot; Gigabit Ethernet, USB 3.0 gadget, UART/JTAG, QSFP28.</li>
+<li>Pmod+ (QICK triggers on PMOD0_0–7, 1.8 V logic), SYZYGY, LEDs, OLED; 12 V/10 A power with a mandatory fan.</li>
+<li>Board at <code>192.168.3.1</code> over USB, password <code>xilinx</code>; QICK recommends PYNQ 3.0.1 for the 4x2.</li>
+</ul>
+</div>
