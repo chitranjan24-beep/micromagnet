@@ -1,2 +1,177 @@
-<!--meta {"id": "bloch", "part": "Part I \u00b7 Quantum mechanics you need", "title": "Two-level systems, states and the Bloch sphere"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "bloch", "part": "Part I · Quantum mechanics you need", "title": "Two-level systems, states and the Bloch sphere"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Every spin-qubit paper describes its experiments in the language of this chapter: states written as \(\ket{\uparrow}\) and \(\ket{\downarrow}\), rotations on the Bloch sphere, "π/2 pulses", "the x axis" and "the phase of the drive". When you later program the RFSoC to play a microwave burst with a certain phase, you are choosing an axis on the Bloch sphere. This chapter gives you that picture precisely, starting from what a quantum state is.</p>
+</div>
+
+<p class="lede">You already know quantum mechanics from undergraduate courses: wavefunctions, the Schrödinger equation, the hydrogen atom. Qubit physics uses a smaller and simpler corner of it. Instead of wavefunctions spread over space, we only care about two states. Everything becomes 2×2 matrices and complex numbers, and the whole state can be drawn as an arrow on a sphere.</p>
+
+<h2>From a classical bit to a quantum state</h2>
+
+<p>A classical bit is either 0 or 1. If you do not know which, you can describe your knowledge with probabilities, \(p_0\) and \(p_1 = 1 - p_0\), but the bit itself is always in one definite state.</p>
+
+<p>A quantum two-level system is described by a <dfn data-def="A vector in a complex vector space that completely describes a quantum system; written |ψ⟩ in Dirac notation.">state vector</dfn>, written in Dirac's "ket" notation as \(\ket{\psi}\). For two levels it is a column of two complex numbers:</p>
+\[ \ket{\psi} = a\ket{0} + b\ket{1} = \begin{pmatrix} a \\ b \end{pmatrix}, \qquad \ket{0} = \begin{pmatrix} 1 \\ 0 \end{pmatrix},\quad \ket{1} = \begin{pmatrix} 0 \\ 1 \end{pmatrix}. \]
+<p>The two states \(\ket{0}\) and \(\ket{1}\) form the <dfn data-def="The reference pair of states |0⟩ and |1⟩ in which a qubit is described and measured; for a spin qubit, spin down and spin up along the field.">computational basis</dfn>. The numbers \(a\) and \(b\) are complex <dfn data-def="The complex coefficients multiplying basis states in a superposition; their squared magnitudes give measurement probabilities.">probability amplitudes</dfn>. They must satisfy the normalisation condition</p>
+\[ |a|^2 + |b|^2 = 1 . \]
+
+<p>For a spin qubit, the two levels are the spin states of one electron along the direction of the static magnetic field. The convention in most spin-qubit papers is that the lower-energy state (spin aligned with the field for an electron with \(g&gt;0\) in the usual sign convention) is \(\ket{\downarrow}\) and labelled \(\ket{0}\), and the higher-energy state is \(\ket{\uparrow} = \ket{1}\). Some papers use the opposite labelling, so always check the definitions in each paper. In this book, \(\ket{0} = \ket{\downarrow}\) (ground state) and \(\ket{1} = \ket{\uparrow}\) (excited state).</p>
+
+<div class="box analogy"><span class="tag">Analogy</span>
+<p>Think of \(a\) and \(b\) as two arrows in the complex plane, like two clock hands. The <i>length</i> of each hand says how much of that basis state is present. The <i>angle</i> of each hand is its phase. Lengths decide probabilities. The angle <i>between</i> the hands, called the relative phase, has no classical counterpart. It is what makes interference, and therefore quantum computing, possible.</p>
+</div>
+
+<h3>Inner products and what "orthogonal" means</h3>
+<p>The "bra" \(\bra{\phi}\) is the conjugate transpose of \(\ket{\phi}\): if \(\ket{\phi} = (c, d)^T\) then \(\bra{\phi} = (c^*, d^*)\). The inner product</p>
+\[ \braket{\phi}{\psi} = c^* a + d^* b \]
+<p>is a complex number that measures how much the two states overlap. Two states are <i>orthogonal</i> when \(\braket{\phi}{\psi} = 0\): they are perfectly distinguishable. \(\ket{0}\) and \(\ket{1}\) are orthogonal. Normalisation is simply \(\braket{\psi}{\psi} = 1\).</p>
+
+<h2>Measurement and why we repeat every experiment thousands of times</h2>
+
+<p>When you measure a qubit in the computational basis, the result is always either 0 or 1, never something in between. The <dfn data-def="The rule that the probability of measuring outcome k is the squared magnitude of the amplitude of |k⟩.">Born rule</dfn> gives the probabilities:</p>
+\[ P(0) = |\braket{0}{\psi}|^2 = |a|^2, \qquad P(1) = |\braket{1}{\psi}|^2 = |b|^2 . \]
+<p>After the measurement, the state is (ideally) the one you observed. A single measurement therefore tells you almost nothing about \(a\) and \(b\). To learn \(P(1)\), you must prepare the same state many times and measure it each time. Each preparation-and-measurement is called a <dfn data-def="One complete repetition of an experiment: initialise, manipulate, measure. Results are averaged over many shots.">shot</dfn>.</p>
+
+<p>This has a direct practical consequence for every experiment you will run. If you take \(N\) shots and count \(n\) ones, your estimate of \(P(1)\) is \(\hat P = n/N\). Because each shot is an independent coin flip with probability \(P\), the count follows a binomial distribution and the statistical uncertainty of your estimate is</p>
+\[ \sigma_{\hat P} = \sqrt{\frac{P(1-P)}{N}} . \]
+
+<figure>
+<div class="figbody"><!--plot:shots-error--></div>
+<figcaption>Statistical uncertainty of a measured probability versus the number of shots. Halving the uncertainty costs four times as many shots. A typical spin-qubit data point uses 100–1000 shots. Characterising a 99.9% fidelity gate needs many more.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>Your Rabi experiment (Chapter 3) shows \(P(1) \approx 0.5\) in the middle of an oscillation. How many shots per point do you need for an uncertainty of 0.01 (one percentage point)?</p>
+<p>\(\sigma = \sqrt{0.5 \times 0.5 / N} = 0.5/\sqrt{N}\). Setting \(0.5/\sqrt N = 0.01\) gives \(\sqrt N = 50\), so \(N = 2500\) shots. If one shot takes 50 µs (initialisation, manipulation and readout), each point takes 0.125 s, and a 100-point sweep takes about 13 s. This kind of estimate tells you how long your experiments will run, which in turn decides how fast your readout must be. It is one reason fast readout (Chapter 9) matters so much.</p>
+</div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The repetition is done in hardware. In QICK you set <code>reps</code> (shots inside one program run) and <code>rounds</code> (how many times the whole program is run). The tProcessor loops over shots without any Python involvement, so a shot can be as short as the physics allows. QICK can return either the average over shots or every single shot's I/Q value, which you then threshold to get 0s and 1s (Chapters 23 and 35).</p>
+</div>
+
+<h2>Global phase, relative phase and the Bloch sphere</h2>
+
+<p>Two complex numbers have four real parameters. Normalisation removes one. One more is physically meaningless: multiplying the whole state by a phase factor \(e^{i\gamma}\) changes no probability and no measurable quantity. This <dfn data-def="An overall phase factor multiplying a whole state; it has no physical effect.">global phase</dfn> can be dropped. That leaves two real parameters, and every pure qubit state can be written as</p>
+\[ \ket{\psi} = \cos\frac{\theta}{2}\,\ket{0} + e^{i\varphi}\sin\frac{\theta}{2}\,\ket{1}, \qquad 0 \le \theta \le \pi,\quad 0 \le \varphi &lt; 2\pi. \]
+
+<p>The two angles \(\theta\) and \(\varphi\) are exactly the polar and azimuthal angles of a point on a unit sphere. This is the <dfn data-def="A unit sphere on which every pure state of a qubit is a point (polar angle θ, azimuth φ); mixed states lie inside.">Bloch sphere</dfn>.</p>
+
+<figure>
+<div class="figbody"><!--plot:bloch-basic--></div>
+<figcaption>The Bloch sphere. The north pole is \(\ket{0}\), the south pole \(\ket{1}\). A general state \(\ket{\psi}\) is an arrow (the Bloch vector) at polar angle \(\theta\) and azimuth \(\varphi\). Points on the equator are equal superpositions: \(\ket{+} = (\ket 0 + \ket 1)/\sqrt 2\) on the +x axis and \(\ket{+i} = (\ket 0 + i\ket 1)/\sqrt 2\) on the +y axis. Dashed lines are behind the sphere.</figcaption>
+</figure>
+
+<p>Read the picture like this:</p>
+<ul>
+<li><b>Latitude \(\theta\) sets the probabilities.</b> \(P(1) = \sin^2(\theta/2) = (1 - \cos\theta)/2\). At the north pole \(P(1)=0\), at the equator \(P(1) = 1/2\), at the south pole \(P(1) = 1\).</li>
+<li><b>Longitude \(\varphi\) is the relative phase.</b> It does not change \(P(0)\) or \(P(1)\), but it changes what happens when you later rotate the state. States on the equator at different \(\varphi\) all give 50/50 results when measured directly, yet they are completely different states: \(\ket{+}\) and \(\ket{-} = (\ket 0 - \ket 1)/\sqrt 2\) are orthogonal.</li>
+<li><b>Opposite points are orthogonal states.</b> Note the factor of 1/2 in \(\theta/2\): an angle of 180° on the sphere corresponds to orthogonal states, whose state vectors are 90° apart in the abstract vector space.</li>
+</ul>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>People new to qubits often think that "the qubit is 50% in each state" means it is randomly in one or the other, like a classical coin. It does not. \(\ket{+}\) is a single definite state. If you rotate it by 90° about the y axis you get \(\ket{0}\) with certainty, every single time. A random 50/50 classical mixture, rotated the same way, would still give 50/50. The Ramsey experiment in Chapter 4 is exactly a test of this difference, and losing it is what we call dephasing.</p>
+</div>
+
+<h2>Operators, Pauli matrices and the Bloch vector</h2>
+
+<p>Physical quantities are represented by Hermitian operators (matrices equal to their own conjugate transpose). For one qubit, every such operator can be built from the identity \(I\) and the three <dfn data-def="The three 2×2 matrices σx, σy, σz that, with the identity, form a basis for all single-qubit operators.">Pauli matrices</dfn>:</p>
+\[ \sigma_x = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}, \quad
+   \sigma_y = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}, \quad
+   \sigma_z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}. \]
+<p>Useful facts you can verify by multiplying matrices: each squares to the identity (\(\sigma_k^2 = I\)); they anticommute (\(\sigma_x\sigma_y = -\sigma_y\sigma_x = i\sigma_z\), and cyclic permutations); and their eigenvalues are \(\pm 1\). The eigenvectors of \(\sigma_z\) are \(\ket 0\) (eigenvalue +1) and \(\ket 1\) (eigenvalue −1); those of \(\sigma_x\) are \(\ket\pm\); those of \(\sigma_y\) are \(\ket{\pm i}\).</p>
+
+<p>For an electron spin, the spin angular momentum operator is \(\vec S = \tfrac{\hbar}{2}\vec\sigma\). So "\(\sigma_z = +1\)" literally means "spin component along z is \(+\hbar/2\)".</p>
+
+<p>The expectation values of the Pauli operators are the Cartesian coordinates of the Bloch vector:</p>
+\[ \vec r = \big(\ev{\sigma_x}, \ev{\sigma_y}, \ev{\sigma_z}\big) = (\sin\theta\cos\varphi,\ \sin\theta\sin\varphi,\ \cos\theta). \]
+<p>You can check the z component directly: \(\ev{\sigma_z} = |a|^2 - |b|^2 = \cos^2(\theta/2) - \sin^2(\theta/2) = \cos\theta\). In an experiment, you only ever measure \(\sigma_z\) directly (spin up or down along the field). To measure \(\ev{\sigma_x}\), you first rotate the state by −90° about y, which moves the x axis to the z axis, and then measure. This trick, rotating before measuring, is how <dfn data-def="Reconstructing the full quantum state by measuring along several axes, using rotations before a z measurement.">state tomography</dfn> works.</p>
+
+<h2>Time evolution: a spin precessing in a magnetic field</h2>
+
+<p>The Schrödinger equation \(i\hbar\,\frac{d}{dt}\ket{\psi} = H\ket{\psi}\) tells you how a state changes in time. For a spin in a static field \(B_0\) along z, the Hamiltonian is the Zeeman energy</p>
+\[ H_0 = \tfrac{1}{2}\, g\mu_B B_0\, \sigma_z = \tfrac{\hbar\omega_0}{2}\,\sigma_z, \qquad \omega_0 = \frac{g\mu_B B_0}{\hbar}. \]
+<p>Here \(g\) is the electron g-factor (about 2.00 in silicon, about −0.44 in GaAs) and \(\mu_B = 9.274\times10^{-24}\) J/T is the Bohr magneton. With the sign conventions above, the energies of the two states differ by \(E_Z = \hbar\omega_0 = |g|\mu_B B_0\), the <dfn data-def="The energy difference between spin up and spin down in a magnetic field, E_Z = g μB B.">Zeeman splitting</dfn>.</p>
+
+<p>Because \(H_0\) is diagonal, the solution is immediate. Starting from \(a\ket0 + b\ket1\):</p>
+\[ \ket{\psi(t)} = a\,e^{-i\omega_0 t/2}\ket 0 + b\,e^{+i\omega_0 t/2}\ket 1 \;=\; e^{-i\omega_0 t/2}\big(a\ket 0 + b\,e^{i\omega_0 t}\ket 1\big). \]
+<p>Dropping the global phase, the relative phase grows as \(\varphi(t) = \varphi(0) + \omega_0 t\). On the Bloch sphere, the vector keeps its latitude and spins around the z axis at angular frequency \(\omega_0\). This is <dfn data-def="The rotation of a spin's Bloch vector around the magnetic field direction at the Larmor frequency.">Larmor precession</dfn>, and \(f_0 = \omega_0/2\pi\) is the Larmor frequency, which equals the qubit frequency.</p>
+
+<figure>
+<div class="figbody"><!--plot:larmor--></div>
+<figcaption>Larmor precession. In a static field along z, the Bloch vector rotates around z at the qubit frequency \(f_0\), keeping its latitude. Its z component, and therefore \(P(1)\), does not change. Only the phase \(\varphi\) does.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: qubit frequencies</span>
+<p>The qubit frequency per tesla is \(f_0/B_0 = |g|\mu_B/h\). With \(\mu_B/h = 13.996\) GHz/T:</p>
+<ul>
+<li>Silicon, \(g \approx 2.00\): about <b>28.0 GHz/T</b>. At 0.5 T, \(f_0 \approx 14\) GHz.</li>
+<li>GaAs, \(|g| \approx 0.44\): about <b>6.2 GHz/T</b>. At 1 T, \(f_0 \approx 6.2\) GHz.</li>
+<li>Holes in germanium have strongly anisotropic g-factors (from about 0.1 to more than 10 depending on field direction <cite data-r="scappucci2021"></cite>), so their frequencies vary a lot.</li>
+</ul>
+<p>This number decides your microwave hardware. The QICK firmware runs the 4x2 DACs at 9.8304 GSPS, so the first Nyquist zone ends at about 4.9 GHz (Chapter 19). For a silicon electron spin, 4.9 GHz corresponds to \(B_0 \approx 4.9/28 = 0.175\) T. To drive a silicon qubit at 0.5 T (14 GHz), you need an external mixer and local oscillator to shift the RFSoC's output up in frequency (Chapters 20 and 42).</p>
+</div>
+
+<h2>Rotations: the gates of a single qubit</h2>
+
+<p>Any physical evolution of a closed qubit is a unitary matrix \(U\) (one with \(U^\dagger U = I\)). Ignoring global phase, every single-qubit unitary is a rotation of the Bloch sphere. The rotation by angle \(\alpha\) about a unit axis \(\hat n\) is</p>
+\[ R_{\hat n}(\alpha) = \exp\!\Big(-i\,\frac{\alpha}{2}\,\hat n\cdot\vec\sigma\Big) = \cos\frac{\alpha}{2}\,I - i\sin\frac{\alpha}{2}\,(n_x\sigma_x + n_y\sigma_y + n_z\sigma_z). \]
+<p>The second form follows from \((\hat n\cdot\vec\sigma)^2 = I\) and the Taylor series of the exponential. The important special cases have names you will see everywhere:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Name</th><th>Rotation</th><th>Effect on \(\ket 0\)</th><th>Typical use</th></tr></thead>
+<tbody>
+<tr><td>X (or X<sub>π</sub>, "π pulse")</td><td>180° about x</td><td>\(\ket 0 \to -i\ket 1\)</td><td>Flip the spin</td></tr>
+<tr><td>X/2 (X<sub>π/2</sub>, "π/2 pulse")</td><td>90° about x</td><td>\(\ket 0 \to (\ket 0 - i\ket 1)/\sqrt2\), the −y point on the equator</td><td>Create a superposition (Ramsey, echo)</td></tr>
+<tr><td>Y, Y/2</td><td>180°, 90° about y</td><td>Y/2: \(\ket 0 \to \ket +\)</td><td>Same as X but with a 90° shifted phase</td></tr>
+<tr><td>Z, Z(φ)</td><td>about z</td><td>Changes phase only</td><td>Often done "virtually" in software (Chapter 5)</td></tr>
+<tr><td>Hadamard H</td><td>180° about (x+z)/√2</td><td>\(\ket 0 \to \ket +\)</td><td>Quantum algorithms; equals Y/2 followed by Z up to phase</td></tr>
+</tbody></table></div>
+
+<p>One unusual fact: \(R_{\hat n}(2\pi) = -I\). Rotating a spin-1/2 by a full turn gives a minus sign, which is a global phase for one qubit but becomes physical in interference with another system. You need 4π to return exactly to the start. This is a real property of spin-1/2 particles, and it shows up in some two-qubit gate calibrations.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>In Chapter 3 you will see that a microwave burst at the qubit frequency produces a rotation about an axis in the equatorial plane, and <b>the axis angle equals the phase of the microwave</b>. A burst with phase 0° rotates about x; the same burst with phase 90° rotates about y. In QICK this is the <code>phase</code> argument of <code>add_pulse()</code>, with a resolution of \(360°/2^{32}\) <cite data-r="qickdocs"></cite>. The rotation angle is set by the pulse's amplitude (<code>gain</code>) times its duration. So the two knobs of every single-qubit gate, axis and angle, map directly onto two numbers you type into QICK.</p>
+</div>
+
+<h2>Mixed states and the density matrix</h2>
+
+<p>Real experiments never produce a perfectly known pure state. The electron may have been initialised in \(\ket 1\) by mistake 2% of the time, or its phase may have drifted randomly between shots. To describe such statistical mixtures we use the <dfn data-def="ρ = Σ p_k |ψ_k⟩⟨ψ_k|; describes pure and mixed (statistically uncertain) quantum states.">density matrix</dfn>:</p>
+\[ \rho = \sum_k p_k \ket{\psi_k}\bra{\psi_k} = \frac{1}{2}\big(I + r_x\sigma_x + r_y\sigma_y + r_z\sigma_z\big), \qquad |\vec r| \le 1 . \]
+<p>The first form says "with probability \(p_k\) the system is in \(\ket{\psi_k}\)". The second form shows that any qubit density matrix is described by a Bloch vector \(\vec r\) whose length can now be <i>less</i> than 1. Pure states lie on the surface; mixed states lie inside; the centre (\(\vec r = 0\), \(\rho = I/2\)) is the completely mixed state, a fair coin with no phase information at all.</p>
+
+<p>Probabilities come from the diagonal: \(P(0) = \rho_{00}\), \(P(1) = \rho_{11}\). The off-diagonal elements \(\rho_{01} = \rho_{10}^*\) are called <dfn data-def="Off-diagonal elements of the density matrix; they carry the phase relationship between basis states.">coherences</dfn>. They encode the relative phase. Decoherence (Chapter 4) is the process by which coherences shrink to zero and the Bloch vector shrinks towards the z axis.</p>
+
+<div class="box example"><span class="tag">Worked example: thermal initialisation</span>
+<p>If you simply wait for the spin to relax into equilibrium with the electron reservoir at temperature \(T_e\), the excited-state probability is \(P(1) = 1/(1 + e^{E_Z/k_B T_e})\). For a silicon qubit at \(B_0 = 0.5\) T (\(E_Z = 57.9\ \mu\)eV) and an electron temperature of 100 mK (\(k_B T_e = 8.6\ \mu\)eV), \(E_Z/k_BT_e = 6.7\) and \(P(1) \approx 0.0012\). So thermal initialisation is 99.9% pure. At 0.175 T, where the 4x2 could drive a silicon qubit directly, and the same 100 mK, \(E_Z/k_BT_e = 2.4\) and \(P(1) \approx 0.09\): only about 91% pure. This is one reason why low-field operation, which the 4x2 could drive directly, comes with a cost. In practice, spin qubits are usually initialised by spin-selective tunnelling or Pauli blockade rather than by waiting (Chapter 11).</p>
+</div>
+
+<h2>Two qubits, entanglement and the singlet</h2>
+
+<p>Two qubits live in a four-dimensional space spanned by the products \(\ket{00}, \ket{01}, \ket{10}, \ket{11}\), where \(\ket{01} = \ket 0 \otimes \ket 1\) means "qubit 1 in \(\ket 0\), qubit 2 in \(\ket 1\)". A general state is</p>
+\[ \ket\Psi = c_{00}\ket{00} + c_{01}\ket{01} + c_{10}\ket{10} + c_{11}\ket{11} . \]
+<p>If \(\ket\Psi\) can be written as a product \(\ket{\psi_1}\otimes\ket{\psi_2}\), the qubits are independent. If it cannot, they are <dfn data-def="A multi-qubit state that cannot be written as a product of single-qubit states.">entangled</dfn>. The most important entangled state for this book is the spin <dfn data-def="The two-spin state (|↑↓⟩ − |↓↑⟩)/√2 with total spin zero.">singlet</dfn>:</p>
+\[ \ket S = \frac{\ket{\uparrow\downarrow} - \ket{\downarrow\uparrow}}{\sqrt 2} . \]
+<p>The singlet has total spin zero. The three states with total spin one are the <dfn data-def="The three two-spin states with total spin 1: T+ = |↑↑⟩, T0 = (|↑↓⟩+|↓↑⟩)/√2, T− = |↓↓⟩.">triplets</dfn>:</p>
+\[ \ket{T_+} = \ket{\uparrow\uparrow}, \qquad \ket{T_0} = \frac{\ket{\uparrow\downarrow} + \ket{\downarrow\uparrow}}{\sqrt 2}, \qquad \ket{T_-} = \ket{\downarrow\downarrow}. \]
+<p>Two electrons in neighbouring quantum dots naturally form these states, and the energy difference between singlet and triplets, the <dfn data-def="The energy splitting J between singlet and triplet states of two electrons, produced by wavefunction overlap; controlled by gate voltages.">exchange energy</dfn> \(J\), is controlled by gate voltages. That one fact underlies the singlet–triplet qubit, the exchange-only qubit, Pauli spin blockade readout and all two-qubit gates between spins (Chapters 11, 13 and 14).</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Where on the Bloch sphere is the state \((\ket 0 - i\ket 1)/\sqrt 2\)? What is \(P(1)\)?</p>
+<details><summary>Show answer</summary><div>It is \(\cos(\theta/2)=\sin(\theta/2)=1/\sqrt2\), so \(\theta = 90°\) (on the equator), and \(e^{i\varphi} = -i\), so \(\varphi = 270°\) (the −y axis). \(P(1) = 1/2\).</div></details>
+<p>2. A silicon spin qubit is driven at 3.2 GHz. What magnetic field is applied?</p>
+<details><summary>Show answer</summary><div>\(B_0 = f_0/(28.0\ \text{GHz/T}) = 3.2/28.0 \approx 0.114\) T (assuming \(g = 2.00\)). In a micromagnet device, the micromagnet adds its own field component along \(B_0\), so the applied field would be somewhat lower.</div></details>
+<p>3. You measure \(P(1) = 0.5\) for a state. Can you tell whether it is \(\ket +\), \(\ket{+i}\) or the completely mixed state? What would you do?</p>
+<details><summary>Show answer</summary><div>Not from a z measurement alone: all three give 50/50. Rotate before measuring. A rotation of −90° about y takes the +x axis to +z, so \(\ket +\) then gives 0 every time. A rotation of +90° about x takes +y to +z, so \(\ket{+i}\) then gives 0 every time. The completely mixed state stays 50/50 whatever rotation you apply. This is state tomography.</div></details>
+<p>4. Why do we need 2500 shots for 1% precision near \(P = 0.5\) but only about 200 near \(P = 0.02\)?</p>
+<details><summary>Show answer</summary><div>The binomial variance \(P(1-P)\) is largest at \(P = 0.5\) (0.25) and small near 0 or 1 (0.0196 at \(P=0.02\)). \(N = P(1-P)/\sigma^2 = 0.0196/10^{-4} \approx 196\).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A qubit state is \(a\ket0 + b\ket1\) with complex amplitudes; measurement gives 0 or 1 with probabilities \(|a|^2\) and \(|b|^2\), so experiments are repeated over many shots.</li>
+<li>Dropping the global phase, every pure state is a point on the Bloch sphere: latitude sets probabilities, longitude is the relative phase.</li>
+<li>In a field \(B_0\) the spin precesses about z at \(f_0 = |g|\mu_B B_0/h\): 28 GHz/T for silicon electrons, 6.2 GHz/T for GaAs.</li>
+<li>Gates are rotations \(R_{\hat n}(\alpha)\); a microwave burst's phase sets the rotation axis and its area sets the angle.</li>
+<li>Mixed states have Bloch vectors inside the sphere; decoherence shrinks them.</li>
+<li>Two spins form singlet and triplet states, split by the exchange energy \(J\).</li>
+</ul>
+</div>

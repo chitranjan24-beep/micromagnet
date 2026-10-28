@@ -1,2 +1,140 @@
-<!--meta {"id": "decoherence", "part": "Part I \u00b7 Quantum mechanics you need", "title": "Decoherence and noise: T1, T2*, T2 and noise spectra"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "decoherence", "part": "Part I · Quantum mechanics you need", "title": "Decoherence and noise: T1, T2*, T2 and noise spectra"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A qubit is only useful while it remembers its state. The three numbers every spin-qubit paper reports, \(T_1\), \(T_2^*\) and \(T_2\), measure how long that memory lasts against different kinds of disturbance. Measuring them is among the first experiments on any new device, and the ratio of coherence time to gate time decides how good your gates can be. This chapter explains what each number means physically, how each is measured with a pulse sequence you will program on the RFSoC, and how the noise environment of a semiconductor device sets them.</p>
+</div>
+
+<p class="lede">In Chapters 2 and 3 the qubit was perfectly isolated. A real spin in a real device is surrounded by fluctuating electric fields from charge traps, nuclear spins in the crystal, lattice vibrations (phonons) and noise coming down your control wires. Each of these slowly scrambles the qubit's state. "Decoherence" is the umbrella word for this scrambling.</p>
+
+<h2>Two different ways to lose information</h2>
+
+<p>Look at the Bloch vector again. It can lose information in two distinct ways:</p>
+<ol>
+<li><b>Energy relaxation.</b> The spin flips from \(\ket 1\) (higher energy) to \(\ket 0\) by giving its energy \(E_Z\) to the environment, usually a phonon. The Bloch vector's z component relaxes towards the ground state. The time scale is \(T_1\).</li>
+<li><b>Dephasing.</b> The qubit frequency fluctuates slightly, so the phase \(\varphi\) drifts by an unknown amount. Averaged over many shots, Bloch vectors pointing in different directions around the equator cancel each other, and the transverse (x, y) components shrink to zero. No energy is exchanged. The time scale is \(T_2\) (or \(T_2^*\), see below).</li>
+</ol>
+<p>Both appear in the <dfn data-def="Phenomenological equations for a Bloch vector with longitudinal relaxation time T1 and transverse relaxation time T2.">Bloch equations</dfn>, written in the rotating frame without drive:</p>
+\[ \frac{dr_z}{dt} = -\frac{r_z - r_z^{\text{eq}}}{T_1}, \qquad \frac{dr_{x,y}}{dt} = -\frac{r_{x,y}}{T_2} . \]
+<p>Because relaxation also destroys phase information, the two times always satisfy \(T_2 \le 2T_1\). For spin qubits in silicon, \(T_1\) is usually much longer than \(T_2\) (milliseconds to seconds versus microseconds), so in practice dephasing is the dominant problem <cite data-r="burkard2023"></cite>.</p>
+
+<h2>T1: energy relaxation</h2>
+
+<h3>Measurement</h3>
+<p>The <dfn data-def="The energy relaxation time: the 1/e decay time of the excited-state population.">T1</dfn> measurement is the simplest sequence there is:</p>
+<pre><code>initialise |0⟩ → X (π pulse) → wait τ → measure</code></pre>
+<p>Sweep \(\tau\) and fit \(P_1(\tau) = A\,e^{-\tau/T_1} + B\). The constants \(A\) and \(B\) absorb imperfect initialisation and readout; never force them to 1 and 0.</p>
+
+<figure>
+<div class="figbody"><!--plot:t1-decay--></div>
+<figcaption>A T1 measurement. With perfect state preparation and readout the curve starts at 1 and decays to 0 (blue). Real data (orange) starts lower and ends higher because of readout and initialisation errors, which is why you fit an offset and an amplitude.</figcaption>
+</figure>
+
+<p>For spin qubits there is a cheaper way that does not need a calibrated π pulse at all. Load an electron with a random spin from the reservoir and read it out after a variable delay (Chapter 11). This is how the first spin T1 values were measured, years before coherent control was possible <cite data-r="elzerman2004"></cite>.</p>
+
+<h3>What sets T1 for a spin in a dot</h3>
+<p>A phonon cannot flip a spin directly: phonons are lattice vibrations that couple to charge, not to spin. Relaxation happens because <dfn data-def="Coupling between an electron's motion and its spin, arising from relativistic effects in the crystal's electric fields.">spin–orbit coupling</dfn> slightly mixes spin and orbital states, so the "spin-up" state contains a small admixture of an excited orbital (or, in silicon, valley) state that phonons can couple to. The resulting rates grow steeply with magnetic field, roughly as \(B^5\) for the common phonon mechanism, so T1 can be seconds at low field and milliseconds at higher field <cite data-r="hanson2007,zwanenburg2013"></cite>. In silicon, T1 drops sharply near a "hot spot" where the Zeeman energy equals the valley splitting (Chapter 10), because there the spin and valley states mix strongly. Measuring T1 versus field is therefore a standard way to <i>measure</i> the valley splitting of a device.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Long waits are easy for QICK: the tProcessor's time values are 32-bit integers in units of its clock (about 2.4 ns on the 4x2's tProc v1 firmware, 409.6 MHz), so a single wait can last up to \(2^{31}\times 2.44\ \text{ns} \approx 5\) s, and loops extend that further <cite data-r="qickdocs"></cite>. For T1 sweeps, use a logarithmic list of delays: the interesting range often spans µs to s.</p>
+</div>
+
+<h2>T2*: dephasing from slow fluctuations</h2>
+
+<h3>The Ramsey experiment</h3>
+<p>The <dfn data-def="Free-induction sequence X/2 – wait τ – X/2 that measures dephasing and frequency detuning.">Ramsey experiment</dfn> measures how long the phase survives. It uses two π/2 pulses separated by a free-evolution time \(\tau\):</p>
+<pre><code>initialise |0⟩ → X/2 → wait τ → X/2 → measure</code></pre>
+<p>Follow it on the Bloch sphere. The first X/2 puts the vector on the equator (at −y). During \(\tau\) it precesses in the rotating frame at the detuning \(\Delta\), picking up phase \(\Delta\tau\). The second X/2 rotates the equator back onto the z axis, so the final \(P_1\) depends on where the vector had moved to:</p>
+\[ P_1(\tau) = \tfrac12\big[1 + \cos(\Delta\tau)\big] \quad\text{(no noise)}. \]
+<p>These oscillations are Ramsey fringes. Their frequency equals the detuning, which makes Ramsey the most precise way to measure the qubit frequency. In practice you deliberately detune by a few MHz to see fringes clearly.</p>
+
+<h3>Why the fringes decay</h3>
+<p>Now suppose the qubit frequency is slightly different on every shot because of slow noise, by an amount \(\delta\omega\) drawn from a Gaussian distribution of width \(\sigma\). Each shot gives \(\cos((\Delta+\delta\omega)\tau)\), and averaging over the Gaussian gives</p>
+\[ \ev{\cos((\Delta+\delta\omega)\tau)} = e^{-\sigma^2\tau^2/2}\cos(\Delta\tau) . \]
+<p>So the fringes decay as a Gaussian, \(P_1 = \tfrac12[1 + e^{-(\tau/T_2^*)^2}\cos\Delta\tau]\), with</p>
+\[ T_2^* = \frac{\sqrt 2}{\sigma} . \]
+<p>The star marks this as the <i>inhomogeneous</i> dephasing time. It is not really a property of the spin alone but of the spin plus everything that drifted during your averaging. It depends on how long you average: integrate for an hour instead of a minute and slow drifts make \(T_2^*\) shorter.</p>
+
+<figure>
+<div class="figbody"><!--plot:ramsey--></div>
+<figcaption>Ramsey fringes with a Gaussian envelope. The fringe frequency is the detuning between drive and qubit; the envelope's 1/e time is \(T_2^*\). Fitting both gives the qubit frequency to a precision of roughly \(1/(2\pi T_2^*)\) per experiment.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>A silicon qubit has \(T_2^* = 2\ \mu\)s. What spread of qubit frequencies does that imply?</p>
+<p>\(\sigma = \sqrt2/T_2^* = 1.41/(2\times10^{-6}) = 7.1\times10^5\) rad/s, or \(\sigma/2\pi \approx 113\) kHz. The qubit frequency (around 10 GHz) is wandering by about 100 kHz, about one part in \(10^5\). For a qubit in a micromagnet gradient of 0.3 mT/nm (8.4 MHz/nm at 28 GHz/T), that corresponds to the electron moving by only about 13 picometres along the gradient. This is how sensitive these qubits are, and why charge noise matters so much in micromagnet devices.</p>
+</div>
+
+<h3>Typical numbers</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Platform</th><th>Main dephasing source</th><th>Typical \(T_2^*\)</th></tr></thead>
+<tbody>
+<tr><td>GaAs electron spin</td><td>Hyperfine coupling to ~10<sup>6</sup> Ga and As nuclear spins</td><td>~10–20 ns <cite data-r="petta2005,hanson2007"></cite></td></tr>
+<tr><td>Natural Si/SiGe (4.7% <sup>29</sup>Si)</td><td><sup>29</sup>Si nuclear spins, charge noise</td><td>~1 µs <cite data-r="kawakami2014"></cite></td></tr>
+<tr><td>Isotopically purified <sup>28</sup>Si/SiGe (800 ppm <sup>29</sup>Si)</td><td>Charge noise through the micromagnet gradient</td><td>~20 µs <cite data-r="yoneda2018"></cite></td></tr>
+</tbody></table></div>
+<p>The jump from nanoseconds in GaAs to tens of microseconds in purified silicon is the single biggest reason the field moved to silicon. Every Ga and As nucleus carries spin, but silicon's only spinful isotope, <sup>29</sup>Si, can be removed.</p>
+
+<h2>T2: the Hahn echo and dynamical decoupling</h2>
+
+<p>Much of the noise behind \(T_2^*\) is slow: the qubit frequency is different from shot to shot, but nearly constant within one shot. Such quasi-static noise can be undone. Insert a π pulse halfway through the free evolution:</p>
+<pre><code>X/2 → wait τ/2 → X (π) → wait τ/2 → X/2 → measure</code></pre>
+<p>In the first half, an unknown detuning \(\delta\omega\) adds phase \(+\delta\omega\tau/2\). The π pulse flips the vector to the other side of the sphere, which reverses the sign of the accumulated phase. In the second half the same \(\delta\omega\) adds another \(+\delta\omega\tau/2\), which now cancels the first half exactly. This is the <dfn data-def="A sequence with a π pulse in the middle of free evolution that refocuses slow (quasi-static) noise; measures T2.">Hahn echo</dfn>. The decay that remains is caused by noise that changes <i>during</i> the sequence, and its time scale is called \(T_2\) (or \(T_2^{\text{Hahn}}\)).</p>
+
+<div class="box analogy"><span class="tag">Analogy</span>
+<p>Runners of slightly different speeds start together. After a while they are spread out. If everyone turns around at the same moment and runs back at the same speed, they all arrive at the start line together. That is the echo. It fails only if a runner's speed changes during the race.</p>
+</div>
+
+<p>Adding more π pulses (Carr–Purcell–Meiboom–Gill, or CPMG, sequences, and other <dfn data-def="Sequences of π pulses during free evolution that cancel low-frequency noise and extend coherence.">dynamical decoupling</dfn> schemes) cancels noise up to higher frequencies. In purified silicon, decoupling extends coherence from tens of microseconds to milliseconds <cite data-r="burkard2023"></cite>. In GaAs, echo extends coherence from about 10 ns to about 1 µs or more <cite data-r="petta2005"></cite>.</p>
+
+<h2>Noise spectra and filter functions</h2>
+
+<p>To understand which sequence protects against which noise, describe the noise by its <dfn data-def="Power spectral density: how the power of a fluctuating quantity is distributed over frequency.">power spectral density</dfn> (PSD) \(S(f)\). Write the instantaneous qubit-frequency fluctuation as \(\delta\omega(t)\). The PSD tells you how much of its variance comes from each frequency: \(\ev{\delta\omega^2} = \int_0^\infty S(f)\,df\) (a one-sided PSD).</p>
+
+<p>A pulse sequence is summarised by a sign function \(y(t)\), equal to +1 or −1 depending on how many π pulses have been applied so far. The phase accumulated in one shot is \(\varphi = \int_0^\tau y(t)\,\delta\omega(t)\,dt\). For Gaussian noise, the remaining coherence is \(e^{-\ev{\varphi^2}/2}\), and a short calculation gives</p>
+\[ \ev{\varphi^2} = \int_0^\infty S(f)\,\big|Y(f)\big|^2\,df, \qquad Y(f) = \int_0^\tau y(t)\,e^{-i2\pi f t}\,dt . \]
+<p>\(|Y(f)|^2\) is the sequence's <dfn data-def="The weighting |Y(f)|² that a pulse sequence applies to the noise spectrum; it shows which noise frequencies cause dephasing.">filter function</dfn>. For Ramsey, \(y = 1\) throughout and \(|Y|^2 = \sin^2(\pi f\tau)/(\pi f)^2\), which is largest at \(f = 0\): Ramsey is most sensitive to the slowest noise. For the echo, \(|Y|^2 = 16\sin^4(\pi f\tau/2)/(2\pi f)^2\), which vanishes at \(f = 0\): the echo is blind to static noise and most sensitive near \(f\approx 1/\tau\). CPMG with \(N\) pulses moves the sensitivity peak to \(f \approx N/(2\tau)\). By measuring decay with different \(N\), you can reconstruct \(S(f)\) itself. This is <dfn data-def="Using a qubit and pulse sequences with known filter functions to measure the spectrum of its noise environment.">noise spectroscopy</dfn>.</p>
+
+<figure>
+<div class="figbody"><!--plot:filter-functions--></div>
+<figcaption>Filter functions (normalised) for a total sequence time \(\tau\). Ramsey responds most to slow noise; the echo cancels static noise and picks up noise near \(1/\tau\); CPMG with 4 π pulses moves its sensitivity to higher frequencies, away from the large 1/f noise at low frequency.</figcaption>
+</figure>
+
+<h3>1/f charge noise: the main enemy in silicon</h3>
+<p>In silicon devices the dominant noise is usually <dfn data-def="Fluctuations whose power spectral density scales as 1/f, typical of charge traps in semiconductor devices.">1/f noise</dfn> from charge traps in the oxide and at interfaces: each trap randomly captures and releases an electron, making a small telegraph signal, and many traps with a wide range of switching rates add up to a spectrum close to \(1/f\). Charge noise moves the dot's electrostatic potential, which moves the electron slightly. Through the micromagnet's field gradient and the Stark shift of the g-factor, that motion becomes qubit-frequency noise. Typical charge-noise amplitudes, referred to the dot's energy, are about 0.1–2 µeV/\(\sqrt{\text{Hz}}\) at 1 Hz in Si/SiGe devices <cite data-r="burkard2023,yoneda2018"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:noise-psd--></div>
+<figcaption>Sketch of typical noise spectra. Charge noise rises towards low frequencies roughly as 1/f until it meets a white noise floor (often from electronics). Very slow drifts or a single strong two-level fluctuator can give a steeper \(1/f^2\) part. Because 1/f noise has most of its power at low frequency, echo and decoupling help a lot.</figcaption>
+</figure>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Three practical facts follow from 1/f noise:</p>
+<ul>
+<li><b>Recalibrate often.</b> The qubit frequency drifts over minutes to hours. Groups re-measure it with a quick Ramsey every few minutes, or track it with fast real-time feedback.</li>
+<li><b>Interleave and randomise.</b> Taking data points in random order, or interleaving reference measurements, prevents slow drifts from looking like a physical effect. The spinQICK exchange-only experiments took a reference measurement before every single shot for this reason <cite data-r="wessels2026"></cite>.</li>
+<li><b>Your electronics are part of the noise.</b> Noise on DC gate voltages, on fast pulse lines, or in amplifiers adds directly to charge noise. The HRL spinQICK study used the qubit itself to identify high-frequency noise added by its room-temperature pulse amplifiers <cite data-r="wessels2026"></cite>.</li>
+</ul>
+</div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The FPGA can do more than play fixed sequences. Because it processes readout in real time, it can estimate the qubit frequency from a burst of fast Ramsey shots and update the drive frequency before the next experiment. Real-time estimation and feedback like this is an active research area, and it is a natural use of an RFSoC. A recent example used an FPGA-based controller to keep a silicon double dot's operating point stable against 1/f drift using fast reflectometry <cite data-r="bryan2026"></cite>. Chapter 44 discusses how to do this with QICK's conditional logic.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. You measure \(T_2^* = 1\ \mu\)s and \(T_2^{\text{Hahn}} = 50\ \mu\)s. What does the large ratio tell you about the noise?</p>
+<details><summary>Show answer</summary><div>Most of the dephasing comes from slow (quasi-static) noise, which the echo refocuses. Only a small part of the noise power lies near \(1/\tau \approx 20\) kHz. This is typical for 1/f charge noise or nuclear-spin noise.</div></details>
+<p>2. Why does a Ramsey experiment with no deliberate detuning look like a simple decay rather than oscillations?</p>
+<details><summary>Show answer</summary><div>With \(\Delta = 0\), \(\cos(\Delta\tau) = 1\), so only the envelope is visible. A small residual detuning gives a slow oscillation that can be mistaken for decay. Deliberately detuning by several \(1/T_2^*\) makes the fringes clear and gives both the frequency and the decay.</div></details>
+<p>3. Can \(T_2\) be longer than \(2T_1\)? Why or why not?</p>
+<details><summary>Show answer</summary><div>No. Energy relaxation also destroys the coherences: the off-diagonal density-matrix elements decay at least at rate \(1/(2T_1)\). So \(1/T_2 = 1/(2T_1) + 1/T_\phi \ge 1/(2T_1)\), where \(T_\phi\) is the pure dephasing time.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>\(T_1\): energy relaxation; measure with π – wait – read. For spins it is long (ms–s) and set by spin–orbit/valley-mediated phonon processes.</li>
+<li>\(T_2^*\): dephasing from slow frequency fluctuations; measure with Ramsey (X/2 – wait – X/2); Gaussian decay \(e^{-(\tau/T_2^*)^2}\).</li>
+<li>\(T_2\): coherence after refocusing; Hahn echo and dynamical decoupling cancel slow noise.</li>
+<li>Filter functions show which noise frequencies each sequence is sensitive to; 1/f charge noise dominates silicon devices.</li>
+<li>GaAs: \(T_2^*\sim 10\) ns (nuclei). Natural Si: ~1 µs. Purified <sup>28</sup>Si: ~20 µs.</li>
+</ul>
+</div>

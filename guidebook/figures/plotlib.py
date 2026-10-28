@@ -34,7 +34,7 @@ def _fmt(v):
 
 class Axes:
     def __init__(self, w=560, h=300, xlim=(0, 1), ylim=(0, 1), xlabel='', ylabel='', title='',
-                 ml=58, mr=16, mt=26, mb=46, xticks=None, yticks=None, grid=True, xfmt=None, yfmt=None):
+                 ml=58, mr=28, mt=26, mb=46, xticks=None, yticks=None, grid=True, xfmt=None, yfmt=None):
         self.w, self.h = w, h
         self.ml, self.mr, self.mt, self.mb = ml, mr, mt, mb
         self.xlim, self.ylim = xlim, ylim

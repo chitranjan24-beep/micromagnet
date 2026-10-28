@@ -237,8 +237,10 @@ dl.gloss dd { margin: 2px 0 0 0; color: var(--ink-2); }
   figure.wide { margin-left: 0; margin-right: 0; }
   h1 { font-size: 31px; } .cover h1 { font-size: 36px; }
   .topbar .brand span, .topbar .where { display: none; }
-  .figbody svg { max-width: none; min-width: 580px; }
   #themeBtn { margin-left: auto; }
   body { font-size: 16.5px; }
+}
+@media (max-width: 700px) {
+  .figbody > svg { max-width: none; min-width: 580px; }
 }
 @media (prefers-reduced-motion: reduce) { .rail { transition: none; } }

@@ -1,2 +1,105 @@
-<!--meta {"id": "gates-fidelity", "part": "Part I \u00b7 Quantum mechanics you need", "title": "Gates, measurement and fidelity"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "gates-fidelity", "part": "Part I · Quantum mechanics you need", "title": "Gates, measurement and fidelity"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Research groups are judged by numbers like "99.9% single-qubit gate fidelity", "98% readout fidelity" or "two-qubit gate above the fault-tolerance threshold". To read those papers, and to produce such numbers yourself, you need to know what a gate set is, how gate errors and readout errors are separated, and how techniques like randomised benchmarking work. These experiments also put the hardest demands on your control electronics: long random pulse sequences, exact phase bookkeeping and many repetitions.</p>
+</div>
+
+<h2>What a gate set is</h2>
+
+<p>A quantum computation is a sequence of <dfn data-def="A unitary operation applied to one or more qubits; the quantum analogue of a logic gate.">gates</dfn>. A small set of gates is <dfn data-def="A set of gates that can approximate any multi-qubit unitary to arbitrary accuracy when combined.">universal</dfn> if combinations of them can approximate any operation. A standard universal set is: arbitrary single-qubit rotations plus one entangling two-qubit gate such as CNOT or CZ.</p>
+
+<p>In spin-qubit experiments the physical single-qubit gates are usually just two: X/2 and Y/2 (π/2 rotations about x and y), made with microwave bursts at phases 0° and 90°. All other single-qubit rotations are built from these plus Z rotations:</p>
+<ul>
+<li><b>Virtual Z.</b> A Z(θ) rotation is implemented by adding θ to the phase of every later drive pulse on that qubit. It costs no time and has no error. A Y/2 is then the same burst as X/2 with a phase shift, and an arbitrary rotation \(U = Z(\alpha)\,X/2\,Z(\beta)\,X/2\,Z(\gamma)\) needs only two physical pulses.</li>
+<li><b>Composite sequences.</b> X = X/2·X/2; Hadamard ≈ Y/2 followed by Z(π).</li>
+</ul>
+
+<p>The most common two-qubit gates for spins (Chapter 14) are:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Gate</th><th>Matrix (basis 00, 01, 10, 11)</th><th>How spins do it</th></tr></thead>
+<tbody>
+<tr><td>CZ (controlled phase)</td><td>diag(1, 1, 1, −1)</td><td>Pulse the exchange \(J\) on for a calibrated time (adiabatically)</td></tr>
+<tr><td>CNOT / CROT</td><td>Flip target if control is 1</td><td>Exchange on + a frequency-selective microwave pulse that only flips one target-qubit transition</td></tr>
+<tr><td>SWAP, √SWAP</td><td>Exchange the two states</td><td>Large exchange pulse, when \(J\) dominates the Zeeman difference</td></tr>
+</tbody></table></div>
+
+<h2>Fidelity: how close to perfect is "close"?</h2>
+
+<p>The <dfn data-def="A measure (0 to 1) of how close an actual state or operation is to the ideal one.">fidelity</dfn> between an ideal pure state \(\ket\psi\) and the actual state \(\rho\) is \(F = \bra\psi\rho\ket\psi\), the probability that the actual state would pass a test for being \(\ket\psi\). For a gate, the <dfn data-def="Fidelity of a gate averaged over all input states; the standard figure of merit reported for qubit gates.">average gate fidelity</dfn> averages this over all possible input states. The error per gate is \(r = 1 - F\).</p>
+
+<p>A useful rule of thumb links gate error to coherence: during a gate of duration \(t_g\) the qubit dephases by roughly \(t_g/T_2\) (using the coherence time that applies during driving, which is often close to the echo \(T_2\) because driving itself refocuses slow noise). So</p>
+\[ r \sim \frac{t_g}{T_2} . \]
+<div class="box example"><span class="tag">Worked example</span>
+<p>A purified silicon qubit with \(T_2 \approx 50\ \mu\)s and an X/2 gate of 50 ns: \(r \sim 50\times10^{-9}/50\times10^{-6} = 10^{-3}\), so \(F \sim 99.9\%\). This matches the level reported in the best single-spin silicon experiments <cite data-r="yoneda2018"></cite>. A GaAs spin with \(T_2^* = 15\) ns and the same 50 ns gate would be hopeless without decoupling, which is why GaAs experiments relied on fast exchange-based singlet–triplet control.</p>
+</div>
+
+<p>Why do we care about 99% versus 99.9%? Because <dfn data-def="Encoding logical qubits in many physical qubits so that errors can be detected and corrected faster than they accumulate.">quantum error correction</dfn> only works when the physical error per operation is below a threshold. For the widely studied surface code the threshold is around 1% per operation; operating well below it (0.1%) makes error correction efficient. Silicon spin qubits crossed 99% two-qubit fidelity in 2022 in three independent groups <cite data-r="xue2022,noiri2022,mills2022"></cite>.</p>
+
+<h2>Measurement: readout fidelity and SPAM</h2>
+
+<p>Measurement in a spin-qubit device is indirect: the spin is converted to a charge state, the charge state changes a sensor's signal, and the signal is integrated over a readout window. Each shot gives one number (or an I/Q pair, Chapter 23). The shots from \(\ket 0\) and from \(\ket 1\) form two distributions, usually close to Gaussian, separated by some distance and each with a width set by noise.</p>
+
+<figure>
+<div class="figbody"><!--plot:readout-hist--></div>
+<figcaption>Single-shot readout histograms. Shots prepared in \(\ket0\) (blue) and \(\ket 1\) (orange) give two distributions. A threshold between them assigns each shot to 0 or 1. The overlap area is the readout error. In real spin readout the \(\ket 1\) distribution also has a tail towards the \(\ket 0\) peak, from spins that relax during the readout window.</figcaption>
+</figure>
+
+<p>Assign 0 below the threshold and 1 above. The two error probabilities are \(\epsilon_0 = P(\text{read }1\,|\,0)\) and \(\epsilon_1 = P(\text{read }0\,|\,1)\), and the readout fidelity is usually quoted as</p>
+\[ F_{\text{RO}} = 1 - \frac{\epsilon_0 + \epsilon_1}{2} \quad\text{or the visibility}\quad V = 1 - \epsilon_0 - \epsilon_1 . \]
+<p>For two Gaussians of equal width \(\sigma\) separated by \(\Delta\mu\), define the signal-to-noise ratio \(\text{SNR} = \Delta\mu/\sigma\). With the threshold in the middle, each error is \(\epsilon = \tfrac12\operatorname{erfc}\!\big(\text{SNR}/(2\sqrt2)\big)\).</p>
+<div class="tablewrap"><table>
+<thead><tr><th class="num">SNR (Δµ/σ)</th><th class="num">2</th><th class="num">4</th><th class="num">6</th><th class="num">8</th></tr></thead>
+<tbody><tr><td>Error per state</td><td class="num">15.9%</td><td class="num">2.3%</td><td class="num">0.13%</td><td class="num">0.003%</td></tr></tbody>
+</table></div>
+<p>Integrating longer improves SNR as \(\sqrt{t_{\text{int}}}\) for white noise, but the spin may relax during the window, so there is an optimum integration time. Chapter 23 shows how to choose it and how the FPGA computes it in real time. The spinQICK exchange-only work reports SNR values of 5–6 <cite data-r="wessels2026"></cite>.</p>
+
+<p>Initialisation is also imperfect. Errors in state preparation and measurement are lumped together as <dfn data-def="State preparation and measurement errors, which must be separated from gate errors when characterising qubits.">SPAM</dfn> errors. They are why every curve in Chapter 4 needed a free amplitude and offset, and why gate characterisation methods are designed to be insensitive to them.</p>
+
+<h2>Calibration sequences: AllXY</h2>
+
+<p>Before measuring fidelities you need well-calibrated pulses. A favourite quick check is <dfn data-def="A calibration sequence of 21 pairs of π and π/2 pulses whose ideal outcomes form a staircase of 0, ½ and 1; deviations reveal specific pulse errors.">AllXY</dfn>: 21 short sequences of two pulses each (for example XX, YY, XY, X/2 Y/2, …) chosen so that ideal results form a staircase of 0, ½ and 1. Each kind of error (wrong amplitude, wrong detuning, wrong phase between x and y) distorts the staircase in a characteristic way, so one glance tells you what to fix. spinQICK includes AllXY for single-spin qubits <cite data-r="spinqick"></cite>.</p>
+
+<h2>Randomised benchmarking</h2>
+
+<p>How do you measure a 0.1% gate error when readout errors are 2%? <dfn data-def="Measuring average gate error by applying random gate sequences of increasing length and fitting the decay of the success probability.">Randomised benchmarking</dfn> (RB) solves this:</p>
+<ol>
+<li>Choose a random sequence of \(m\) gates from the <dfn data-def="The group of 24 single-qubit rotations (11,520 for two qubits) that map Pauli operators to Pauli operators; used in randomised benchmarking.">Clifford group</dfn> (24 operations for one qubit).</li>
+<li>Append the one Clifford that inverts the whole sequence, so that the ideal final state is \(\ket 0\).</li>
+<li>Measure the probability of getting 0. Average over many random sequences of the same length.</li>
+<li>Repeat for many lengths \(m\) and fit \(P(m) = A\,p^m + B\).</li>
+</ol>
+<p>SPAM errors only affect \(A\) and \(B\), not the decay constant \(p\). Random sequences turn coherent errors into an average depolarising effect, so the decay is a clean exponential. The average error per Clifford is \(r = (1-p)(d-1)/d\), with \(d = 2\) for one qubit. If each Clifford is built from on average 1.875 physical X/2 or Y/2 pulses, the error per physical gate is about \(r/1.875\).</p>
+
+<figure>
+<div class="figbody"><!--plot:rb-decay--></div>
+<figcaption>Simulated randomised benchmarking. The probability of ending in the right state decays towards 0.5 (a fully mixed qubit) as more random gates are applied. Here \(p = 0.998\), so the error per Clifford is \((1-0.998)/2 = 0.1\%\).</figcaption>
+</figure>
+
+<p>Variants you will see in papers: <b>interleaved RB</b> (insert one specific gate between random Cliffords to measure that gate's error), <b>two-qubit RB</b> (Cliffords on two qubits, much longer sequences), and <b>gate set tomography</b> (GST), which reconstructs the full error model of every gate and was used in several of the 2022 silicon threshold papers <cite data-r="xue2022,mills2022"></cite>.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>RB is a demanding test of a controller. You need hundreds of different random sequences, each up to hundreds of gates long, with exact phase tracking. With QICK, two strategies work:</p>
+<ul>
+<li>Compile each random sequence into its own short QICK program and run them one after another from Python. Simple, but loading many programs adds overhead.</li>
+<li>Store the Clifford pulses once and let the tProcessor select them in a loop from a table in data memory. tProc v2 programs are limited to about 4096 instructions <cite data-r="qickdocs"></cite>, so long sequences must be built with loops and table look-ups rather than written out.</li>
+</ul>
+<p>Virtual Z gates are implemented in QICK by changing the <code>phase</code> parameter of following pulses, which costs no time.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your readout histograms are separated by 3σ. Roughly what readout fidelity do you expect, and how much longer would you have to integrate (white noise, no relaxation) to reach SNR 6?</p>
+<details><summary>Show answer</summary><div>Error per state is \(\tfrac12\operatorname{erfc}(3/2.83) \approx 6.7\%\), so \(F_{RO}\approx 93\%\). SNR grows as \(\sqrt{t}\), so doubling SNR needs 4 times the integration time.</div></details>
+<p>2. Why is RB insensitive to SPAM errors?</p>
+<details><summary>Show answer</summary><div>SPAM errors happen once per sequence, regardless of its length. They change the overall scale and offset (\(A\), \(B\)) but not how fast the signal decays with the number of gates \(m\), which is what gives the gate error.</div></details>
+<p>3. A Rabi frequency of 5 MHz gives what X/2 duration? With \(T_2 = 30\ \mu\)s, estimate the gate fidelity limit.</p>
+<details><summary>Show answer</summary><div>\(t_{X/2} = 1/(4f_R) = 50\) ns. \(r \sim 50\text{ ns}/30\ \mu\text{s} \approx 1.7\times10^{-3}\), so \(F\approx 99.8\%\).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Spin qubits typically use physical X/2 and Y/2 pulses, virtual Z gates, and an exchange-based CZ or CROT as the entangling gate.</li>
+<li>Gate error scales roughly as gate time over coherence time; 1% is the surface-code threshold scale, silicon spins have reached 99.9% (one qubit) and over 99% (two qubits).</li>
+<li>Readout fidelity follows from histogram overlap; SNR 6 gives about 0.1% error per state.</li>
+<li>AllXY diagnoses calibration errors; randomised benchmarking measures gate errors independent of SPAM.</li>
+</ul>
+</div>

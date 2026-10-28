@@ -1,2 +1,142 @@
-<!--meta {"id": "rabi", "part": "Part I \u00b7 Quantum mechanics you need", "title": "Driving a qubit: resonance, Rabi oscillations and the rotating frame"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "rabi", "part": "Part I · Quantum mechanics you need", "title": "Driving a qubit: resonance, Rabi oscillations and the rotating frame"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Almost every single-qubit operation is a burst of oscillating field at (or near) the qubit frequency. The first coherent experiment on any new qubit is a <b>Rabi oscillation</b>: you drive the spin for a variable time and watch \(P(1)\) swing up and down. To set up that experiment you must understand what controls the swing's speed (drive amplitude), what happens off resonance (detuning), why the drive's phase picks the rotation axis, and why physicists talk about a "rotating frame". These ideas then define your calibrations: π-pulse length, qubit frequency, pulse shape.</p>
+</div>
+
+<p class="lede">A spin in a static field just precesses. To make it change latitude, that is, to flip it, we must push it with a second, oscillating field. The push only works if it keeps in step with the precession. This chapter makes that statement exact.</p>
+
+<h2>The picture: pushing a swing</h2>
+
+<p>Imagine pushing a child on a swing. If you push once per swing, always at the same point, the swing goes higher and higher. If you push at a slightly different rate, sometimes your push helps and sometimes it fights the motion, so the amplitude grows, then shrinks, then grows again. That is resonance and detuning.</p>
+
+<p>A spin precessing at \(f_0\) around z behaves similarly. A small oscillating magnetic field \(B_1\) perpendicular to z gives the spin a tiny torque. If \(B_1\) oscillates at \(f_0\), the torque always points the same way relative to the precessing spin, so its effect accumulates and the spin slowly tips over from the north pole towards the south pole and back. This slow tipping is the <dfn data-def="Coherent oscillation of a qubit between |0⟩ and |1⟩ under a resonant drive; its frequency is the Rabi frequency.">Rabi oscillation</dfn>, at a frequency \(f_R\) much lower than \(f_0\). For spin qubits \(f_0\) is GHz and \(f_R\) is typically 1–20 MHz.</p>
+
+<h2>The driven Hamiltonian</h2>
+
+<p>Add an oscillating transverse term to the Zeeman Hamiltonian of Chapter 2:</p>
+\[ H(t) = \frac{\hbar\omega_0}{2}\,\sigma_z + \hbar\Omega\cos(\omega t + \phi)\,\sigma_x . \]
+<p>Here \(\omega = 2\pi f\) is the drive frequency (what you set on your generator), \(\phi\) is the drive phase, and \(\Omega\) is proportional to the drive amplitude. For true electron spin resonance (ESR), where a real oscillating magnetic field \(B_1\cos(\omega t+\phi)\) is applied along x, \(\hbar\Omega = \tfrac12 g\mu_B B_1\). For electric-dipole spin resonance (EDSR) with a micromagnet (Chapter 12), an oscillating electric field moves the electron in a field gradient and produces the same mathematical term with a different constant.</p>
+
+<h2>Going to the rotating frame</h2>
+
+<p>The time dependence of \(H(t)\) makes the Schrödinger equation hard to solve directly. The standard trick is to look at the spin from a reference frame that itself rotates around z at the drive frequency \(\omega\). Imagine standing on a merry-go-round turning at \(\omega\). A spin precessing at exactly \(\omega_0 = \omega\) then looks stationary, and the oscillating drive looks like a constant field.</p>
+
+<p>Mathematically, define \(\ket{\tilde\psi} = U\ket\psi\) with \(U(t) = e^{i\omega t\sigma_z/2}\). Substituting into the Schrödinger equation gives a new effective Hamiltonian</p>
+\[ \tilde H = U H U^\dagger + i\hbar\,\dot U U^\dagger . \]
+<p>Two identities do the work. First, \(i\hbar\dot UU^\dagger = -\tfrac{\hbar\omega}{2}\sigma_z\), which subtracts the frame's rotation. Second, rotating \(\sigma_x\) about z gives \(U\sigma_xU^\dagger = \sigma_x\cos\omega t - \sigma_y\sin\omega t\). Using the product formulas \(\cos A\cos B = \tfrac12[\cos(A-B) + \cos(A+B)]\) and \(\cos A\sin B = \tfrac12[\sin(A+B) - \sin(A-B)]\), the drive term becomes</p>
+\[ \begin{aligned}
+\hbar\Omega\cos(\omega t+\phi)\big(\sigma_x\cos\omega t - \sigma_y\sin\omega t\big)
+ &= \frac{\hbar\Omega}{2}\big(\cos\phi\,\sigma_x + \sin\phi\,\sigma_y\big) \\
+ &\quad + \frac{\hbar\Omega}{2}\big(\cos(2\omega t+\phi)\,\sigma_x - \sin(2\omega t+\phi)\,\sigma_y\big).
+\end{aligned} \]
+
+<p>The second line oscillates at twice the drive frequency. Because \(\Omega \ll \omega\) (MHz versus GHz), its effect averages to nearly zero over any time scale where the spin moves appreciably. Dropping it is the <dfn data-def="Neglecting terms in the rotating-frame Hamiltonian that oscillate at twice the drive frequency; valid when the Rabi frequency is much smaller than the qubit frequency.">rotating-wave approximation (RWA)</dfn>. The result is a time-independent Hamiltonian:</p>
+\[ \boxed{\;\tilde H = \frac{\hbar\Delta}{2}\,\sigma_z + \frac{\hbar\Omega}{2}\big(\cos\phi\,\sigma_x + \sin\phi\,\sigma_y\big),\qquad \Delta = \omega_0 - \omega\;} \]
+
+<p>This one equation contains almost everything about single-qubit control:</p>
+<ul>
+<li>\(\Delta\) is the <dfn data-def="The difference between qubit frequency and drive frequency, Δ = ω0 − ω.">detuning</dfn>. On resonance \(\Delta = 0\) and only the drive term remains.</li>
+<li>The drive term is a rotation about an axis in the equatorial plane at angle \(\phi\) from x. <b>The phase of your microwave chooses the rotation axis.</b></li>
+<li>\(\Omega\) is the <dfn data-def="The angular frequency Ω at which a resonant drive rotates the Bloch vector; f_R = Ω/2π.">Rabi frequency</dfn> (in angular units); \(f_R = \Omega/2\pi\).</li>
+</ul>
+
+<p>Since \(\tilde H = \tfrac{\hbar}{2}\vec W\cdot\vec\sigma\) with \(\vec W = (\Omega\cos\phi, \Omega\sin\phi, \Delta)\), the evolution is a rotation (Chapter 2) about the axis \(\hat n = \vec W/|\vec W|\) at angular speed</p>
+\[ W = \sqrt{\Omega^2 + \Delta^2}, \]
+<p>called the generalised Rabi frequency.</p>
+
+<figure>
+<div class="figbody"><!--plot:rotating-frame--></div>
+<figcaption>Motion of the Bloch vector in the rotating frame, starting at \(\ket0\) (north pole). Left: on resonance, the drive is the only field, along x; the state rotates in the y–z plane and passes through \(\ket 1\). Right: with detuning \(\Delta = \Omega\), the effective axis tilts out of the equatorial plane by 45°, so the state traces a cone and never reaches the south pole.</figcaption>
+</figure>
+
+<h2>The Rabi formula</h2>
+
+<p>Starting in \(\ket 0\) and driving for a time \(t\), the probability of finding \(\ket 1\) follows from rotating the north pole about \(\hat n\) by angle \(Wt\):</p>
+\[ P_1(t) = \frac{\Omega^2}{\Omega^2 + \Delta^2}\,\sin^2\!\Big(\frac{\sqrt{\Omega^2+\Delta^2}}{2}\,t\Big). \]
+<p>Check the limits. On resonance, \(P_1 = \sin^2(\Omega t/2)\): the spin is fully flipped at \(t_\pi = \pi/\Omega = 1/(2f_R)\). Far off resonance (\(|\Delta| \gg \Omega\)), the amplitude \(\Omega^2/\Delta^2\) is tiny and the oscillation is fast: the drive barely affects the spin.</p>
+
+<figure>
+<div class="figbody"><!--plot:rabi-detuning--></div>
+<figcaption>Rabi oscillations for three detunings at the same drive strength. Detuning makes the oscillation faster and smaller. In an experiment, a reduced amplitude often means the drive is off resonance, not that the readout is bad.</figcaption>
+</figure>
+
+<p>If you sweep both the drive time and the drive frequency, you get a 2D map called a <dfn data-def="2D map of qubit excitation versus drive time and drive frequency; its symmetric pattern locates the resonance and the Rabi frequency.">Rabi chevron</dfn>, named after its V-shaped pattern. It is one of the most useful plots in qubit tune-up: the centre line gives the exact qubit frequency, and the period along that line gives the π time.</p>
+
+<figure>
+<div class="figbody"><!--plot:rabi-chevron--></div>
+<figcaption>A simulated Rabi chevron: \(P_1\) (colour, yellow = 1) versus drive time and detuning. The slowest, fullest oscillation is at \(\Delta = 0\). Real data from spin qubits looks like this, blurred by decoherence and by slow drifts of the qubit frequency (Chapter 4).</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: pulse times</span>
+<p>Your Rabi oscillation on resonance has a period of 400 ns, so \(f_R = 2.5\) MHz.</p>
+<ul>
+<li>π pulse (X): \(t_\pi = 1/(2f_R) = 200\) ns.</li>
+<li>π/2 pulse (X/2): 100 ns.</li>
+<li>If you double the drive amplitude (and the drive is linear), \(f_R\) doubles to 5 MHz and \(t_\pi\) halves to 100 ns.</li>
+</ul>
+<p>Real silicon EDSR qubits reach \(f_R\) from below 1 MHz to around 10–20 MHz depending on micromagnet design and drive power <cite data-r="yoneda2018,burkard2023"></cite>. Faster is better for gate speed, but strong drive heats the device and can shift the qubit frequency, so labs choose a compromise.</p>
+</div>
+
+<h2>Pulse area, pulse shapes and why shapes matter</h2>
+
+<p>On resonance, the rotation angle depends only on the integral of the drive envelope. If the drive amplitude changes in time, \(\Omega(t)\), the rotation angle is the <dfn data-def="The time integral of the Rabi frequency over a pulse; equals the rotation angle on resonance.">pulse area</dfn></p>
+\[ \alpha = \int \Omega(t)\,dt . \]
+<p>A π pulse can therefore be short and strong or long and weak, square or Gaussian, as long as the area is π. In practice square pulses are rarely ideal. A sharp edge contains a wide range of frequencies (Chapter 21), which can excite unwanted transitions, for example a neighbouring qubit only a few MHz away, or a higher valley state. Smooth envelopes such as Gaussians, cosine ramps or <dfn data-def="A pulse with smooth rising and falling edges and a constant middle section.">flat-top</dfn> pulses keep the spectrum narrow. For a Gaussian envelope of width \(\sigma\), the spectral width is about \(1/(2\pi\sigma)\).</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>QICK provides three pulse styles: <code>const</code> (square), <code>arb</code> (any envelope you upload, for example a Gaussian from <code>add_gauss()</code>), and <code>flat_top</code> (envelope halves for the edges, constant middle) <cite data-r="qickdocs"></cite>. On the 4x2, the envelope memory per generator holds 65 536 complex samples, which at 9.8304 GSPS is about 6.7 µs of arbitrary waveform. Constant and flat-top pulses can be much longer because their middle part is not stored sample by sample <cite data-r="qickrepo"></cite>.</p>
+</div>
+
+<h2>Frequency-domain view: spectroscopy</h2>
+
+<p>Instead of sweeping time, you can fix the pulse (say a π pulse calibrated on resonance) and sweep the drive frequency. This is pulsed <dfn data-def="Measuring a system's response versus drive frequency to locate its transitions.">spectroscopy</dfn>. From the Rabi formula with \(\Omega t = \pi\):</p>
+\[ P_1(\Delta) = \frac{\Omega^2}{\Omega^2+\Delta^2}\sin^2\!\Big(\frac{\pi}{2}\sqrt{1+\Delta^2/\Omega^2}\Big). \]
+<p>The central peak has a full width of roughly \(1.6\,\Omega/2\pi\), about 1.6 times the Rabi frequency. That gives a rule of thumb: <b>to find an unknown resonance quickly, drive hard (wide line, easy to hit) and then reduce power to locate it precisely</b>.</p>
+
+<p>With a long, weak, continuous drive, the line width is instead set by decoherence. In the steady state of the Bloch equations (Chapter 4) the line is a Lorentzian of half-width</p>
+\[ \Delta\omega_{1/2} = \frac{1}{T_2}\sqrt{1 + \Omega^2 T_1 T_2}, \]
+<p>which grows with drive strength. This growth is called <dfn data-def="Broadening of a spectroscopic line when the drive is strong enough to saturate the transition.">power broadening</dfn>. When you see a broad line, lower the power until the width stops shrinking; that limiting width tells you about \(T_2^*\).</p>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>The first time a group finds an EDSR resonance on a new device, they usually do a 2D scan of drive frequency against magnetic field with a long, strong burst. The resonance appears as a straight line \(f_0 = g\mu_B (B_0 + B_{\text{mm}})/h\) whose slope gives the g-factor and whose offset reveals the micromagnet's field \(B_{\text{mm}}\) at the dot. Two dots under one micromagnet show two parallel lines separated by the field difference between them, typically tens to hundreds of MHz, which is what makes individual addressing possible (Chapter 12).</p>
+</div>
+
+<h2>When the rotating-wave approximation fails</h2>
+
+<p>The RWA needs \(\Omega \ll \omega_0\). For spin qubits (MHz Rabi, GHz qubit frequency) this is extremely well satisfied. The leading correction, the Bloch–Siegert shift, moves the resonance by about \(\Omega^2/(4\omega_0)\): for \(f_R = 10\) MHz and \(f_0 = 10\) GHz that is 2.5 kHz, usually negligible but measurable in precise experiments. Two related effects matter more in practice:</p>
+<ul>
+<li><b>AC Stark (light) shifts</b>: a strong drive on one transition shifts nearby transitions. When two qubits share a drive line, the drive for qubit A shifts qubit B's frequency and adds phase errors that must be calibrated <cite data-r="xue2022,noiri2022"></cite>.</li>
+<li><b>Heating-induced frequency shifts</b>: in silicon EDSR devices, strong microwave power warms the device and shifts qubit frequencies by up to MHz. Labs often apply a constant "pre-pulse" or keep the average power fixed to stabilise this <cite data-r="philips2022"></cite>.</li>
+</ul>
+
+<h2>Phase, frames and keeping track of time</h2>
+
+<p>In the rotating frame we measure angles relative to the drive. That means the phase of your drive generator <i>is</i> your reference clock for the qubit. Two consequences matter a lot when you program the hardware:</p>
+<ol>
+<li><b>Phase coherence.</b> Every pulse in a sequence must have a well-defined phase relative to the same continuously running reference at frequency \(\omega\). If the generator's phase jumps randomly between pulses, a Ramsey experiment shows no fringes even for a perfect qubit. QICK's signal generators use a phase accumulator that keeps running between pulses (it can be reset on request), so pulses at the same frequency stay phase coherent <cite data-r="qickrepo"></cite>.</li>
+<li><b>Virtual Z gates.</b> A rotation about z is just a phase shift. Instead of applying it physically, you can add its angle to the phase of every following drive pulse. This "virtual Z" is exact and takes zero time. Most spin-qubit groups implement Z gates this way (Chapter 5).</li>
+</ol>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Changing the drive frequency between pulses, for instance to address two qubits with one generator, breaks the simple phase picture: the rotating frame of qubit A is not that of qubit B. Each qubit needs its own phase bookkeeping, as if it had its own oscillator. With QICK you either dedicate one generator per qubit frequency, or keep careful track of the accumulated phase \(2\pi\,\delta f\,t\) yourself. Multiplexed generators (several tones on one output) exist in QICK firmware for larger boards, but the 4x2's standard firmware has two full-speed generators <cite data-r="qickrepo"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A Rabi oscillation reaches only \(P_1 = 0.5\) at its maximum, with perfect readout. What is \(|\Delta|/\Omega\)?</p>
+<details><summary>Show answer</summary><div>The amplitude is \(\Omega^2/(\Omega^2+\Delta^2) = 0.5\), so \(\Delta^2 = \Omega^2\) and \(|\Delta| = \Omega\). The drive is detuned by one Rabi frequency.</div></details>
+<p>2. You play an X/2 pulse with phase 0°, then the same pulse with phase 180°. What is the net operation?</p>
+<details><summary>Show answer</summary><div>The second pulse rotates about −x by 90°, which undoes the first. The net operation is the identity (up to global phase). This makes a good calibration check: any residual signal shows amplitude or phase errors.</div></details>
+<p>3. Why does a weaker drive give a narrower spectroscopy line?</p>
+<details><summary>Show answer</summary><div>The width of the pulsed resonance scales with \(\Omega\); the drive only acts strongly when \(|\Delta| \lesssim \Omega\). With weaker drive (and a correspondingly longer pulse), only frequencies closer to the resonance produce a full flip, until the width reaches the limit set by decoherence and frequency fluctuations.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A transverse field oscillating at \(\omega\) near \(\omega_0\) drives Rabi oscillations; in the rotating frame (RWA) the Hamiltonian is \(\tfrac{\hbar}{2}(\Delta\sigma_z + \Omega\cos\phi\,\sigma_x + \Omega\sin\phi\,\sigma_y)\).</li>
+<li>The drive phase \(\phi\) sets the rotation axis; the pulse area \(\int\Omega\,dt\) sets the angle; detuning tilts the axis.</li>
+<li>\(P_1(t) = \frac{\Omega^2}{\Omega^2+\Delta^2}\sin^2(\sqrt{\Omega^2+\Delta^2}\,t/2)\); a Rabi chevron maps this in time and frequency.</li>
+<li>Smooth pulse shapes reduce spectral leakage; spectroscopy line width shrinks with drive power until decoherence sets the limit.</li>
+<li>The drive generator's phase is the qubit's reference clock, so phase coherence and phase bookkeeping (virtual Z) are essential.</li>
+</ul>
+</div>
