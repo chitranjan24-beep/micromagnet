@@ -1,2 +1,91 @@
-<!--meta {"id": "tuning", "part": "Part III \u00b7 Spin qubits", "title": "Tuning a device: from first cooldown to a working qubit"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "tuning", "part": "Part III · Spin qubits", "title": "Tuning a device: from first cooldown to a working qubit"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Most of the time in a spin-qubit lab is not spent running elegant gate sequences. It is spent getting a new device from "a chip with wires" to "a qubit that can be measured": checking gates, forming dots, finding the last electron, setting up readout, finding the resonance. This chapter walks through that sequence in the order labs actually do it, with the measurement used at each step, how long it typically takes, and which steps the RFSoC 4x2 speeds up. It ties together everything in Parts II and III.</p>
+</div>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 430" width="900" role="img" aria-label="Device tuning flow">
+  <g>
+    <rect x="20" y="20" width="200" height="70" rx="5" class="box"/><text class="ttl" x="32" y="42">1. Room temperature</text><text class="sm" x="32" y="62">gate leakage, ohmic resistance,</text><text class="sm" x="32" y="78">bond map, ESD protection</text>
+    <rect x="240" y="20" width="200" height="70" rx="5" class="box"/><text class="ttl" x="252" y="42">2. Cooldown checks</text><text class="sm" x="252" y="62">ohmics at base, gate leakage,</text><text class="sm" x="252" y="78">line attenuation, temperatures</text>
+    <rect x="460" y="20" width="200" height="70" rx="5" class="boxa"/><text class="ttl" x="472" y="42">3. Turn-on and pinch-off</text><text class="sm" x="472" y="62">accumulate 2DEG; pinch each</text><text class="sm" x="472" y="78">barrier; find usable ranges</text>
+    <rect x="680" y="20" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="692" y="42">4. Charge sensor</text><text class="sm" x="692" y="62">sensor dot, Coulomb peaks,</text><text class="sm" x="692" y="78">reflectometry match, power</text>
+    <rect x="680" y="130" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="692" y="152">5. Qubit dots</text><text class="sm" x="692" y="172">CSDs, last electron, virtual</text><text class="sm" x="692" y="188">gates, tunnel rates</text>
+    <rect x="460" y="130" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="472" y="152">6. Spin readout</text><text class="sm" x="472" y="172">PSB window or Elzerman point,</text><text class="sm" x="472" y="188">T1, readout fidelity</text>
+    <rect x="240" y="130" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="252" y="152">7. Find the resonance</text><text class="sm" x="252" y="172">EDSR spectroscopy vs field,</text><text class="sm" x="252" y="188">identify each qubit</text>
+    <rect x="20" y="130" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="32" y="152">8. Coherent control</text><text class="sm" x="32" y="172">Rabi, Ramsey, echo, AllXY,</text><text class="sm" x="32" y="188">pulse calibration</text>
+    <rect x="20" y="240" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="32" y="262">9. Benchmark</text><text class="sm" x="32" y="282">randomised benchmarking,</text><text class="sm" x="32" y="298">noise spectroscopy</text>
+    <rect x="240" y="240" width="200" height="70" rx="5" class="boxb"/><text class="ttl" x="252" y="262">10. Two qubits</text><text class="sm" x="252" y="282">exchange calibration, CZ/CROT,</text><text class="sm" x="252" y="298">Bell states</text>
+    <rect x="460" y="240" width="420" height="70" rx="5" class="boxl"/><text class="ttl" x="472" y="262">Keep it working</text><text class="sm" x="472" y="282">drift tracking, periodic recalibration, charge jumps,</text><text class="sm" x="472" y="298">automated retuning and logging</text>
+  </g>
+  <g class="acc">
+    <line x1="220" y1="55" x2="240" y2="55"/><line x1="440" y1="55" x2="460" y2="55"/><line x1="660" y1="55" x2="680" y2="55"/>
+    <line x1="780" y1="90" x2="780" y2="130"/><line x1="680" y1="165" x2="660" y2="165"/><line x1="460" y1="165" x2="440" y2="165"/><line x1="240" y1="165" x2="220" y2="165"/>
+    <line x1="120" y1="200" x2="120" y2="240"/><line x1="220" y1="275" x2="240" y2="275"/><line x1="440" y1="275" x2="460" y2="275"/>
+  </g>
+  <rect x="20" y="340" width="16" height="12" class="box"/><text class="sm" x="44" y="350">mostly DC instruments (DC sources, lock-in, multimeters)</text>
+  <rect x="20" y="364" width="16" height="12" class="boxa"/><text class="sm" x="44" y="374">DC instruments, faster with automation</text>
+  <rect x="20" y="388" width="16" height="12" class="boxb"/><text class="sm" x="44" y="398">fast RF readout and pulsed control: where an RFSoC helps most</text>
+  <rect x="460" y="340" width="16" height="12" class="boxl"/><text class="sm" x="484" y="350">continuous: feedback and scheduling, also suited to an FPGA</text>
+</svg>
+</div>
+<figcaption>The usual order of tuning steps for a new spin-qubit device. The colour shows what kind of equipment each step relies on. Steps 4–10 depend on fast readout and pulses, which is where an RFSoC-based controller makes the biggest difference.</figcaption>
+</figure>
+
+<h2>Step 1: at room temperature</h2>
+<p>Before cooling, measure each gate's leakage to every other gate and to the 2DEG contacts (should be open circuit, above GΩ), and each ohmic contact's resistance to the others (usually kΩ–MΩ at room temperature through the substrate, which disappears at low temperature in undoped wafers). Record a <b>bond map</b> linking every device pad to a fridge line and a breakout-box pin. Ground all lines while handling: nanometre-scale gates are destroyed by electrostatic discharge, and one zap can kill a device.</p>
+
+<h2>Step 2: cooldown checks</h2>
+<p>A dilution refrigerator cooldown takes about 1–3 days (Chapter 16). At base temperature, repeat the leakage checks, verify that every line works, and record the fridge temperatures and the attenuation of RF lines. Many problems later on (noisy readout, hot electrons, missing pulses) come from a line that was never tested.</p>
+
+<h2>Step 3: turn-on and pinch-off</h2>
+<p>In an undoped Si/SiGe device, nothing conducts until gates pull in electrons. A <b>global turn-on</b> ramps all accumulation, plunger and barrier gates together while measuring current between two ohmic contacts with a small bias (say 100 µV) and a lock-in. Current appears at the turn-on (threshold) voltage, typically somewhere between 0.5 and 2 V depending on the stack. Then, with the channel conducting, sweep each barrier down individually: a <b>pinch-off</b> curve shows the voltage at which it closes the channel. Pinch-off voltages tell you which gates work and their useful ranges. Hysteresis or sudden jumps indicate charge traps.</p>
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Ramping gates quickly or to too high a voltage. Large voltages can push charge into the oxide or break it down. Labs set software limits on every gate and ramp rates (for example 10–50 mV/s), and keep a log of the maximum voltage each gate has seen.</p>
+</div>
+
+<h2>Step 4: the charge sensor</h2>
+<p>Form the sensor dot with its own plunger and barriers, find its Coulomb peaks, and measure diamonds to get its lever arm and charging energy (Chapter 7). Then set up RF reflectometry: sweep the carrier frequency to find the tank resonance, check how deep the dip is (matching), and sweep the carrier power to find the highest power that does not broaden the Coulomb peaks. Finally, park the sensor on the steepest flank of a peak.</p>
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>This is the first step where the 4x2 does the measuring. A frequency sweep of the reflected signal is a short QICK program (or even a simple PYNQ loop) with the DAC as source and the ADC with QICK's demodulator as receiver. Power sweeps use the generator <code>gain</code>. Chapter 39 gives the procedure and code.</p>
+</div>
+
+<h2>Step 5: forming the qubit dots</h2>
+<p>Using the sensor, take charge stability diagrams in pairs of plunger voltages. Find the charge transitions of each qubit dot, then empty the dots until the last transition is found. Measure the slopes of the lines to build the virtual-gate matrix (Chapter 8), then re-measure in virtual coordinates. Adjust barriers to set tunnel rates to the reservoirs (for loading and Elzerman readout, typically 10 kHz–1 MHz) and the interdot tunnel coupling.</p>
+<p>A slow DC-sensor CSD of 100×100 points at 10 ms per point takes almost 2 minutes; with RF readout and a fast raster ("video mode", Chapter 40), the same map can be taken in under a second and refreshed continuously while you turn knobs. This difference changes how tuning feels: from waiting to watching.</p>
+
+<h2>Step 6: spin readout</h2>
+<p>For PSB, scan the readout point near the \((1,1)\)–\((2,0)\) transition with a pulse sequence that alternately prepares singlets and mixed states, and look for the triangle where the signal depends on the spin state (Chapter 11). For Elzerman readout, find the plunger voltage where the Fermi level sits between the spin-split levels. Then record single-shot histograms, set a threshold and estimate readout fidelity. Measure \(T_1\) with load–wait–read.</p>
+
+<h2>Step 7: finding the resonance</h2>
+<p>Now the magnetic field is set and microwaves are applied. Because the micromagnet adds an unknown field (often 50–300 mT), you do not know exactly where the resonance is. Labs use long, strong bursts (or frequency chirps that adiabatically invert the spin over a wide band) and sweep frequency against magnetic field. The resonance appears as a line whose slope gives \(g\mu_B/h\). Two lines mean two qubits. This search over GHz with MHz-wide lines can take hours, so efficient spectroscopy matters.</p>
+
+<h2>Step 8: coherent control and calibration</h2>
+<p>With the resonance found: Rabi oscillations (sets π time and confirms coherent driving), a Rabi chevron (refines the frequency), Ramsey (precise frequency and \(T_2^*\)), Hahn echo (\(T_2\)), and AllXY (pulse calibration). This is the point where you can say you have a qubit.</p>
+
+<h2>Steps 9 and 10: benchmarking and two-qubit gates</h2>
+<p>Randomised benchmarking gives single-qubit gate fidelities. For two qubits, calibrate exchange (measure \(J\) versus barrier voltage, often with "fingerprint" plots of exchange oscillations versus pulse amplitude and detuning, as in the spinQICK EO work <cite data-r="wessels2026"></cite>), then the CZ or CROT gate, then Bell-state tomography.</p>
+
+<h2>Keeping it working</h2>
+<p>A tuned device does not stay tuned. Charge noise drifts the qubit frequencies, a single charge trap can jump and shift a dot by a fraction of a millivolt, and the sensor's working point wanders. Labs therefore schedule recalibrations (Ramsey frequency checks every few minutes, sensor re-centring, readout threshold updates) and log every parameter. Automating these tasks is an active research area <cite data-r="zwolak2023"></cite>. HRL's spinQICK includes experiments for electrostatic tune-up (charge stability, gate action, global turn-on) as well as qubit calibrations <cite data-r="spinqick"></cite>.</p>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Realistic timescales for a well-equipped group with a known device design: steps 1–3 take a day or two after cooldown; steps 4–6 one to several weeks; finding and calibrating the first qubit another week or more. A new device design or a new heterostructure can take months. Fast readout and automation shorten every step after step 3.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why is the charge sensor tuned before the qubit dots?</p>
+<details><summary>Show answer</summary><div>All later steps (finding transitions, the last electron, readout) are measured with the sensor, because qubit dots are too opaque for transport. Without a working sensor you cannot see the qubit dots at all.</div></details>
+<p>2. A 200 × 200 CSD takes how long at 10 ms per point (DC) versus 5 µs per point (RF raster)?</p>
+<details><summary>Show answer</summary><div>40 000 points: 400 s (almost 7 minutes) with DC readout, 0.2 s with RF raster readout, ignoring overheads.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Tuning goes: room-temperature checks → cooldown checks → turn-on and pinch-off → sensor → qubit dots → spin readout → resonance → coherent control → benchmarking → two-qubit gates.</li>
+<li>Early steps use DC instruments; from the sensor onward, fast RF readout and pulsed control dominate.</li>
+<li>Devices drift, so recalibration and logging are part of normal operation.</li>
+</ul>
+</div>

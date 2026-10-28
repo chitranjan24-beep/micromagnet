@@ -1,2 +1,171 @@
-<!--meta {"id": "spin-readout", "part": "Part III \u00b7 Spin qubits", "title": "Spin readout: Elzerman, Pauli spin blockade and latching"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "spin-readout", "part": "Part III · Spin qubits", "title": "Spin readout: Elzerman, Pauli spin blockade and latching"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The magnetic moment of one electron is far too small to detect directly. Every spin-qubit readout therefore converts spin into charge: "spin up" is made to move an electron somewhere, "spin down" is not (or vice versa), and the charge sensor from Chapter 9 sees the difference. There are two main conversion methods. Which one you use decides the pulse sequence, the required magnetic field and temperature, the readout time, and how much the RFSoC has to do in real time. This chapter explains both from the energy diagrams up.</p>
+</div>
+
+<h2>Spin-to-charge conversion</h2>
+
+<p>The idea is always the same: arrange the energy levels so that an electron (or a pair of electrons) can tunnel to a new position only for one spin state. Then measure the charge with the sensor. The spin information becomes a charge signal of the same size as any charge transition, which a good sensor reads in microseconds. The price is that readout destroys the spin state (it is "demolition" readout), and it takes far longer than gate operations (µs versus ns).</p>
+
+<h2>Energy-selective (Elzerman) readout</h2>
+
+<p>The first single-shot readout of an electron spin, by Elzerman and colleagues in 2004, used one dot next to one reservoir <cite data-r="elzerman2004"></cite>. In a magnetic field, the dot's single-electron level is split into \(E_\downarrow\) and \(E_\uparrow = E_\downarrow + E_Z\). The plunger voltage moves both levels together relative to the reservoir's Fermi level \(E_F\).</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 230" width="760" role="img" aria-label="Elzerman readout energy diagrams">
+  <g>
+    <text class="ttl" x="10" y="20">1. Empty</text>
+    <rect x="10" y="120" width="90" height="90" class="boxl"/><line class="ln" x1="10" y1="120" x2="100" y2="120"/><text class="sm" x="14" y="114">E<tspan baseline-shift="sub" font-size="8">F</tspan></text>
+    <rect x="110" y="40" width="10" height="170" class="box"/>
+    <line class="t1" x1="130" y1="76" x2="200" y2="76"/><text class="sm t1t" x="204" y="80">E↑</text>
+    <line class="t1" x1="130" y1="96" x2="200" y2="96"/><text class="sm t1t" x="204" y="100">E↓</text>
+    <text class="sm" x="128" y="150">both levels above E<tspan baseline-shift="sub" font-size="8">F</tspan>:</text><text class="sm" x="128" y="164">dot empties</text>
+  </g>
+  <g transform="translate(255,0)">
+    <text class="ttl" x="10" y="20">2. Load</text>
+    <rect x="10" y="120" width="90" height="90" class="boxl"/><line class="ln" x1="10" y1="120" x2="100" y2="120"/><text class="sm" x="14" y="114">E<tspan baseline-shift="sub" font-size="8">F</tspan></text>
+    <rect x="110" y="40" width="10" height="170" class="box"/>
+    <line class="t1" x1="130" y1="150" x2="200" y2="150"/><text class="sm t1t" x="204" y="154">E↑</text>
+    <line class="t1" x1="130" y1="170" x2="200" y2="170"/><text class="sm t1t" x="204" y="174">E↓</text>
+    <circle cx="165" cy="150" r="5" class="f2"/>
+    <text class="sm" x="128" y="70">both levels below E<tspan baseline-shift="sub" font-size="8">F</tspan>:</text><text class="sm" x="128" y="84">an electron enters,</text><text class="sm" x="128" y="98">spin random (or prepared)</text>
+  </g>
+  <g transform="translate(510,0)">
+    <text class="ttl" x="10" y="20">3. Read</text>
+    <rect x="10" y="120" width="90" height="90" class="boxl"/><line class="ln" x1="10" y1="120" x2="100" y2="120"/><text class="sm" x="14" y="114">E<tspan baseline-shift="sub" font-size="8">F</tspan></text>
+    <rect x="110" y="40" width="10" height="170" class="box"/>
+    <line class="t1" x1="130" y1="108" x2="200" y2="108"/><text class="sm t1t" x="204" y="112">E↑</text>
+    <line class="t1" x1="130" y1="132" x2="200" y2="132"/><text class="sm t1t" x="204" y="136">E↓</text>
+    <line class="t2" x1="135" y1="104" x2="104" y2="116"/><polygon points="104,116 112,110 113,118" class="f2"/>
+    <text class="sm" x="128" y="48">E↑ above E<tspan baseline-shift="sub" font-size="8">F</tspan>, E↓ below:</text><text class="sm" x="128" y="62">only spin up can leave,</text><text class="sm" x="128" y="76">then spin down refills</text>
+  </g>
+</svg>
+</div>
+<figcaption>Energy-selective readout. The reservoir (left in each panel) is filled up to the Fermi level \(E_F\); the grey bar is the tunnel barrier; blue lines are the dot's spin-split levels. In the read configuration, a spin-up electron can tunnel out (its energy is above \(E_F\)) while a spin-down electron cannot. After a spin-up electron leaves, a spin-down electron from the reservoir tunnels in, so the charge is missing only briefly.</figcaption>
+</figure>
+
+<p>In the read phase, the charge sensor shows a short "blip" if the spin was up: the electron leaves (sensor signal changes) and a spin-down electron soon refills the dot (signal returns). If the spin was down, nothing happens. Detecting the blip with a threshold is single-shot readout.</p>
+
+<figure>
+<div class="figbody"><!--plot:elzerman-trace--></div>
+<figcaption>Simulated Elzerman readout. Top: the plunger pulse (empty, load, read, empty). Middle: sensor trace for a spin-up electron, showing a blip during the read phase when the electron tunnels out and is replaced. Bottom: spin down, no blip. Real traces are noisier and blips have random start times and lengths, set by the tunnel rates.</figcaption>
+</figure>
+
+<h3>Requirements and limitations</h3>
+<ul>
+<li><b>Zeeman energy well above the electron temperature.</b> The Fermi level sits between \(E_\downarrow\) and \(E_\uparrow\). Thermal smearing of the reservoir lets a spin-down electron leave (false "up") or blocks a spin-up electron (false "down"). You need \(E_Z\) of at least several \(k_BT_e\): for \(T_e = 100\) mK that means \(E_Z\gtrsim 40\ \mu\)eV, so \(B\gtrsim 0.35\) T in silicon. This pushes the qubit frequency to 10 GHz and above.</li>
+<li><b>Tunnel rate in the right window.</b> The tunnel-out time must be longer than the sensor's response time (so blips are visible) and much shorter than \(T_1\) (so the spin does not relax before it is read). Typical tunnel times are 1–100 µs.</li>
+<li><b>Long readout window.</b> Because tunnelling is random, the read phase must last several tunnel times, typically 50 µs–1 ms. Elzerman readout is therefore slow compared with Pauli blockade.</li>
+<li><b>Needs a reservoir next to the qubit dot.</b> In long arrays, inner dots have no reservoir, so Elzerman readout only works at the ends.</li>
+</ul>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Energy-selective readout gives two other tools for free. <b>Initialisation</b>: in the load phase, place only \(E_\downarrow\) below \(E_F\), and only a spin-down electron can enter. <b>T1 without control</b>: load a random spin, wait, read; the fraction of blips versus wait time gives \(T_1\). These were how the first spin relaxation times in quantum dots were measured <cite data-r="elzerman2004,hanson2007"></cite>.</p>
+</div>
+
+<h2>Pauli spin blockade (PSB)</h2>
+
+<p><dfn data-def="Readout that uses the Pauli exclusion principle: two electrons can move into one dot only in the singlet state, so a charge sensor distinguishes singlet from triplet.">Pauli spin blockade</dfn> uses two electrons in two dots. Start in the \((1,1)\) charge state (one electron in each dot) and pulse the detuning towards \((2,0)\), where both electrons would sit in the left dot. Two electrons in the same dot's ground orbital must form a singlet, because the Pauli exclusion principle forbids two parallel spins in the same orbital (and the same valley). The triplet \((2,0)\) states require one electron in an excited orbital or valley state, which costs an extra energy \(E_{ST}\) (typically 0.1–1 meV in silicon, limited by the valley splitting).</p>
+
+<p>So in a detuning window just past the \((1,1)\)–\((2,0)\) transition:</p>
+<ul>
+<li>if the spins form a <b>singlet</b>, the right electron tunnels left and the charge becomes \((2,0)\);</li>
+<li>if they form a <b>triplet</b>, tunnelling is blocked and the charge stays \((1,1)\).</li>
+</ul>
+<p>The charge sensor distinguishes \((2,0)\) from \((1,1)\). Spin information has become charge information without needing a reservoir or a large Zeeman energy <cite data-r="hanson2007,seedhouse2021"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:st-energies--></div>
+<figcaption>Two-electron energies near the \((1,1)\)–\((2,0)\) transition (with \(t_c = 25\ \mu\)eV and Zeeman splitting \(E_Z = 35\ \mu\)eV). The singlet branch hybridises with \(S(2,0)\) and drops in energy for positive detuning. The triplets stay in \((1,1)\), because \(T(2,0)\) lies much higher (off the plot). At the readout point (vertical line), a singlet becomes \((2,0)\) while triplets remain \((1,1)\). The energy gap between \(S\) and \(T_0\) at a given detuning is the exchange \(J(\varepsilon)\).</figcaption>
+</figure>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 520 300" width="520" role="img" aria-label="Pauli spin blockade readout window in a charge stability diagram">
+  <rect x="60" y="20" width="420" height="240" class="box"/>
+  <!-- transition lines -->
+  <line class="ln" x1="200" y1="20" x2="250" y2="140"/>
+  <line class="ln" x1="250" y1="140" x2="480" y2="190"/>
+  <line class="ln" x1="250" y1="140" x2="300" y2="170"/>
+  <line class="ln" x1="300" y1="170" x2="340" y2="260"/>
+  <line class="ln" x1="300" y1="170" x2="60" y2="118"/>
+  <!-- readout triangle -->
+  <polygon points="300,170 360,183 316,205" class="fa2"/>
+  <line class="t2" x1="300" y1="170" x2="360" y2="183"/><line class="t2" x1="300" y1="170" x2="316" y2="205"/>
+  <line class="t2 dash" x1="316" y1="205" x2="360" y2="183"/>
+  <text class="lbl" x="140" y="80">(1,1)</text>
+  <text class="lbl" x="390" y="240">(2,0)</text>
+  <text class="lbl" x="380" y="80">(1,0)</text>
+  <text class="lbl" x="100" y="220">(2,1)</text>
+  <text class="sm t2t" x="364" y="206">PSB readout window:</text>
+  <text class="sm t2t" x="364" y="220">S → (2,0), T stays (1,1)</text>
+  <text class="sm" x="312" y="152">interdot line</text>
+  <line class="acc" x1="170" y1="120" x2="332" y2="190"/><polygon points="332,190 322,183 320,191" class="fillacc"/>
+  <text class="sm tacc" x="150" y="112">detuning ε</text>
+  <text class="sm" x="270" y="286" text-anchor="middle">V′<tspan baseline-shift="sub" font-size="8">P1</tspan> →</text>
+  <text class="sm" x="30" y="150" transform="rotate(-90 30 150)">V′<tspan baseline-shift="sub" font-size="8">P2</tspan> →</text>
+</svg>
+</div>
+<figcaption>Schematic location of the PSB readout window in the charge stability diagram (labels are illustrative). Just across the \((1,1)\)–\((2,0)\) interdot line, a small triangle exists where a singlet can move to \((2,0)\) but triplets stay in \((1,1)\). Its size is set by \(E_{ST}\) of the \((2,0)\) dot. In a measurement, the triangle appears as a region where the sensor signal is intermediate when the initial spin state is random.</figcaption>
+</figure>
+
+<h3>What PSB actually measures</h3>
+<p>PSB distinguishes "singlet" from "triplet", but the details depend on the magnetic fields:</p>
+<ul>
+<li>With a large Zeeman <i>difference</i> between the two dots (for example from a micromagnet gradient), \(T_0\) and \(S\) mix quickly in \((1,1)\). During readout, \(\ket{\uparrow\downarrow}\) and \(\ket{\downarrow\uparrow}\) both partly convert to singlet, so PSB measures the <b>parity</b> of the two spins: antiparallel (\(\uparrow\downarrow, \downarrow\uparrow\)) versus parallel (\(\uparrow\uparrow, \downarrow\downarrow\)). spinQICK calls this parity readout <cite data-r="spinqick"></cite>.</li>
+<li>With a small field difference (and a well-chosen pulse), PSB measures singlet versus all triplets, as used in singlet–triplet qubits (Chapter 13).</li>
+<li>Spin–orbit coupling can mix \(T_\pm\) with \(S\) and lift the blockade, especially in silicon at certain field directions <cite data-r="seedhouse2021"></cite>. Readout must be faster than this mixing.</li>
+</ul>
+<p>To read a single qubit with PSB, pair it with a reference spin in a known state (for example spin down in the neighbouring dot). Then "parallel or antiparallel" tells you the qubit's state.</p>
+
+<h3>Why PSB is so widely used</h3>
+<ul>
+<li>It does not need a reservoir next to the qubit dot, so it works anywhere in an array.</li>
+<li>It works at low magnetic fields and at higher temperatures (up to ~1 K), because it depends on \(E_{ST}\) (hundreds of µeV), not on \(E_Z\).</li>
+<li>It is fast: the charge changes deterministically when you pulse (no waiting for random tunnelling), so readout time is set by the sensor's SNR. With RF reflectometry, single-shot PSB readout in a few microseconds is routine <cite data-r="connors2020"></cite>.</li>
+</ul>
+
+<h2>Latching and shelving: making the signal bigger</h2>
+
+<p>The charge difference between \((2,0)\) and \((1,1)\) is just one electron moving by one dot spacing, which a sensor far away may barely see. Several enhancements map the two outcomes onto charge states that differ more strongly, or that are stable for longer:</p>
+<ul>
+<li><b>Latched readout</b>: arrange tunnel rates so that one outcome quickly proceeds to a different total-charge state (an electron enters or leaves from a reservoir), which then persists long after the spin would have relaxed. The sensor then measures a large, long-lived difference <cite data-r="harveycollard2018"></cite>.</li>
+<li><b>Shelving</b> into metastable charge states serves the same purpose in larger arrays.</li>
+</ul>
+<p>These tricks need extra pulse segments and careful timing of tunnel rates, again baseband voltage pulses on plungers.</p>
+
+<h2>A readout timing budget</h2>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>Your reflectometry sensor has \(t_{\min} = 100\) ns (SNR 1 in 100 ns, Chapter 9). The triplet state relaxes to the singlet during readout with a time \(T_1^{\text{RO}} = 50\ \mu\)s. How long should you integrate?</p>
+<p>For SNR 6 you need \(t = 36\,t_{\min} = 3.6\ \mu\)s. The probability that a triplet relaxes during that time is about \(3.6/50 \approx 7\%\), which would itself limit fidelity to roughly 96%. Integrating for 1.6 µs gives SNR 4 (2.3% overlap error each) and 3.2% relaxation error. The optimum is in between, and it is found experimentally by recording single-shot traces and analysing them offline or with an FPGA-based filter. This trade-off is why so much effort goes into faster sensors and amplifiers.</p>
+</div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Readout splits into two hardware tasks:</p>
+<ul>
+<li><b>Reading the sensor</b>: carrier generation, demodulation, integration and thresholding. This is what the 4x2 and QICK do well. QICK can return the integrated I/Q of every shot, or raw decimated traces for analysing blips and relaxation (Chapter 23).</li>
+<li><b>Pulsing the plungers</b> to the load, read and empty points (Elzerman), or across the interdot line (PSB). These are baseband pulses lasting µs (PSB) to ms (Elzerman). The 4x2's AC-coupled DAC outputs cannot hold these levels. You either use a separate DC-coupled AWG (triggered by the 4x2's PMOD outputs), modify the 4x2's output path, or use a board with DC-coupled outputs. spinQICK's PSB readout ran on a ZCU216 with DC-coupled amplifiers <cite data-r="wessels2026"></cite>. Chapter 38 compares the options.</li>
+</ul>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does Elzerman readout need a large magnetic field while PSB does not?</p>
+<details><summary>Show answer</summary><div>Elzerman readout discriminates spin by energy relative to the reservoir Fermi level, so \(E_Z\) must exceed the thermal smearing (several \(k_BT_e\)). PSB discriminates by the Pauli principle; the relevant energy is the singlet–triplet splitting of the doubly occupied dot (\(E_{ST}\), hundreds of µeV), which is independent of the field.</div></details>
+<p>2. In a micromagnet device with a large field difference between two dots, PSB readout cannot distinguish \(\ket{\uparrow\downarrow}\) from \(\ket{\downarrow\uparrow}\). Why, and what does it measure?</p>
+<details><summary>Show answer</summary><div>The field difference rapidly mixes \(S\) and \(T_0\) in (1,1), and both \(\ket{\uparrow\downarrow}\) and \(\ket{\downarrow\uparrow}\) are equal combinations of S and T₀. Both therefore unblock partially in the same way. PSB then measures parity: parallel spins (blocked) versus antiparallel (not blocked).</div></details>
+<p>3. What limits how long the Elzerman read window must be?</p>
+<details><summary>Show answer</summary><div>The tunnel-out time of the spin-up electron: you must wait several tunnel times to be sure an up spin has left. But the window must be short compared with \(T_1\), or up spins relax first and are misread as down.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Spin readout converts spin to charge and reads the charge with a sensor.</li>
+<li>Elzerman readout: spin-up tunnels out to a reservoir; needs \(E_Z \gg k_BT_e\), a reservoir, and read windows of tens of µs to ms.</li>
+<li>PSB: singlets move to (2,0), triplets are blocked; works anywhere in an array, at low field and higher temperature, and fast; measures singlet/triplet or parity.</li>
+<li>Latching and shelving enhance the charge signal.</li>
+<li>The 4x2 handles sensor readout well; the plunger pulses for readout need DC-coupled outputs.</li>
+</ul>
+</div>

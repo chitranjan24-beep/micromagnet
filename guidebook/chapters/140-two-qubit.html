@@ -1,2 +1,84 @@
-<!--meta {"id": "two-qubit", "part": "Part III \u00b7 Spin qubits", "title": "Two-qubit gates and multi-qubit devices"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "two-qubit", "part": "Part III · Spin qubits", "title": "Two-qubit gates and multi-qubit devices"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A quantum computer needs entangling gates. For spins they all come from the exchange interaction, switched on for tens of nanoseconds by a barrier-gate pulse while single-qubit microwave pulses correct phases and rotate targets. Programming a two-qubit gate means synchronising a shaped baseband pulse, one or more microwave bursts and a readout, all to within a nanosecond, which is the most demanding thing you will ask of a controller. This chapter explains the physics behind the three standard gates and what their pulses look like.</p>
+</div>
+
+<h2>Two spins with exchange and different Zeeman energies</h2>
+
+<p>Two LD qubits in neighbouring dots, with Zeeman energies \(E_{Z1}\) and \(E_{Z2}\) (different, thanks to the micromagnet), coupled by exchange \(J\):</p>
+\[ H = \frac{E_{Z1}}{2}\sigma_z^{(1)} + \frac{E_{Z2}}{2}\sigma_z^{(2)} + \frac{J}{4}\big(\vec\sigma^{(1)}\cdot\vec\sigma^{(2)} - 1\big). \]
+<p>Write \(\Delta E_Z = E_{Z1} - E_{Z2}\). Two regimes give two different kinds of gate:</p>
+<ul>
+<li>\(J \ll \Delta E_Z\): the flip-flop part of exchange (\(\sigma_x\sigma_x + \sigma_y\sigma_y\)) connects \(\ket{\uparrow\downarrow}\) and \(\ket{\downarrow\uparrow}\), which differ in energy by \(\Delta E_Z\). It is strongly off-resonant and has almost no effect. What remains is the Ising part \(\tfrac J4\sigma_z\sigma_z\): <b>a controlled phase</b>.</li>
+<li>\(J \gg \Delta E_Z\): exchange dominates and swaps the two spins: <b>a SWAP gate</b>.</li>
+</ul>
+<p>Silicon micromagnet devices typically have \(\Delta E_Z/h\) of tens to hundreds of MHz and operate in the first regime.</p>
+
+<h2>The CZ (controlled-phase) gate</h2>
+
+<p>In the regime \(J\ll\Delta E_Z\), the four computational states stay (nearly) product states, and their energies are</p>
+\[ E_{\uparrow\uparrow} = \bar E_Z,\quad E_{\downarrow\downarrow} = -\bar E_Z,\quad E_{\uparrow\downarrow} = \tfrac{\Delta E_Z}{2} - \tfrac{J}{2},\quad E_{\downarrow\uparrow} = -\tfrac{\Delta E_Z}{2} - \tfrac{J}{2}, \]
+<p>with \(\bar E_Z = (E_{Z1}+E_{Z2})/2\). The antiparallel states are lowered by \(J/2\) each. Over a pulse during which exchange is on, the four states pick up phases; subtracting the single-qubit parts (which a virtual Z on each qubit can undo) leaves a <b>conditional phase</b></p>
+\[ \phi_{CP} = \frac{1}{\hbar}\int J(t)\,dt . \]
+<p>When \(\phi_{CP} = \pi\), the gate is CZ = diag(1, 1, 1, −1) up to single-qubit Z rotations. For a constant \(J\), the gate time is \(t_{CZ} = h/(2J)\).</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>With \(J/h = 5\) MHz during the pulse, \(t_{CZ} = 1/(2\times5\ \text{MHz}) = 100\) ns. With \(\Delta E_Z/h = 100\) MHz, \(J/\Delta E_Z = 0.05\): small enough that the swap-like error is small, provided the pulse is turned on and off smoothly. Silicon experiments typically use CZ gates of 50–200 ns.</p>
+</div>
+
+<h3>Why the pulse shape matters</h3>
+<p>Turning \(J\) on suddenly excites unwanted transitions between \(\ket{\uparrow\downarrow}\) and \(\ket{\downarrow\uparrow}\), because the eigenstates change abruptly. A smooth envelope (for example a cosine or Hann window) keeps the evolution <i>adiabatic</i> with respect to \(\Delta E_Z\), so the states follow the slowly changing eigenstates and only acquire phase. The silicon experiments that crossed 99% two-qubit fidelity all used carefully shaped barrier pulses and calibrated the single-qubit phase corrections <cite data-r="xue2022,noiri2022,mills2022"></cite>. A further subtlety: the barrier pulse also shifts the dot potentials slightly through cross-capacitance, so the plungers are compensated with virtual-gate pulses at the same time.</p>
+
+<h2>The CROT (conditional rotation) gate</h2>
+
+<p>While \(J\) is on, the frequency of qubit 2 depends on the state of qubit 1: from the energies above, qubit 2's transition is at \(f_2 \pm J/(2h)\). The spectrum splits into four lines.</p>
+
+<figure>
+<div class="figbody"><!--plot:crot-spectrum--></div>
+<figcaption>Simulated EDSR spectrum of two qubits with exchange on. Each qubit's line splits into two, separated by \(J/h\), depending on the other qubit's state. A π pulse tuned to one of the four lines flips its qubit only if the other qubit is in the matching state: a conditional rotation (CROT), equivalent to CNOT up to phases.</figcaption>
+</figure>
+
+<p>A microwave π pulse at one of the four frequencies, long enough to resolve the \(J\) splitting (pulse bandwidth smaller than \(J/h\)), flips the target only for one control state. This is a <b>CROT</b>, equivalent to a CNOT up to single-qubit phases. It needs exchange on during a frequency-selective microwave pulse, so both baseband and microwave channels must be synchronised.</p>
+
+<h2>The SWAP gate</h2>
+<p>When \(J \gg \Delta E_Z\), the eigenstates of the two spins become singlet and triplets, and a pulse with \(\int J\,dt/\hbar = \pi\) exchanges the two spin states: \(\ket{\uparrow\downarrow}\to\ket{\downarrow\uparrow}\). The √SWAP (half the pulse area) is entangling and universal together with single-qubit gates. SWAP gates are also useful to move quantum information along a chain without moving electrons. They need large, fast exchange pulses, and residual \(\Delta E_Z\) causes errors unless the pulse is short or the field difference is small.</p>
+
+<h2>Where the field stands</h2>
+<p>In 2022, three groups demonstrated two-qubit gates in silicon above 99% fidelity: Delft (Xue et al.), RIKEN (Noiri et al.) and Princeton (Mills et al.), all in Si/SiGe with micromagnets <cite data-r="xue2022,noiri2022,mills2022"></cite>. Delft operated a six-qubit processor with universal control the same year <cite data-r="philips2022"></cite>. HRL demonstrated universal logic between exchange-only encoded qubits <cite data-r="weinstein2023"></cite>. The open questions now are mostly about scale: uniformity of many qubits, crosstalk, calibration effort, wiring and control electronics. That last point is exactly where open-source RFSoC controllers come in.</p>
+
+<h2>Scaling beyond nearest neighbours</h2>
+<ul>
+<li><b>Linear arrays</b>: 4–12 dots in a line, each with plunger and barrier gates, read by sensors at the sides <cite data-r="philips2022"></cite>.</li>
+<li><b>2D arrays</b>: 2×2 and larger, with more complex gate stacks.</li>
+<li><b>Shuttling</b>: moving electrons coherently along a channel with a travelling potential, to link distant qubit regions. Shuttling with "conveyor-belt" gates uses several phase-shifted sinusoids at MHz frequencies on a set of gates, a natural task for multi-channel DACs.</li>
+<li><b>Spin–photon coupling</b>: coupling spins to a superconducting microwave resonator, for long-range interactions.</li>
+</ul>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>A minimal CZ or CROT experiment on two LD qubits needs at least:</p>
+<ul>
+<li>one microwave channel (EDSR for both qubits, frequency-multiplexed),</li>
+<li>one DC-coupled fast baseband channel for the barrier (exchange) pulse, plus plunger compensation,</li>
+<li>one or two baseband channels for the PSB readout pulse on the plungers,</li>
+<li>one readout carrier and one ADC.</li>
+</ul>
+<p>That is three to five DAC channels; the 4x2 has two, both AC-coupled. Realistically, a two-qubit experiment uses the 4x2 for readout and microwaves together with a DC-coupled AWG for the gate pulses, or moves to a larger board. Chapter 44 discusses how to synchronise them and what the 4x2 can still contribute, such as real-time feedback and calibration loops.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does a CZ gate require \(J \ll \Delta E_Z\), while a SWAP requires \(J\gg\Delta E_Z\)?</p>
+<details><summary>Show answer</summary><div>When \(\Delta E_Z\) dominates, the flip-flop term is off-resonant, so exchange only adds a state-dependent energy shift (an Ising coupling), giving a controlled phase. When \(J\) dominates, the flip-flop term is resonant and exchanges the spin states.</div></details>
+<p>2. \(J/h = 2\) MHz. How long is the CZ gate? How long must a CROT π pulse be, at least, to resolve the J-split lines?</p>
+<details><summary>Show answer</summary><div>\(t_{CZ} = 1/(2\times2\ \text{MHz}) = 250\) ns. For the CROT, choose the Rabi frequency so that the unwanted line (detuned by \(J/h\)) completes a whole number of full rotations while the wanted line gets exactly π. For a square pulse this "synchronisation" condition gives \(f_R = (J/h)/\sqrt{3} \approx 1.15\) MHz (π pulse ≈ 430 ns) or, with more margin, \(f_R = (J/h)/\sqrt{15} \approx 0.52\) MHz (π pulse ≈ 1 µs).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>All spin two-qubit gates use exchange \(J\), switched by barrier-gate pulses.</li>
+<li>\(J\ll\Delta E_Z\): CZ with \(\phi_{CP} = \int J\,dt/\hbar = \pi\); smooth pulses keep it adiabatic.</li>
+<li>With exchange on, qubit frequencies split by \(J/h\): a selective microwave π pulse makes a CROT (CNOT).</li>
+<li>\(J\gg\Delta E_Z\): SWAP and √SWAP.</li>
+<li>Silicon passed 99% two-qubit fidelity in 2022; scaling now depends heavily on control electronics.</li>
+</ul>
+</div>

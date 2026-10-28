@@ -508,6 +508,118 @@ def sensor_peak():
     save('sensor-peak', ax.svg(legend_pos='tl'))
 
 
+# ---------------------------------------------------------------- Part III figures
+@fig
+def zeeman_valley():
+    B = np.linspace(0, 1.2, 600)
+    Ez = 2 * 57.88 * B  # ueV
+    Evs = 70.0
+    dsv = 3.0
+    # basis energies
+    e1 = -Ez / 2              # v-, down
+    e2 = Ez / 2               # v-, up
+    e3 = Evs - Ez / 2         # v+, down
+    e4 = Evs + Ez / 2         # v+, up
+    # anticrossing e2 <-> e3
+    m = (e2 + e3) / 2; d = np.sqrt(((e2 - e3) / 2) ** 2 + dsv ** 2)
+    ax = Axes(330, 310, xlim=(0, 1.2), ylim=(-80, 230), xlabel='magnetic field B (T)', ylabel='energy (µeV)', title='spin–valley levels', mr=12)
+    ax.line(B, e1, 't1', 'v₋ ↓'); ax.line(B, m - d, 't2', 'v₋ ↑ / v₊ ↓ (mixed)'); ax.line(B, m + d, 't3'); ax.line(B, e4, 't4', 'v₊ ↑')
+    Bh = Evs / (2 * 57.88)
+    ax.vline(Bh, 'thin dash', 'hot spot', ly=-60)
+    # relaxation rate
+    rate = (B ** 5) * 1.0 + 40 * (dsv ** 2) / (((Ez - Evs) / 4) ** 2 + dsv ** 2) * (B > 0.05)
+    ax2 = Axes(330, 310, xlim=(0, 1.2), ylim=(-1, 3.2), xlabel='magnetic field B (T)', ylabel='log₁₀ (1/T₁) (arb.)', title='relaxation rate', mr=12, yticks=[-1, 0, 1, 2, 3])
+    ax2.line(B[30:], np.log10(rate[30:] + 0.1), 't2')
+    ax2.vline(Bh, 'thin dash', 'E_Z = E_VS', ly=2.9)
+    save('zeeman-valley', row(ax.svg(legend_pos='tl'), ax2.svg()))
+
+
+@fig
+def elzerman_trace():
+    t = np.linspace(0, 3.0, 3000)  # ms
+    V = np.where(t < 0.5, 1.0, np.where(t < 1.5, 0.0, np.where(t < 2.5, -1.0, 1.0)))
+    rng = np.random.default_rng(7)
+    base = np.where(t < 0.5, 0.2, np.where(t < 1.5, 0.0, np.where(t < 2.5, 0.0, 0.2)))
+    # spin up: tunnels out at 1.62 ms, spin-down electron tunnels back in at 1.86
+    up = base.copy(); up[(t > 1.62) & (t < 1.86)] += 0.6
+    # dot empty during "empty" phase -> sensor level shift
+    down = base.copy()
+    for arr in (up, down):
+        arr[(t >= 2.5) & (t < 2.52)] += 0.0
+    up = up + rng.normal(0, 0.05, t.size); down = down + rng.normal(0, 0.05, t.size) - 1.2
+    up = up + 0.0
+    ax = Axes(640, 360, xlim=(0, 3), ylim=(-2.8, 2.6), xlabel='time (ms)', ylabel='signal (arb.)', yticks=[], grid=False)
+    ax.line(t, 1.6 + 0.6 * V, 't4', 'plunger pulse: load / read / empty')
+    ax.line(t, up, 't2', 'sensor trace, spin up: blip')
+    ax.line(t, down, 't1', 'sensor trace, spin down: no blip')
+    for x, lab in [(0.25, 'empty'), (1.0, 'load'), (2.0, 'read'), (2.75, 'empty')]:
+        ax.text(x, 2.45, lab, 'sm', anchor='middle')
+    save('elzerman-trace', ax.svg(legend_pos='bl'))
+
+
+@fig
+def st_energies():
+    eps = np.linspace(-200, 200, 800)  # ueV, positive favours (2,0)
+    tc, Ez = 25.0, 35.0
+    # singlet hybridisation between S(1,1) at 0 and S(2,0) at -eps
+    a, b = 0.0, -eps
+    mid = (a + b) / 2; half = np.sqrt(((a - b) / 2) ** 2 + 2 * tc ** 2)
+    ax = Axes(620, 330, xlim=(-200, 200), ylim=(-230, 90), xlabel='detuning ε (µeV)  ← (1,1) favoured      (2,0) favoured →', ylabel='energy (µeV)')
+    ax.line(eps, mid - half, 't1', 'S (hybridised S(1,1)–S(2,0))')
+    ax.line(eps, mid + half, 't1')
+    ax.line(eps, 0 * eps, 't3', 'T₀(1,1)')
+    ax.line(eps, Ez + 0 * eps, 't2', 'T₊(1,1), T₋(1,1)')
+    ax.line(eps, -Ez + 0 * eps, 't2')
+    ax.vline(120, 'acc')
+    ax.text(114, 70, 'readout point: S → (2,0), T blocked', 'sm tacc', anchor='end')
+    ax.text(-190, -40, 'J(ε) = gap between S and T₀', 'sm')
+    save('st-energies', ax.svg(legend_pos='bl'))
+
+
+@fig
+def crot_spectrum():
+    f = np.linspace(-30, 30, 1500)  # MHz relative to qubit-1 centre ... use two qubits
+    f1, f2, J = -12.0, 12.0, 6.0
+    def lor(x, x0, w=0.6):
+        return w ** 2 / ((x - x0) ** 2 + w ** 2)
+    ax = Axes(620, 280, xlim=(-25, 25), ylim=(0, 1.15), xlabel='drive frequency − 10 GHz (MHz)', ylabel='excitation probability', yticks=[0, 0.5, 1])
+    y = 0.9 * (lor(f, f1 - J / 2) + lor(f, f1 + J / 2) + lor(f, f2 - J / 2) + lor(f, f2 + J / 2))
+    ax.line(f, y, 't1')
+    for x0, lab in [(f1 - J / 2, 'Q1 | Q2=↓'), (f1 + J / 2, 'Q1 | Q2=↑'), (f2 - J / 2, 'Q2 | Q1=↓'), (f2 + J / 2, 'Q2 | Q1=↑')]:
+        ax.text(x0, 1.02, lab, 'sm', anchor='middle')
+    ax.text(f1, 0.35, '← J →', 'sm tacc', anchor='middle')
+    save('crot-spectrum', ax.svg())
+
+
+@fig
+def st_bloch():
+    b = Bloch(size=320, cx=240)
+    b.sphere(); b.axes(labels=False)
+    u, v, _ = b.proj(0, 0, 1); b.parts.append(f'<text class="lbl" x="{u + 8:.1f}" y="{v - 10:.1f}">|S⟩</text>')
+    u, v, _ = b.proj(0, 0, -1); b.parts.append(f'<text class="lbl" x="{u + 8:.1f}" y="{v + 18:.1f}">|T₀⟩</text>')
+    b.vector(0, 0, 1.0, 't1', 'J (exchange)', (8, 22))
+    b.vector(1.0, 0, 0, 't2', 'ΔB<tspan baseline-shift="sub" font-size="9">z</tspan> (field difference)', (-130, 22))
+    th = math.atan2(1.0, 0.6)
+    n = (math.sin(th), 0, math.cos(th))
+    b.vector(*n, 't3', 'both on', (6, -4))
+    u, v, _ = b.proj(1, 0, 0); b.parts.append(f'<text class="sm" x="{u - 120:.1f}" y="{v + 42:.1f}">|↑↓⟩ and |↓↑⟩ lie on the ±x axis</text>')
+    save('st-bloch', b.svg(w=480))
+
+
+@fig
+def eo_axes():
+    b = Bloch(size=320, cx=250)
+    b.sphere(); b.axes(labels=False)
+    u, v, _ = b.proj(0, 0, 1); b.parts.append(f'<text class="lbl" x="{u + 8:.1f}" y="{v - 10:.1f}">|0<tspan baseline-shift="sub" font-size="9">L</tspan>⟩</text>')
+    u, v, _ = b.proj(0, 0, -1); b.parts.append(f'<text class="lbl" x="{u + 8:.1f}" y="{v + 18:.1f}">|1<tspan baseline-shift="sub" font-size="9">L</tspan>⟩</text>')
+    b.vector(0, 0, 1.0, 't1', 'J₁₂ axis (z)', (8, 26))
+    a = math.radians(120)
+    b.vector(math.sin(a), 0, math.cos(a), 't2', 'J₂₃ axis (n), 120° from z', (-170, 30))
+    a2 = math.radians(-120)
+    b.vector(math.sin(a2), 0, math.cos(a2), 't3', 'J₁₃ axis (m), triangular devices', (6, 34))
+    save('eo-axes', b.svg(w=520))
+
+
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)
     for n in names:

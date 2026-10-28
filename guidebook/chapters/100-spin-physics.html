@@ -1,2 +1,110 @@
-<!--meta {"id": "spin-physics", "part": "Part III \u00b7 Spin qubits", "title": "An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "spin-physics", "part": "Part III · Spin qubits", "title": "An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A spin qubit is not an isolated spin in vacuum. It lives in a crystal, inside an electrostatic trap, next to other electrons and (in some materials) millions of nuclear spins. Four interactions shape everything you will measure: the Zeeman effect (sets the qubit frequency), spin–orbit coupling (allows electric control and causes relaxation), the hyperfine interaction with nuclei (causes dephasing), and, in silicon, the valley degree of freedom. A fifth, the exchange interaction between neighbouring electrons, is what makes two-qubit gates and several qubit encodings possible. This chapter collects them in one place with their typical sizes.</p>
+</div>
+
+<h2>The energy ladder of a spin qubit device</h2>
+
+<p>Before going into each interaction, here are the energy scales of a typical Si/SiGe device, from largest to smallest. Keeping these in your head makes most papers easy to follow. Frequency equivalents use \(1\ \mu\text{eV} \leftrightarrow 0.242\) GHz.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Energy</th><th>Typical size</th><th>Frequency equivalent</th><th>What it controls</th></tr></thead>
+<tbody>
+<tr><td>Charging energy \(E_C\)</td><td>2–10 meV</td><td>0.5–2.4 THz</td><td>Electron number</td></tr>
+<tr><td>Orbital spacing</td><td>1–4 meV</td><td>0.2–1 THz</td><td>Excited orbital states</td></tr>
+<tr><td>Valley splitting \(E_{VS}\)</td><td>20–300 µeV</td><td>5–70 GHz</td><td>Extra low-lying states in Si</td></tr>
+<tr><td>Zeeman splitting \(E_Z\)</td><td>10–120 µeV (0.1–1 T)</td><td>2.8–28 GHz</td><td>Qubit frequency</td></tr>
+<tr><td>Tunnel coupling \(t_c\)</td><td>0.1–100 µeV</td><td>0.02–24 GHz</td><td>Exchange, PSB</td></tr>
+<tr><td>Exchange \(J\)</td><td>0–1 µeV (operational)</td><td>0–250 MHz</td><td>Two-qubit gates</td></tr>
+<tr><td>Thermal \(k_BT_e\) at 100 mK</td><td>8.6 µeV</td><td>2 GHz</td><td>Initialisation, readout errors</td></tr>
+<tr><td>Micromagnet field difference between dots</td><td>~0.2–2 µeV</td><td>50–500 MHz</td><td>Qubit addressability</td></tr>
+<tr><td>Rabi frequency (as energy)</td><td>~0.004–0.08 µeV</td><td>1–20 MHz</td><td>Gate speed</td></tr>
+</tbody></table></div>
+
+<h2>Zeeman effect and the g-factor</h2>
+
+<p>The Zeeman energy \(E_Z = g\mu_B B\) (Chapter 2) gives the qubit frequency. For electrons in silicon, \(g\) is very close to the free-electron value of 2.0023, because silicon's conduction band has weak spin–orbit coupling. It is not exactly 2: interface electric fields and the valley state shift \(g\) by parts in \(10^3\)–\(10^4\), and these shifts depend on gate voltages. This electrical tunability of \(g\) (a Stark shift) is small but useful: in Si-MOS devices it is used to address individual qubits, and it also means charge noise can shift the qubit frequency <cite data-r="burkard2023"></cite>.</p>
+
+<p>In GaAs, \(g\approx -0.44\), so a 1 T field gives only 6.2 GHz. Holes in germanium have g-factors that depend strongly on field direction, from about 0.1 in-plane to more than 10 out-of-plane, so the qubit frequency changes a lot if the sample is tilted in the magnet <cite data-r="scappucci2021"></cite>.</p>
+
+<h2>Spin–orbit coupling</h2>
+
+<p>An electron moving through an electric field sees, in its own rest frame, an effective magnetic field. In a crystal, electric fields come from the crystal structure (inversion asymmetry of the lattice, giving the Dresselhaus term) and from the heterostructure and gates (structural asymmetry, giving the Rashba term). The result is a coupling between the electron's momentum and its spin, schematically</p>
+\[ H_{SO} = \alpha_R(\sigma_x k_y - \sigma_y k_x) + \beta_D(\sigma_x k_x - \sigma_y k_y) . \]
+<p>Its strength is often expressed as a <dfn data-def="The distance an electron must travel for spin–orbit coupling to rotate its spin by about one radian.">spin–orbit length</dfn> \(\ell_{SO}\): the distance an electron must travel for its spin to rotate by one radian. In GaAs \(\ell_{SO}\) is a few micrometres; in silicon conduction electrons it is much longer (weak coupling); in germanium holes it is short (strong coupling).</p>
+
+<p>Spin–orbit coupling has two consequences for qubits:</p>
+<ul>
+<li><b>It allows electric control.</b> Shaking the electron back and forth with an oscillating gate voltage moves it in space; with spin–orbit coupling, that motion appears to the spin as an oscillating magnetic field. This is intrinsic <dfn data-def="Driving spin rotations with an oscillating electric field, using spin–orbit coupling or a magnetic field gradient to convert motion into an effective magnetic field.">electric-dipole spin resonance (EDSR)</dfn>. It works well in GaAs and germanium. In silicon electrons it is too weak, so a micromagnet provides an artificial, much stronger "spin–orbit" effect (Chapter 12).</li>
+<li><b>It causes relaxation.</b> It mixes spin and orbital states, letting phonons cause spin flips (Chapter 4).</li>
+</ul>
+
+<h2>Hyperfine interaction with nuclear spins</h2>
+
+<p>An electron in a dot overlaps with many atomic nuclei. If those nuclei have spin, the electron feels their combined magnetic field through the <dfn data-def="The interaction between an electron's spin and the spins of atomic nuclei it overlaps with; produces the fluctuating Overhauser field.">hyperfine interaction</dfn>, dominated by the Fermi contact term:</p>
+\[ H_{hf} = \sum_k A_k\,\vec S\cdot\vec I_k \;\approx\; g\mu_B\,\vec B_{\text{nuc}}\cdot\vec S . \]
+<p>The sum over \(k\) runs over all nuclei in the dot, with coupling \(A_k\) proportional to the electron density at nucleus \(k\). The total behaves like an extra random magnetic field, the <dfn data-def="The effective magnetic field felt by an electron spin from the combined hyperfine interaction with many nuclear spins.">Overhauser field</dfn> \(\vec B_{\text{nuc}}\). Its average is zero, but its fluctuations are not: with \(N\) nuclei pointing randomly, the field fluctuates by an amount of order \(1/\sqrt N\) times the fully polarised field. The nuclear spins change slowly (milliseconds to seconds), so the Overhauser field looks quasi-static during a shot but different from shot to shot. This is exactly the noise that gives a Gaussian Ramsey decay (Chapter 4).</p>
+
+<div class="box example"><span class="tag">Worked example: GaAs dephasing time</span>
+<p>In a GaAs dot of about \(10^6\) nuclei, the Overhauser field fluctuates with a standard deviation of roughly \(\sigma_B \approx 2\) mT <cite data-r="hanson2007"></cite>. The frequency spread is \(\sigma_\omega = |g|\mu_B\sigma_B/\hbar = 0.44\times9.27\times10^{-24}\times2\times10^{-3}/1.055\times10^{-34} \approx 7.7\times10^7\) rad/s. Then \(T_2^* = \sqrt2/\sigma_\omega \approx 18\) ns. This matches measured values of 10–20 ns <cite data-r="petta2005"></cite>.</p>
+</div>
+
+<p>In natural silicon only 4.7% of nuclei (<sup>29</sup>Si) carry spin, and the coupling per nucleus is weaker; \(T_2^*\) is around 1 µs. In isotopically purified <sup>28</sup>Si with 800 ppm or less <sup>29</sup>Si, hyperfine noise becomes negligible and charge noise takes over as the main dephasing source <cite data-r="yoneda2018"></cite>. GaAs experiments, in turn, learned to use the nuclear field: singlet–triplet qubits in GaAs use a deliberately prepared Overhauser field difference between two dots as a control axis (Chapter 13), and real-time Bayesian estimation of the nuclear field has been used to extend coherence.</p>
+
+<h2>Valleys again: spin–valley mixing</h2>
+
+<p>Chapter 6 introduced the two low-lying valley states in silicon, split by \(E_{VS}\). With spin, a single electron in the dot has four low-lying states: \(\ket{v_-,\downarrow}, \ket{v_-,\uparrow}, \ket{v_+,\downarrow}, \ket{v_+,\uparrow}\). As the magnetic field increases, \(\ket{v_-,\uparrow}\) moves up and \(\ket{v_+,\downarrow}\) moves down. They meet when \(E_Z = E_{VS}\). Spin–orbit coupling (and interface roughness) couples them weakly, producing an anticrossing.</p>
+
+<figure>
+<div class="figbody"><!--plot:zeeman-valley--></div>
+<figcaption>Left: the four lowest single-electron states in a silicon dot with valley splitting 70 µeV, versus magnetic field. The spin-up lower-valley state anticrosses with the spin-down upper-valley state when \(E_Z = E_{VS}\) (here at 0.6 T). Right: schematic spin relaxation rate. Away from the crossing, \(1/T_1\) grows steeply with field; at the crossing it peaks (the hot spot) because the qubit state has borrowed valley character.</figcaption>
+</figure>
+
+<p>Two practical lessons follow. Operate the qubit well away from the hot spot. And measure \(E_{VS}\) for every qubit dot, because it varies randomly from dot to dot in Si/SiGe. Measuring \(T_1\) versus \(B\) and locating the peak is one standard method <cite data-r="burkard2023"></cite>.</p>
+
+<h2>Two electrons: the exchange interaction</h2>
+
+<p>Two electrons in neighbouring dots interact through their wavefunctions' overlap. Because electrons are fermions, the total wavefunction must be antisymmetric. The spin singlet (antisymmetric in spin) must have a symmetric orbital part, and the triplets (symmetric in spin) an antisymmetric orbital part. These orbital parts have different energies, so the singlet and triplets split. The splitting \(J\) is the <dfn data-def="The energy splitting J between singlet and triplet states of two electrons, produced by wavefunction overlap; controlled by gate voltages.">exchange energy</dfn>, and the spin physics is described by the Heisenberg Hamiltonian</p>
+\[ H_{ex} = J\Big(\vec S_1\cdot\vec S_2 - \frac14\Big) \]
+<p>(with \(\vec S\) in units of \(\hbar\)), which gives energy \(-J\) to the singlet and 0 to the triplets.</p>
+
+<p>In a double dot, \(J\) comes from virtual tunnelling: the electron in dot 1 can briefly hop to dot 2 and back, but only if the spins form a singlet (two electrons cannot share an orbital with parallel spin). Second-order perturbation theory in the Hubbard model gives</p>
+\[ J(\varepsilon) \approx \frac{2t_c^2}{U - \varepsilon} + \frac{2t_c^2}{U + \varepsilon} = \frac{4t_c^2\,U}{U^2 - \varepsilon^2} , \]
+<p>where \(U\) is the on-site charging energy and \(\varepsilon\) the detuning between the dots. This formula shows the two ways to turn exchange on:</p>
+<ul>
+<li><b>Detuning control</b>: increase \(|\varepsilon|\) towards \(U\), pushing one electron towards the other dot. Simple, but \(dJ/d\varepsilon\) is large, so charge noise in \(\varepsilon\) causes exchange noise.</li>
+<li><b>Barrier (symmetric) control</b>: keep \(\varepsilon = 0\), where \(dJ/d\varepsilon = 0\), and increase \(t_c\) by lowering the barrier gate. \(J\propto t_c^2\) and \(t_c\) depends exponentially on barrier voltage, so \(J\) can be switched over many orders of magnitude while staying first-order insensitive to detuning noise. Most modern experiments use barrier control <cite data-r="burkard2023"></cite>.</li>
+</ul>
+
+<div class="box example"><span class="tag">Worked example: exchange in frequency units</span>
+<p>With \(t_c = 10\ \mu\)eV, \(U = 3\) meV and \(\varepsilon = 0\): \(J = 4t_c^2/U = 4\times100/3000 = 0.133\ \mu\)eV, about 32 MHz. Lowering the barrier so that \(t_c\) doubles gives \(J\approx 0.53\ \mu\)eV ≈ 130 MHz. The HRL exchange-only experiments with spinQICK reached \(J/h\approx 75\)–78 MHz with 10 ns pulses <cite data-r="wessels2026"></cite>. So exchange pulses are short (ns) baseband voltage pulses of a few to tens of mV on barrier gates, which is a job for a fast DAC.</p>
+</div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>Map each physical scale to the hardware that controls it:</p>
+<ul>
+<li><b>Zeeman (GHz)</b>: microwave drive. Direct from the 4x2's DACs up to about 4.9 GHz (first Nyquist zone at 9.83 GSPS), or higher with an external mixer.</li>
+<li><b>Exchange (MHz, ns pulses)</b>: baseband pulses on barrier gates. The 4x2 can produce short pulses (its sample time is 0.1 ns) but its outputs are AC-coupled, so pulses with a DC component droop (Chapter 29).</li>
+<li><b>Charge transitions (detuning pulses, µs)</b>: baseband pulses on plungers, with the same AC-coupling issue.</li>
+<li><b>Readout (sensor)</b>: reflectometry at 100 MHz–1 GHz, a perfect fit.</li>
+</ul>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does purifying silicon to <sup>28</sup>Si improve \(T_2^*\) so much, while purifying GaAs is impossible?</p>
+<details><summary>Show answer</summary><div><sup>28</sup>Si has nuclear spin zero, so removing <sup>29</sup>Si removes almost all hyperfine noise. All stable isotopes of Ga and As have nuclear spin 3/2, so there is no spin-free GaAs.</div></details>
+<p>2. Why is barrier-controlled ("symmetric") exchange less sensitive to charge noise?</p>
+<details><summary>Show answer</summary><div>At \(\varepsilon = 0\), \(J(\varepsilon)\) is at a minimum with respect to detuning: \(dJ/d\varepsilon = 0\). Small detuning fluctuations change \(J\) only to second order. Changing \(J\) through \(t_c\) avoids moving away from this sweet spot.</div></details>
+<p>3. A dot has \(E_{VS} = 150\ \mu\)eV. Up to roughly what field can you operate before hitting the hot spot?</p>
+<details><summary>Show answer</summary><div>\(B = E_{VS}/(g\mu_B) = 150/115.8 \approx 1.3\) T, a qubit frequency of about 36 GHz. You would normally stay well below this.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Zeeman: \(E_Z = g\mu_B B\); \(g\approx2\) in Si (slightly gate-tunable), −0.44 in GaAs, anisotropic for holes.</li>
+<li>Spin–orbit coupling enables intrinsic EDSR (GaAs, holes) and causes relaxation; it is weak for Si electrons, hence micromagnets.</li>
+<li>Hyperfine coupling gives a quasi-static random Overhauser field: \(T_2^*\sim 10\) ns in GaAs, ~1 µs in natural Si, negligible in purified <sup>28</sup>Si.</li>
+<li>Silicon's valley splitting creates a relaxation hot spot at \(E_Z = E_{VS}\).</li>
+<li>Exchange \(J \approx 4t_c^2U/(U^2-\varepsilon^2)\) is switched by detuning or (better) by barrier gates, using ns baseband pulses.</li>
+</ul>
+</div>

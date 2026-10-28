@@ -1,2 +1,122 @@
-<!--meta {"id": "st-eo", "part": "Part III \u00b7 Spin qubits", "title": "Singlet\u2013triplet, exchange-only and other encoded qubits"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "st-eo", "part": "Part III · Spin qubits", "title": "Singlet–triplet, exchange-only and other encoded qubits"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A single spin is not the only way to make a qubit from electrons in dots. Encoding one qubit in the joint state of two or three spins lets you control it entirely with fast <b>baseband</b> voltage pulses, no microwaves at all, and makes it immune to some kinds of noise. HRL Laboratories builds its processors from exchange-only qubits, and the first open-source RFSoC spin-qubit work demonstrated exactly that kind of qubit <cite data-r="wessels2026"></cite>. These encodings put very different demands on the control hardware than the single-spin qubit does: fewer GHz signals, many more nanosecond-precision DC-coupled pulses.</p>
+</div>
+
+<h2>Why encode a qubit in several spins?</h2>
+
+<p>The LD qubit needs a microwave drive at the Zeeman frequency for every rotation. Microwaves are hard to deliver to many qubits without heating and crosstalk. Exchange \(J\), on the other hand, is controlled by voltage pulses on gates, which are fast (ns), local, and need no carrier. Exchange alone cannot rotate a single spin, because it only acts on pairs and conserves total spin. But if the qubit is <i>defined</i> as a property of a pair or a triple of spins, exchange becomes a full rotation tool.</p>
+
+<h2>The singlet–triplet (S–T₀) qubit</h2>
+
+<h3>Encoding</h3>
+<p>Take two electrons in a double dot in the \((1,1)\) charge state, in a magnetic field large enough that the polarised triplets \(T_\pm\) are split away by \(\pm E_Z\). The remaining two states with total \(S_z = 0\) form the qubit <cite data-r="petta2005"></cite>:</p>
+\[ \ket{0_{ST}} = \ket S = \frac{\ket{\uparrow\downarrow} - \ket{\downarrow\uparrow}}{\sqrt2}, \qquad \ket{1_{ST}} = \ket{T_0} = \frac{\ket{\uparrow\downarrow} + \ket{\downarrow\uparrow}}{\sqrt2}. \]
+
+<h3>The two control axes</h3>
+<p>In the \(\{S, T_0\}\) basis, the Hamiltonian is</p>
+\[ H_{ST} = \frac{J(\varepsilon)}{2}\,\sigma_z + \frac{\Delta E_Z}{2}\,\sigma_x \quad\text{(up to a constant)}, \]
+<ul>
+<li><b>Exchange \(J\)</b> splits \(S\) and \(T_0\): rotation about z. It is switched on in nanoseconds by pulsing the detuning towards \((2,0)\) or by lowering the barrier.</li>
+<li><b>The Zeeman energy difference \(\Delta E_Z = g\mu_B(B_{z,1} - B_{z,2})\)</b> between the two dots mixes \(S\) and \(T_0\): rotation about x. In GaAs it comes from a difference in Overhauser fields (which fluctuates, or can be stabilised by dynamic nuclear polarisation); in silicon it comes from a micromagnet and is stable.</li>
+</ul>
+<p>Note that \(\ket{\uparrow\downarrow}\) and \(\ket{\downarrow\uparrow}\) lie on the ±x axis of this Bloch sphere. With \(J = 0\), the state precesses between \(S\) and \(T_0\) at frequency \(\Delta E_Z/h\); with \(J \gg \Delta E_Z\), it precesses around z at \(J/h\). Combining both allows any rotation.</p>
+
+<figure>
+<div class="figbody"><!--plot:st-bloch--></div>
+<figcaption>The Bloch sphere of a singlet–triplet qubit. Exchange rotates about z (the S–T₀ axis); the Zeeman difference between the dots rotates about x. When both are on, the rotation axis tilts in between. Both controls are set by baseband gate voltages or by static fields, so no microwaves are needed.</figcaption>
+</figure>
+
+<h3>A typical S–T₀ experiment</h3>
+<ol>
+<li><b>Initialise</b> in \(S(2,0)\) by waiting at positive detuning (two electrons in one dot form the singlet ground state).</li>
+<li><b>Separate</b>: pulse to \((1,1)\). The pulse must be slow compared with \(h/t_c\), so that the electron follows the singlet branch from \((2,0)\) into \((1,1)\) without being excited across the charge anticrossing. If it is also fast compared with \(h/\Delta E_Z\), the spin state stays \(\ket S\). If instead it is slow compared with \(h/\Delta E_Z\) as well (fully adiabatic), \(S(2,0)\) maps onto the lower-energy eigenstate of the field difference, \(\ket{\uparrow\downarrow}\) or \(\ket{\downarrow\uparrow}\).</li>
+<li><b>Evolve</b> for a time \(\tau\) at a chosen detuning (sets \(J\)) to rotate.</li>
+<li><b>Read out</b> by pulsing back to the PSB window: \(S\) goes to \((2,0)\), \(T_0\) stays in \((1,1)\) <cite data-r="barthel2009"></cite>.</li>
+</ol>
+<p>Every step is a baseband voltage pulse with ns-scale timing on the two plungers (or plunger and barrier). The rotation frequencies \(J/h\) and \(\Delta E_Z/h\) are typically 10 MHz–1 GHz, so the timing resolution must be well below a nanosecond for accurate gates.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>A silicon S–T₀ qubit has a micromagnet field difference of 1.5 mT between the dots. What is the x-rotation frequency, and how long is a π rotation?</p>
+<p>\(\Delta E_Z/h = 28\ \text{GHz/T}\times1.5\ \text{mT} = 42\) MHz, so a π rotation about x takes \(1/(2\times42\ \text{MHz}) \approx 12\) ns. Timing errors of 0.1 ns give a rotation-angle error of about 1.5°. That is why baseband pulse timing, rise times and pulse distortion matter so much for this encoding.</p>
+</div>
+
+<h3>Strengths and weaknesses</h3>
+<ul>
+<li>No microwaves; fast gates (ns); PSB readout comes naturally.</li>
+<li>Insensitive to global field fluctuations, because only the difference between the dots matters.</li>
+<li>Exchange is sensitive to charge noise (via \(dJ/d\varepsilon\)); \(\Delta E_Z\) cannot be switched off.</li>
+<li>Leakage to \(T_\pm\) can occur if \(E_Z\) is small or near anticrossings.</li>
+</ul>
+
+<h2>The exchange-only (EO) qubit</h2>
+
+<h3>Encoding</h3>
+<p>Three spins in three dots have \(2^3 = 8\) states. Total spin and its z component are conserved by exchange, so exchange alone cannot mix states with different total spin \(S\) or \(S_z\). Group the states: one quartet (\(S = 3/2\), four states) and two doublets (\(S = 1/2\), two states each). Within, say, \(S = 1/2, S_z = +1/2\), there are exactly two states. They form the qubit <cite data-r="divincenzo2000"></cite>:</p>
+\[ \ket{0_L} = \ket{S}_{12}\ket{\uparrow}_3, \qquad \ket{1_L} = \sqrt{\tfrac23}\,\ket{T_+}_{12}\ket{\downarrow}_3 - \sqrt{\tfrac13}\,\ket{T_0}_{12}\ket{\uparrow}_3 . \]
+<p>In words, \(\ket{0_L}\) has spins 1 and 2 in a singlet, \(\ket{1_L}\) has them in a triplet, combined with spin 3 to give total spin 1/2.</p>
+
+<h3>Control with exchange alone</h3>
+<p>Exchange \(J_{12}\) between spins 1 and 2 distinguishes singlet from triplet of that pair, so it rotates the logical qubit about the z axis. Exchange \(J_{23}\) between spins 2 and 3 acts the same way on a different pair; in the logical basis, it rotates about an axis tilted by 120° from z. Two non-parallel axes are enough for any rotation (using sequences of pulses, the same way Euler angles work). DiVincenzo and colleagues showed in 2000 that exchange alone is universal for such encoded qubits, including two-qubit gates between encoded qubits <cite data-r="divincenzo2000"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:eo-axes--></div>
+<figcaption>Logical Bloch sphere of an exchange-only qubit. Exchange between dots 1 and 2 rotates about z; exchange between 2 and 3 rotates about an axis 120° away. In a triangular triple dot, where all three dots are neighbours, exchange \(J_{13}\) provides a third axis at −120°, which HRL used to design new decoupling sequences <cite data-r="wessels2026"></cite>.</figcaption>
+</figure>
+
+<h3>What it takes in practice</h3>
+<p>HRL Laboratories demonstrated universal logic with encoded exchange-only qubits in Si/SiGe in 2023 <cite data-r="weinstein2023"></cite>. In 2026, HRL's open-source spinQICK work showed coherent control, state preparation and readout of a triangular EO qubit using a ZCU216 RFSoC <cite data-r="wessels2026"></cite>. That paper is the clearest public description of what an EO qubit needs from its controller:</p>
+<ul>
+<li>14 baseband DAC channels at 6.88 GSPS, plus 2 channels with DDS for the readout stimulus, all with DC-coupled amplifiers (TI LMH5401 and THS3491 stages).</li>
+<li>Exchange pulses of 10 ns, digitally pre-distorted to compensate the amplifier chain's response, with about 40 ns gaps between pulses.</li>
+<li>A crosstalk-compensation matrix in FPGA logic, so that each exchange pulse is accompanied by compensating pulses on neighbouring gates (virtual exchange axes).</li>
+<li>PSB readout with a reference measurement every shot, a 1 MHz AC charge-sensor excitation, and real-time demodulation, with SNR of 5–6.</li>
+</ul>
+<p>EO qubits are free from microwave hardware, but in return they need many fast, DC-coupled, low-noise, well-calibrated baseband channels. HRL found that noise added by the room-temperature pulse amplifiers was visible in the qubit's coherence <cite data-r="wessels2026"></cite>.</p>
+
+<h2>Other encodings you will meet</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Encoding</th><th>Dots / electrons</th><th>Control</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Resonant exchange (RX) qubit</td><td>3 dots, 3 electrons</td><td>Always-on exchange + microwave on a gate (RF at the qubit splitting, ~GHz)</td><td>An EO variant with resonant driving</td></tr>
+<tr><td>Hybrid qubit</td><td>2 dots, 3 electrons</td><td>Baseband or microwave at GHz</td><td>Mixes spin and charge states for speed; more charge-noise sensitivity</td></tr>
+<tr><td>Charge qubit</td><td>2 dots, 1 electron</td><td>Detuning pulses or microwaves at \(2t_c/h\)</td><td>Fast but coherence of ns; used for coupling to resonators</td></tr>
+<tr><td>Flopping-mode spin qubit</td><td>2 dots, 1 electron</td><td>Microwave EDSR near the interdot transition</td><td>Large drive at low power</td></tr>
+<tr><td>Hole spin qubits (Ge, Si)</td><td>1 dot per qubit</td><td>EDSR via intrinsic spin–orbit, often at low fields</td><td>No micromagnet; anisotropic g-factor <cite data-r="scappucci2021"></cite></td></tr>
+<tr><td>Donor qubits (P in Si)</td><td>1 donor</td><td>ESR (electron) and NMR (nucleus)</td><td>Extremely long nuclear coherence</td></tr>
+</tbody></table></div>
+
+<h2>Comparing the main encodings</h2>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Loss–DiVincenzo</th><th>Singlet–triplet</th><th>Exchange-only</th></tr></thead>
+<tbody>
+<tr><td>Dots per qubit</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>Single-qubit control</td><td>Microwave (ESR/EDSR) at 2–40 GHz</td><td>Baseband exchange + static ΔB<sub>z</sub></td><td>Baseband exchange only</td></tr>
+<tr><td>Fast DAC channels needed</td><td>One microwave line per few qubits + baseband for readout and two-qubit gates</td><td>2 baseband per qubit</td><td>3+ baseband per qubit</td></tr>
+<tr><td>Readout</td><td>Elzerman or PSB (with a partner)</td><td>PSB (natural)</td><td>PSB on one pair</td></tr>
+<tr><td>Main noise sensitivity</td><td>Charge noise via micromagnet gradient</td><td>Charge noise in J; ΔB<sub>z</sub> noise</td><td>Charge noise in J; hyperfine (if not purified)</td></tr>
+<tr><td>Fit with the 4x2</td><td>Good for microwaves and readout; needs DC-coupled pulses for PSB</td><td>Needs 2 DC-coupled fast channels: exactly the 4x2's DAC count, after modification</td><td>Needs more channels than the 4x2 has</td></tr>
+</tbody></table></div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>For a singlet–triplet qubit, the 4x2's two DACs are just enough to pulse two gates (P1 and P2, or a plunger and a barrier), but the pulses must be DC-coupled. The board's baluns block DC (Chapter 29). If you modify the outputs (remove the balun, add DC-coupled differential amplifiers, as the QICK-DAWG and spinQICK hardware do for inputs and outputs respectively <cite data-r="qickdawg,spinqick"></cite>), you still need a separate readout source, because both DACs are busy with gate pulses. One solution is to use the readout as an AC excitation through an ADC-side circuit, or to add a second board. For exchange-only qubits, a ZCU216 (16 DACs) or several synchronised boards are the realistic route.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why can exchange alone not rotate a single-spin (LD) qubit, but can rotate an S–T₀ qubit?</p>
+<details><summary>Show answer</summary><div>Exchange \(J\,\vec S_1\cdot\vec S_2\) conserves total spin and total \(S_z\); it cannot flip one spin's \(S_z\) on its own. An LD qubit's states differ in \(S_z\). The S–T₀ qubit's states have the same \(S_z = 0\) but different total spin, which exchange does split.</div></details>
+<p>2. In an S–T₀ qubit, what happens if \(\Delta E_Z = 0\)?</p>
+<details><summary>Show answer</summary><div>Only z rotations (exchange) are available; you cannot rotate between S and T₀ from the poles. Universal control needs a second axis, so a field difference (micromagnet or nuclear polarisation) is essential, or an alternative such as resonant exchange driving.</div></details>
+<p>3. Count the fast DC-coupled channels a single EO qubit needs at minimum, and compare with the 4x2.</p>
+<details><summary>Show answer</summary><div>At least two exchange (barrier) gates, J₁₂ and J₂₃, plus usually plunger pulses for initialisation and PSB readout: in practice 3–6 fast channels per EO qubit. The 4x2 has 2 DACs, both AC-coupled, so it cannot run an EO qubit alone.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Encoded qubits use the joint state of several spins so that exchange, switched by baseband pulses, provides rotations.</li>
+<li>S–T₀: two spins, axes J (z) and ΔE<sub>Z</sub> (x); natural PSB readout; ns pulses on two gates.</li>
+<li>EO: three spins, two or three exchange axes 120° apart; universal with exchange alone; demonstrated by HRL, including with spinQICK on a ZCU216.</li>
+<li>These encodings trade microwave hardware for many fast, DC-coupled, low-noise baseband channels.</li>
+</ul>
+</div>
