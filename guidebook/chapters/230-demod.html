@@ -1,2 +1,98 @@
-<!--meta {"id": "demod", "part": "Part V \u00b7 Signals and software-defined radio", "title": "From waveform to qubit result: demodulation, integration and thresholds"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "demod", "part": "Part V · Signals and software-defined radio", "title": "From waveform to qubit result: demodulation, integration and thresholds"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>This chapter connects everything in Part V to the readout of your qubit. The ADC delivers billions of samples per second; you want, for every shot, one bit: spin up or down. In between are down-conversion, filtering, choosing the right time window, integrating, rotating the IQ plane and thresholding. On the RFSoC, almost all of this happens in FPGA logic in real time, which is why the RFSoC can make decisions (feedback) within a microsecond of a measurement. Understanding each step lets you set QICK's readout parameters sensibly and squeeze the most fidelity out of your sensor.</p>
+</div>
+
+<h2>The readout pipeline</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 180" width="900" role="img" aria-label="Readout signal pipeline">
+  <g>
+    <rect x="10" y="50" width="100" height="56" rx="4" class="boxb"/><text class="sm" x="60" y="74" text-anchor="middle">ADC</text><text class="sm" x="60" y="90" text-anchor="middle">4.42 GSPS</text>
+    <rect x="140" y="50" width="110" height="56" rx="4" class="box"/><text class="sm" x="195" y="74" text-anchor="middle">× e<tspan baseline-shift="super" font-size="8">−iωt</tspan></text><text class="sm" x="195" y="90" text-anchor="middle">(DDS mixer)</text>
+    <rect x="280" y="50" width="120" height="56" rx="4" class="box"/><text class="sm" x="340" y="74" text-anchor="middle">low-pass filter</text><text class="sm" x="340" y="90" text-anchor="middle">+ decimate ×8</text>
+    <rect x="430" y="50" width="120" height="56" rx="4" class="box"/><text class="sm" x="490" y="74" text-anchor="middle">sum over window</text><text class="sm" x="490" y="90" text-anchor="middle">(optional weights)</text>
+    <rect x="580" y="50" width="120" height="56" rx="4" class="box"/><text class="sm" x="640" y="74" text-anchor="middle">rotate IQ plane</text><text class="sm" x="640" y="90" text-anchor="middle">I′ = signal axis</text>
+    <rect x="730" y="50" width="150" height="56" rx="4" class="boxa"/><text class="sm" x="805" y="74" text-anchor="middle">threshold → 0 / 1</text><text class="sm" x="805" y="90" text-anchor="middle">or average over shots</text>
+    <line class="acc" x1="110" y1="78" x2="140" y2="78"/><line class="acc" x1="250" y1="78" x2="280" y2="78"/><line class="acc" x1="400" y1="78" x2="430" y2="78"/><line class="acc" x1="550" y1="78" x2="580" y2="78"/><line class="acc" x1="700" y1="78" x2="730" y2="78"/>
+    <text class="sm" x="10" y="134">raw samples</text>
+    <text class="sm" x="140" y="134">complex, at</text><text class="sm" x="140" y="148">baseband</text>
+    <text class="sm" x="280" y="134">"decimated" trace,</text><text class="sm" x="280" y="148">552.96 MSPS on the 4x2</text>
+    <text class="sm" x="430" y="134">one I/Q pair</text><text class="sm" x="430" y="148">per shot</text>
+    <text class="sm" x="580" y="134">one real number</text><text class="sm" x="580" y="148">per shot</text>
+    <text class="sm" x="730" y="134">bit per shot, or</text><text class="sm" x="730" y="148">probability</text>
+    <text class="sm" x="10" y="30">FPGA fabric, in real time (QICK readout + buffers + tProcessor)</text>
+    <text class="sm" x="580" y="30">on the PC, or in the tProcessor for feedback</text>
+  </g>
+</svg>
+</div>
+<figcaption>From ADC samples to qubit outcomes. QICK's readout block performs mixing, filtering, decimation and accumulation in the FPGA; its buffers store the decimated trace and/or the accumulated I/Q per shot; rotation and thresholding are done on the PC or, for feedback, by the tProcessor <cite data-r="stefanazzi2022,qickdocs"></cite>.</figcaption>
+</figure>
+
+<h2>Step 1: down-conversion</h2>
+<p>The readout's DDS generates \(e^{-i\omega t}\) at the carrier frequency. Multiplying turns the reflected carrier into a slowly varying complex number, \(s(t) = I(t) + iQ(t)\), proportional to the reflection coefficient \(\Gamma\) of the tank circuit, plus noise. Because the generator that produced the carrier and the readout's DDS run from the same clock and (with frequency matching) the same frequency, \(s(t)\) is constant in time for a constant \(\Gamma\), shot after shot <cite data-r="qickdocs"></cite>.</p>
+
+<h2>Step 2: filtering and decimation</h2>
+<p>A low-pass filter removes the \(2\omega\) component and noise outside the band; then the stream is decimated. On the 4x2, QICK's readout decimates by 8, from 4423.68 to 552.96 MSPS <cite data-r="qickrepo"></cite>. These <b>decimated samples</b> can be recorded directly: QICK's <code>acquire_decimated()</code> returns the averaged I/Q trace versus time, which is how you see the carrier arrive, check the timing, and look at the sensor's response during a pulse.</p>
+
+<h2>Step 3: choosing the readout window</h2>
+
+<p>The signal does not appear at the ADC at the moment the DAC starts the carrier. It takes time to travel: cables down and up a fridge (several metres, about 5 ns/m), amplifiers, filters, and the converters' own pipelines. This delay is the <dfn data-def="The delay between a pulse leaving the DAC and its arrival at the ADC, through cables and processing; the readout window must start after it.">time of flight</dfn>, typically 0.2–1 µs in total. The tank resonator also takes time to ring up: its response time is about \(Q/(\pi f_0)\), where \(Q\) is its quality factor. For \(Q = 30\) at 200 MHz, that is about 48 ns.</p>
+<p>So: measure the time of flight once with a decimated trace (Chapter 36), then start the readout window after the signal has arrived and settled. In QICK this is the trigger time of the readout relative to the pulse, plus a calibrated offset.</p>
+
+<h2>Step 4: integration</h2>
+
+<p>Summing the decimated samples over a window of length \(T\) gives one complex number per shot. For white noise, the signal grows as \(T\) and the noise as \(\sqrt T\), so SNR grows as \(\sqrt T\) until something else (relaxation, drifts) intervenes. QICK accumulates the samples in hardware and returns either every shot's sum or the average over shots.</p>
+
+<h3>Weighted integration</h3>
+<p>If the signal changes during the window, for example because a triplet relaxes to a singlet during PSB readout, equal weights are not optimal. The SNR-optimal linear filter for distinguishing two known average traces \(\bar s_0(t)\) and \(\bar s_1(t)\) in white noise is the <dfn data-def="The weighting function w(t) ∝ s̄1(t) − s̄0(t) that maximises SNR when distinguishing two known signals in white noise.">matched filter</dfn>, with weights \(w(t) \propto \bar s_1(t) - \bar s_0(t)\). If the difference decays because of relaxation, the weights decay too, trusting early samples more.</p>
+
+<figure>
+<div class="figbody"><!--plot:optimal-weights--></div>
+<figcaption>Two integration weightings for a readout signal that decays with a 6 µs relaxation time during the window. A boxcar (equal weights over a fixed window) is simple; a decaying weight matches the expected signal and gives better discrimination. The 4x2's QICK tProc v2 firmware includes a weighted-buffer block for this kind of processing <cite data-r="qickrepo"></cite>.</figcaption>
+</figure>
+
+<h2>Step 5: the IQ plane, rotation and threshold</h2>
+
+<p>Plot each shot's integrated \((I, Q)\) as a point. Shots from the two states form two clouds. The direction joining the cloud centres carries the information; the perpendicular direction only adds noise. Rotate the plane by the angle \(\theta = \operatorname{atan2}(\Delta Q, \Delta I)\) of the separation vector, so that all the signal is on the new \(I'\) axis, and discard \(Q'\). Then set a threshold on \(I'\) between the clouds.</p>
+
+<figure>
+<div class="figbody"><!--plot:iq-blobs--></div>
+<figcaption>Left: simulated single-shot I/Q values for two prepared states. Right: after rotating so that the separation lies along one axis, histograms of that axis with a threshold. A few |1⟩ shots that relaxed during readout appear between the clouds. QICK's readout configuration accepts a phase, so the rotation can be applied in hardware, which matters when the tProcessor thresholds in real time.</figcaption>
+</figure>
+
+<div class="box example"><span class="tag">Worked example: from traces to SNR</span>
+<p>Your averaged decimated traces for the two charge states differ by 40 ADC units in \(I'\) during a 2 µs window; single decimated samples have a noise standard deviation of 400 units. At 552.96 MSPS, 2 µs contains about 1106 samples. Summing them (and dividing by the count) reduces the noise by \(\sqrt{1106} \approx 33\), to about 12 units. The single-shot SNR is \(40/12 \approx 3.3\), giving about 5% error per state (Chapter 5). To reach SNR 6 you would need about \((6/3.3)^2 \approx 3.3\) times longer: 6.6 µs, if relaxation allows.</p>
+</div>
+
+<h2>Averaged versus single-shot data</h2>
+<ul>
+<li><b>Averaged</b>: average I/Q over many shots, then rotate and scale to a probability using calibration points (prepared 0 and 1). Robust and simple, but SPAM and readout errors blend into the result.</li>
+<li><b>Single-shot</b>: threshold each shot, then count. Gives true probabilities (after correcting for readout errors) and correlations between qubits. Required for feedback, error correction and many benchmarking protocols.</li>
+</ul>
+
+<h2>The same pipeline as a lock-in</h2>
+<p>If you replace the GHz carrier with a lower-frequency excitation (HRL used 1 MHz through the charge sensor, read with a 20 kΩ current-to-voltage resistor <cite data-r="wessels2026"></cite>), the same mix–filter–integrate chain is a digital lock-in amplifier. On the 4x2 such a low frequency is below the baluns' 10 MHz rating, so expect strong attenuation unless you bypass them; reflectometry at hundreds of MHz avoids the problem.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The 4x2's QICK readouts provide, per channel, an accumulated buffer of 16 384 entries (one per shot or per sweep point) and a decimated buffer of 4096 samples (7.4 µs at 552.96 MSPS). A 1.07-billion-sample DDR4 buffer (1.94 s) can record long continuous traces, useful for watching tunnelling events, and a multi-rate buffer captures raw 8192-sample stretches <cite data-r="qickrepo"></cite>. These numbers come from the firmware's configuration printout; print <code>soc</code> to see your own firmware's values.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your two IQ clouds are centred at (100, 20) and (40, 100). By what angle should you rotate so that the separation lies along +I?</p>
+<details><summary>Show answer</summary><div>The separation vector is (40 − 100, 100 − 20) = (−60, 80), at angle atan2(80, −60) ≈ 126.9°. Rotating by −126.9° puts it along +I (or by 53.1° to put it along −I; either works if the threshold is placed accordingly).</div></details>
+<p>2. Why does integration time stop improving fidelity beyond a certain point?</p>
+<details><summary>Show answer</summary><div>During longer windows more excited states relax (or the charge state changes for other reasons), so the classes overlap more. Slow drifts and 1/f noise also stop averaging down as \(\sqrt T\).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Readout: mix with the carrier, filter and decimate, integrate over a window, rotate, threshold.</li>
+<li>Start the window after the time of flight and resonator ring-up.</li>
+<li>SNR grows as \(\sqrt T\) for white noise; matched (weighted) filters do better when the signal decays.</li>
+<li>Single-shot thresholding gives bits and enables feedback; averaging gives probabilities with calibration.</li>
+<li>QICK does mixing, decimation and accumulation in the FPGA, with buffers for shots, traces and long records.</li>
+</ul>
+</div>

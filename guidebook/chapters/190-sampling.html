@@ -1,2 +1,94 @@
-<!--meta {"id": "sampling", "part": "Part V \u00b7 Signals and software-defined radio", "title": "Sampling, quantisation and Nyquist zones"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "sampling", "part": "Part V · Signals and software-defined radio", "title": "Sampling, quantisation and Nyquist zones"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The RFSoC is a <i>direct RF-sampling</i> device: its ADCs and DACs work directly at GHz frequencies, without the analog mixers older radios needed. To use it well, you must understand what sampling does to a signal: which frequencies the DAC can produce, where its unwanted images appear, which input frequencies an ADC confuses with each other, and how many effective bits you get. When QICK asks for <code>nqz=1</code> or <code>nqz=2</code> when you declare a generator, this chapter tells you what you are choosing <cite data-r="sdrbook"></cite>.</p>
+</div>
+
+<h2>Sampling a signal</h2>
+
+<p>An ADC measures the input voltage at regular instants \(t_n = nT_s\), where \(T_s = 1/f_s\) is the sampling period and \(f_s\) the <dfn data-def="The number of samples per second taken by an ADC or produced by a DAC (samples/s, S/s).">sample rate</dfn>. The result is a list of numbers \(x[n] = x(nT_s)\). A DAC does the reverse: it turns a list of numbers into a voltage that changes at each sample instant.</p>
+
+<p>The <dfn data-def="A signal with no frequency components above f_s/2 is completely determined by samples taken at rate f_s.">sampling theorem</dfn> (Nyquist–Shannon) says: a signal containing only frequencies below \(f_s/2\) is completely determined by its samples. The frequency \(f_s/2\) is the <b>Nyquist frequency</b>. Conversely, frequencies above \(f_s/2\) cannot be told apart from frequencies below it.</p>
+
+<h2>Aliasing</h2>
+
+<p>Sample a cosine at frequency \(f\) and another at \(f' = f_s - f\). At the sample instants,</p>
+\[ \cos(2\pi f' nT_s) = \cos(2\pi n - 2\pi f nT_s) = \cos(2\pi f n T_s), \]
+<p>so the two produce identical samples. More generally, all frequencies \(|f \pm kf_s|\) for integer \(k\) produce the same samples. This is <dfn data-def="When frequencies above the Nyquist frequency appear, after sampling, as lower frequencies indistinguishable from real ones.">aliasing</dfn>.</p>
+
+<figure>
+<div class="figbody"><!--plot:aliasing-time--></div>
+<figcaption>Aliasing in the time domain. A 7.0 GHz cosine sampled at 9.8304 GSPS (the 4x2's QICK DAC rate) gives exactly the same samples as a 2.83 GHz cosine. From the samples alone, the two are indistinguishable.</figcaption>
+</figure>
+
+<p>The frequency axis is divided into <dfn data-def="Frequency bands of width f_s/2: zone k covers (k−1)f_s/2 to k f_s/2. Signals in every zone fold onto the first zone when sampled.">Nyquist zones</dfn> of width \(f_s/2\): zone 1 from 0 to \(f_s/2\), zone 2 from \(f_s/2\) to \(f_s\), zone 3 from \(f_s\) to \(3f_s/2\), and so on. After sampling, every zone folds onto zone 1. Even zones are mirrored (frequency increasing in zone 2 appears decreasing in zone 1).</p>
+
+<div class="box example"><span class="tag">Worked example: where does it fold?</span>
+<p>The QICK readout on the 4x2 samples at \(f_s = 4423.68\) MSPS, so the Nyquist frequency is 2211.84 MHz. An input at 3000 MHz is in zone 2 and appears at \(4423.68 - 3000 = 1423.68\) MHz. An input at 5000 MHz is in zone 3 and appears at \(5000 - 4423.68 = 576.32\) MHz. If your readout carrier is at 576 MHz, a stray 5 GHz signal (for example leakage from a microwave line) would land on top of it. This is why analog filters before ADCs matter.</p>
+</div>
+
+<h3>Using aliasing on purpose: RF sampling</h3>
+<p>Aliasing is not always bad. If you know your signal is in, say, zone 2, and you filter out everything else, the ADC can digitise it directly and the folding is just a known frequency mapping. This is <b>RF sampling</b> (or undersampling), and it is how the RFSoC's ADCs can digitise signals above their Nyquist frequency, up to their analog input bandwidth (about 6 GHz for the 4x2's ADCs <cite data-r="rd4x2manual"></cite>). For reflectometry at a few hundred MHz you do not need it: you work in zone 1.</p>
+
+<h2>The DAC side: zero-order hold, sinc roll-off and images</h2>
+
+<p>A DAC holds each sample's voltage for one sample period. Mathematically, the output is the ideal sampled signal convolved with a rectangular pulse of width \(T_s\). In frequency, convolution becomes multiplication, and the Fourier transform of a rectangle is a sinc. So the DAC's output spectrum is the ideal spectrum multiplied by</p>
+\[ |H(f)| = \left|\frac{\sin(\pi f/f_s)}{\pi f/f_s}\right| = |\operatorname{sinc}(f/f_s)| . \]
+<p>Two consequences <cite data-r="sdrbook"></cite>:</p>
+<ul>
+<li><b>Roll-off</b>: output power falls with frequency, by about 3.9 dB at \(f_s/2\). Inverse-sinc digital filters can compensate in zone 1.</li>
+<li><b>Images</b>: a DAC playing a tone at \(f\) also produces <dfn data-def="Unwanted copies of a DAC's output at k·f_s ± f, created by the sample-and-hold process.">images</dfn> at \(f_s - f\), \(f_s + f\), \(2f_s - f\), …, weighted by the sinc. These must be filtered if they could reach the device.</li>
+</ul>
+
+<p>Gen3 RF-DACs also offer <b>mix-mode</b>: each sample period is split into two halves of opposite sign, which moves the output response's maximum into zone 2. Normal mode is best in zone 1, mix-mode in zone 2 <cite data-r="sdrbook"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:nyquist-zones--></div>
+<figcaption>Relative DAC output power versus output frequency at 9.8304 GSPS. In normal mode (sinc response) power falls through zone 1 and reaches a null at \(f_s\). Mix-mode trades lower power in zone 1 for useful output in zone 2. The board's analog path (balun, traces) adds further frequency dependence on top of these ideal curves.</figcaption>
+</figure>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>In QICK, <code>declare_gen(ch, nqz=1)</code> tells the firmware and library that you will play frequencies in zone 1 (0 to 4915 MHz at the 4x2's 9830.4 MSPS DAC rate); <code>nqz=2</code> sets the RF-DAC's Nyquist-zone mode to 2, which (as the QICK source notes, referring to AMD's PG269) increases output power in the 2nd and 3rd Nyquist zones; this is the mix-mode described above <cite data-r="qickrepo,pg269"></cite>. Zone 2 spans 4915 to 9830 MHz. Expect lower and frequency-dependent power in zone 2, and measure it. The DAC rate of 9830.4 MSPS is 20 times the 491.52 MHz reference clock, and the ADC rate of 4423.68 MSPS is 9 times it <cite data-r="qickrepo"></cite>.</p>
+</div>
+
+<h2>Quantisation: how many bits you really get</h2>
+
+<p>An \(N\)-bit converter represents the voltage with \(2^N\) levels. The step between levels is one <dfn data-def="Least significant bit: the voltage step between adjacent converter levels, full-scale range divided by 2^N.">LSB</dfn> \(\Delta = V_{\text{FS}}/2^N\). Rounding to the nearest level adds a <b>quantisation error</b> between \(-\Delta/2\) and \(+\Delta/2\). For a busy signal this error behaves like white noise with power \(\Delta^2/12\).</p>
+
+<figure>
+<div class="figbody"><!--plot:quantization--></div>
+<figcaption>Quantisation with 3 bits (8 levels). The error (green) is bounded by half a step and looks noise-like for complicated signals. With 14 bits, as in the RFSoC's converters, the steps are 2048 times finer.</figcaption>
+</figure>
+
+<p>For a full-scale sinusoid, the ratio of signal power to quantisation noise power is</p>
+\[ \text{SNR}_{\text{ideal}} = 6.02N + 1.76\ \text{dB}. \]
+<p>A 14-bit converter could reach 86 dB. Real converters fall short because of thermal noise, clock jitter and nonlinearity; the <dfn data-def="Effective number of bits: the resolution of an ideal converter that would have the same measured SNR (including distortion).">effective number of bits</dfn> is defined by inverting the formula with the measured SNR: \(\text{ENOB} = (\text{SNR} - 1.76)/6.02\). RF-sampling converters are usually specified by their noise spectral density instead (Chapter 22).</p>
+
+<h3>Processing gain: more bits by filtering</h3>
+<p>Quantisation and thermal noise spread over the whole Nyquist band \(f_s/2\). If you only care about a narrow bandwidth \(B\) (for example 1 MHz around your readout carrier), filtering away the rest removes most of the noise. The improvement is the <dfn data-def="The SNR improvement from filtering a signal to a bandwidth B narrower than the Nyquist band: 10 log10(f_s / 2B).">processing gain</dfn></p>
+\[ G_p = 10\log_{10}\frac{f_s}{2B}. \]
+<p>At \(f_s = 4.42\) GSPS and \(B = 1\) MHz, \(G_p = 33\) dB. This is why integrating a readout signal in the FPGA gives much better SNR than the raw 14 bits suggest, and why the demodulate-and-integrate step (Chapter 23) is so powerful.</p>
+
+<h2>Clock jitter</h2>
+<p>If the sampling instants wobble by a random time \(\sigma_t\) (jitter), a signal of frequency \(f\) acquires a voltage error of order \(2\pi fA\sigma_t\). The resulting SNR limit is</p>
+\[ \text{SNR}_{\text{jitter}} = -20\log_{10}(2\pi f\sigma_t). \]
+<p>With \(\sigma_t = 100\) fs at 1 GHz, the limit is 64 dB; at 5 GHz it is 50 dB. High-frequency sampling needs very clean clocks, which is why the 4x2 has dedicated jitter-cleaning clock chips (Chapter 30).</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A DAC at 9830.4 MSPS plays a 1200 MHz tone. Where are the first two images?</p>
+<details><summary>Show answer</summary><div>At \(f_s - f = 8630.4\) MHz and \(f_s + f = 11030.4\) MHz, attenuated by the sinc response (and by the board's analog path).</div></details>
+<p>2. What is the ideal SNR of a 12-bit converter? How much processing gain do you get filtering a 4 GSPS stream to 100 kHz?</p>
+<details><summary>Show answer</summary><div>\(6.02\times12 + 1.76 = 74\) dB. \(G_p = 10\log_{10}(4\times10^9/2\times10^5) = 43\) dB.</div></details>
+<p>3. Why does the even Nyquist zone appear mirrored?</p>
+<details><summary>Show answer</summary><div>A frequency \(f\) in zone 2 aliases to \(f_s - f\); as \(f\) increases, \(f_s - f\) decreases, so the spectrum is reversed.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Sampling at \(f_s\) represents frequencies up to \(f_s/2\); higher frequencies alias into zone 1 at \(|f - kf_s|\).</li>
+<li>DAC outputs roll off as sinc(\(f/f_s\)) and produce images at \(kf_s\pm f\); mix-mode favours zone 2.</li>
+<li>On the 4x2 with QICK: DAC 9830.4 MSPS (zone 1 up to 4915 MHz), ADC 4423.68 MSPS (Nyquist 2212 MHz).</li>
+<li>Ideal SNR is \(6.02N+1.76\) dB; filtering to a narrow bandwidth adds processing gain \(10\log(f_s/2B)\).</li>
+<li>Clock jitter limits SNR at high frequency.</li>
+</ul>
+</div>

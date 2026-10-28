@@ -1,2 +1,74 @@
-<!--meta {"id": "rack", "part": "Part IV \u00b7 The lab", "title": "The traditional instrument rack, box by box"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "rack", "part": "Part IV · The lab", "title": "The traditional instrument rack, box by box"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>To judge what an RFSoC 4x2 can do for your lab, you need to know what it replaces. A spin-qubit setup has grown out of a rack of separate instruments, each solving one problem: DC sources, current amplifiers, lock-ins, AWGs, microwave sources, mixers, digitisers. Commercial "qubit controllers" bundle several of them. This chapter describes each box, what its key specifications mean, and which jobs the 4x2 with QICK can take over, which it can share and which it cannot do.</p>
+</div>
+
+<h2>The boxes in a typical spin-qubit rack</h2>
+
+<h3>Multi-channel DC voltage sources</h3>
+<p>One channel per gate, often 24–48 channels or more, with very low noise (µV-level), high resolution (20–25 bits over ±5–10 V), and slow, smooth ramping. Examples in the community include the QDevil QDAC and the Basel "LNHR" DAC. They set the electrostatic landscape and must not add noise, because voltage noise on a gate is charge noise. Some can step quickly when triggered, which allows coarse raster scans for CSDs. HRL's spinQICK setup used a custom 20-bit DC source, and a 32-channel 20-bit DAC add-on ("QuACK") designed to be triggered by QICK is in development <cite data-r="wessels2026,spinqick"></cite>.</p>
+
+<h3>Current preamplifier and lock-in amplifier</h3>
+<p>For transport (Coulomb peaks, diamonds, pinch-offs) and DC charge sensing: a transimpedance amplifier converts nA–pA currents to volts (bandwidth kHz at high gain), and a <dfn data-def="An instrument that measures the amplitude and phase of a signal at a known reference frequency by multiplying and low-pass filtering; rejects noise at other frequencies.">lock-in amplifier</dfn> applies a small AC excitation (Hz–kHz) and measures the response at that frequency with a narrow bandwidth, rejecting noise. Digital lock-ins (Stanford Research, Zurich Instruments) are standard.</p>
+
+<h3>Arbitrary waveform generator (AWG)</h3>
+<p>For fast baseband gate pulses: DC-coupled outputs with 1–2.5 GSa/s and 12–16 bits, waveform memories of millions of samples, sequencing and marker outputs for triggers. Key specifications: rise time (sub-ns), amplitude range (±1 V or more), noise, and whether it is DC-coupled. A typical spin experiment needs 4–16 such channels.</p>
+
+<h3>Microwave source and IQ modulation</h3>
+<p>For EDSR drive: a low-phase-noise source at 2–40 GHz (the local oscillator, LO) combined in an <b>IQ mixer</b> with two baseband waveforms (I and Q) from AWG channels. The mixer output is \(I(t)\cos\omega_{LO}t - Q(t)\sin\omega_{LO}t\), which lets the AWG control the amplitude, phase and fine frequency of the microwave burst (Chapter 20). Many vector signal generators include the IQ modulator internally.</p>
+
+<h3>Digitiser and demodulator</h3>
+<p>For reflectometry and single-shot readout: an ADC card or instrument (hundreds of MSa/s to GSa/s) and demodulation, either analog (an IQ mixer driven by the carrier, then a slow digitiser) or digital (in an FPGA). Real-time integration and thresholding inside the instrument avoid sending raw data to the PC.</p>
+
+<h3>Trigger and timing hardware</h3>
+<p>Everything above must stay synchronised to a few nanoseconds. Labs distribute a 10 MHz reference clock to all instruments and use one instrument (often the AWG) as the master that triggers the others. Jitter between instruments and the latency of triggering are recurring pain points.</p>
+
+<h3>Measurement and test equipment</h3>
+<p>Oscilloscope (check pulse shapes), spectrum analyser (check microwave power and spurs), vector network analyser (find resonator frequencies, measure line attenuation), multimeters.</p>
+
+<h3>Cryogenic and magnet electronics</h3>
+<p>Superconducting magnet power supply, temperature controller, HEMT amplifier bias supply. These are not replaced by any qubit controller.</p>
+
+<h2>Integrated qubit controllers</h2>
+<p>Since about 2019, several companies sell integrated controllers that combine AWG, microwave and digitiser functions with an on-board real-time processor: for example Quantum Machines (OPX family), Zurich Instruments (HDAWG, SHFQC and related products), Qblox (Cluster modules) and Keysight (QCS). Their main advantages for spin qubits are many synchronised channels, DC-coupled baseband outputs, built-in IQ upconversion to tens of GHz, low-latency feedback and polished software. Their main disadvantage is cost, typically tens to hundreds of thousands of dollars for a multi-qubit setup. Many leading spin-qubit groups use them; the 2026 FPGA feedback demonstration on a silicon double dot used an OPX <cite data-r="bryan2026"></cite>.</p>
+
+<p>Open-source RFSoC controllers (QICK, QubiC, and the spinQICK extension) target the same functions at a fraction of the price, about $1000 per high-speed DAC channel according to HRL <cite data-r="wessels2026"></cite>, with the trade-off that you assemble the analog front end and maintain the software yourself. Several companies now sell RFSoC boxes with front ends designed for QICK <cite data-r="arnaldi2026"></cite>.</p>
+
+<h2>What the 4x2 with QICK can take over</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Rack function</th><th>4x2 + QICK</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Readout carrier source (100 MHz–1 GHz)</td><td><b>Yes</b></td><td>One DAC channel with DDS, phase-coherent with the readout</td></tr>
+<tr><td>Digitiser + demodulator + integrator</td><td><b>Yes</b></td><td>ADC + QICK readout blocks; I/Q per shot, decimated traces, DDR4 buffer for long records</td></tr>
+<tr><td>Pulse sequencer and timing master</td><td><b>Yes</b></td><td>tProcessor with ~2.4 ns timing; loops, branching, feedback</td></tr>
+<tr><td>Trigger outputs to other instruments</td><td><b>Yes</b></td><td>8 PMOD digital outputs controlled by the tProcessor</td></tr>
+<tr><td>Microwave drive up to ~5 GHz</td><td><b>Yes</b></td><td>Direct synthesis, first Nyquist zone</td></tr>
+<tr><td>Microwave drive 5–10 GHz</td><td><b>Partly</b></td><td>Second Nyquist zone with reduced, frequency-dependent power</td></tr>
+<tr><td>Microwave drive &gt;10 GHz</td><td><b>With external mixer + LO</b></td><td>The 4x2 provides the IF waveform</td></tr>
+<tr><td>Baseband gate pulses</td><td><b>Short, zero-mean pulses only</b></td><td>AC-coupled through baluns (10 MHz–10 GHz); DC-coupled operation needs hardware modification</td></tr>
+<tr><td>Lock-in at kHz</td><td><b>No</b></td><td>Baluns block low frequencies</td></tr>
+<tr><td>DC gate voltages</td><td><b>No</b></td><td>Need a DC source (can be triggered by PMOD outputs)</td></tr>
+<tr><td>Many channels</td><td><b>No</b></td><td>2 DACs, 4 ADCs (2 used by QICK standard firmware)</td></tr>
+</tbody></table></div>
+<p>Board facts from the board documentation and the QICK firmware <cite data-r="rfsocpynq4x2,rd4x2manual,qickrepo"></cite>.</p>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>A sensible way to bring a 4x2 into an existing lab is as a <b>readout and timing engine</b>: it generates the reflectometry carrier, demodulates the sensor signal in real time, and triggers the AWG and DC source with its PMOD outputs. Microwave drive can be added on its second DAC (directly or with a mixer). This uses the board's strengths and leaves the baseband pulsing to a DC-coupled instrument until you decide whether to modify the board or move to a larger RFSoC.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Which instruments in a spin-qubit rack add noise directly to the qubit's electrostatic environment, and why does that matter?</p>
+<details><summary>Show answer</summary><div>The DC gate sources and the fast-pulse AWG (and any amplifiers after them). Their voltage noise on gates moves the dots' potentials, which is indistinguishable from charge noise and dephases the qubits.</div></details>
+<p>2. Why are integrated controllers attractive compared with separate instruments?</p>
+<details><summary>Show answer</summary><div>Synchronisation and latency: all channels share one clock and one real-time processor, so pulses, readout and feedback happen within nanoseconds without external triggering, and one program describes the whole experiment.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A rack contains DC sources, current amplifiers and lock-ins, AWGs, microwave sources with IQ mixers, digitisers, timing hardware and test equipment.</li>
+<li>Commercial integrated controllers combine many of these with real-time processors at high cost; RFSoC-based open-source controllers aim at the same functions cheaply.</li>
+<li>The 4x2 + QICK can replace the readout source, digitiser, demodulator, sequencer, triggers and microwave drive up to a few GHz; it cannot replace DC sources, kHz lock-ins or DC-coupled baseband AWGs without modification.</li>
+</ul>
+</div>

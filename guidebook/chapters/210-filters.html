@@ -1,2 +1,78 @@
-<!--meta {"id": "filters", "part": "Part V \u00b7 Signals and software-defined radio", "title": "Spectra, filters, decimation and interpolation"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "filters", "part": "Part V · Signals and software-defined radio", "title": "Spectra, filters, decimation and interpolation"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The shape of a qubit pulse in time decides which frequencies it contains, and therefore which neighbouring qubits or transitions it disturbs. The readout chain filters and decimates billions of samples per second down to one number per shot. Cables and amplifiers distort baseband pulses, and you correct them with digital pre-distortion filters. All three are applications of a small set of ideas from signal processing: the Fourier transform, filters, and changing the sample rate. This chapter explains them with the qubit applications in mind <cite data-r="sdrbook"></cite>.</p>
+</div>
+
+<h2>Time and frequency are two views of one signal</h2>
+
+<p>The Fourier transform decomposes a signal into sinusoids:</p>
+\[ X(f) = \int_{-\infty}^{\infty} x(t)\,e^{-i2\pi f t}\,dt . \]
+<p>\(|X(f)|^2\) tells you how much power the signal has at each frequency. One general rule matters more than any formula: <b>short in time means wide in frequency</b>. A pulse of duration \(\tau\) occupies a bandwidth of order \(1/\tau\). A 10 ns exchange pulse spans about 100 MHz; a 100 ns microwave burst about 10 MHz around its carrier.</p>
+
+<p>The <i>shape</i> matters as much as the duration. A square pulse has a sinc-shaped spectrum with slowly decaying side lobes (−13 dB for the first, then falling as \(1/f\)). A Gaussian pulse has a Gaussian spectrum with no side lobes at all.</p>
+
+<figure>
+<div class="figbody"><!--plot:pulse-spectra--></div>
+<figcaption>Spectra of a 100 ns square microwave pulse and a Gaussian pulse with similar area. At a neighbouring qubit 30 MHz away, the square pulse still has significant power in its side lobes, while the Gaussian's spectrum has fallen far below. This is the frequency-domain reason for smooth pulse envelopes.</figcaption>
+</figure>
+
+<h2>The discrete Fourier transform and FFT</h2>
+
+<p>For \(N\) samples at rate \(f_s\), the discrete Fourier transform gives \(N\) frequency bins spaced by the <b>resolution</b> \(\Delta f = f_s/N\). The fast Fourier transform (FFT) computes it in \(N\log N\) operations. Two practical points:</p>
+<ul>
+<li><b>Spectral leakage</b>: a sinusoid that does not fit an integer number of periods into the record spreads into neighbouring bins. Multiplying the record by a smooth <i>window</i> (Hann, Blackman) before the FFT reduces leakage.</li>
+<li><b>Noise per bin</b>: white noise is spread over all bins, so longer records (more bins) lower the noise level per bin, while a sinusoid stays in one bin. A spectrum analyser's displayed noise floor depends on its resolution bandwidth for this reason.</li>
+</ul>
+<p>The SDR book's Notebook Set C builds a spectrum analyser on the RFSoC; it is an excellent first hands-on exercise for seeing aliasing, images and spurs on your own board <cite data-r="sdrbook"></cite>.</p>
+
+<h2>Filters</h2>
+
+<p>A filter passes some frequencies and attenuates others. In the digital world there are two families:</p>
+<ul>
+<li><dfn data-def="Finite impulse response filter: output is a weighted sum of the last N input samples; always stable, can have exactly linear phase.">FIR filters</dfn> compute each output as a weighted sum of the last \(N\) inputs, \(y[n] = \sum_{k=0}^{N-1} h_k\,x[n-k]\). The weights \(h_k\) are the <b>taps</b> (the impulse response). FIRs are always stable, can have exactly linear phase (all frequencies delayed equally), and map efficiently onto FPGA multipliers.</li>
+<li><dfn data-def="Infinite impulse response filter: output depends on past outputs as well as inputs; efficient, but can be unstable and has nonlinear phase.">IIR filters</dfn> also feed back past outputs. They achieve sharp responses with few coefficients but have nonlinear phase and can be unstable if designed carelessly. A single-pole IIR is the digital version of an RC circuit.</li>
+</ul>
+
+<figure>
+<div class="figbody"><!--plot:fir-response--></div>
+<figcaption>Frequency response of a 63-tap low-pass FIR filter with cut-off at one eighth of the sample rate. More taps give a sharper transition and deeper stop-band, at the cost of more multipliers and more delay.</figcaption>
+</figure>
+
+<p>Analog filters are just as important in the lab: low-pass filters on DC lines, band-pass filters before the ADC to stop aliasing, and filters after mixers to remove images. Commercial coaxial filters (low-pass, high-pass, band-pass) are cheap and should be part of every RFSoC setup.</p>
+
+<h2>Changing the sample rate</h2>
+
+<h3>Decimation</h3>
+<p>To reduce the sample rate by a factor \(M\), first low-pass filter to below the new Nyquist frequency \(f_s/(2M)\), then keep every \(M\)th sample. Skipping the filter lets out-of-band noise and signals alias into the band. <dfn data-def="Reducing the sample rate by an integer factor after low-pass filtering to prevent aliasing.">Decimation</dfn> is what makes real-time readout possible: the ADC produces 4.4 billion samples per second, but you want one I/Q number per shot. QICK's readout on the 4x2 decimates by 8 after down-conversion, giving 552.96 MSPS "decimated" data that can be recorded as a trace, and then accumulates over the readout window for the per-shot result <cite data-r="qickrepo"></cite>.</p>
+
+<h3>Interpolation</h3>
+<p>To increase the sample rate by \(L\), insert \(L-1\) zeros between samples and low-pass filter to remove the resulting images. <dfn data-def="Increasing the sample rate by inserting samples and filtering; lets slowly-defined waveforms drive fast DACs.">Interpolation</dfn> lets a waveform be stored at a lower rate (saving memory) and played at the full DAC rate. QICK's interpolated generator (<code>sg_int4_v2</code>, used on the ZCU216) stores envelopes at a quarter of the DAC rate for this reason <cite data-r="qickdocs"></cite>.</p>
+
+<h2>Pre-distortion: undoing the cables</h2>
+
+<p>A baseband pulse travelling through amplifiers, cables, bias tees and filters arrives distorted: edges are rounded (low-pass behaviour), long pulses droop (high-pass behaviour, from AC coupling and bias tees), and reflections add ringing. If the chain is linear, its effect is a filter with some impulse response \(g(t)\). You can measure \(g(t)\) (with a fast oscilloscope at room temperature, or with the qubit itself) and apply an inverse filter digitally to the waveform before playing it, so that what arrives at the gate is the shape you wanted. This is <dfn data-def="Applying an inverse filter to a waveform before playing it, so that the distortion of the signal chain is cancelled at the device.">pre-distortion</dfn>.</p>
+<p>HRL's spinQICK exchange-only experiments fitted the room-temperature chain (ZCU216 → LMH5401 → THS3491 → low-pass filter) with two single-pole IIR filters and pre-distorted their 10 ns exchange pulses accordingly <cite data-r="wessels2026"></cite>. For long sequences that exceeded waveform memory, they pre-distorted a short repeating unit and played it in a loop.</p>
+
+<div class="box example"><span class="tag">Worked example: correcting AC-coupling droop</span>
+<p>A high-pass path with time constant \(\tau\) turns a step into \(e^{-t/\tau}\). Its inverse adds back the integral of the past signal: \(v_{\text{pre}}(t) = v(t) + \frac{1}{\tau}\int_0^t v(t')\,dt'\). For a 1 µs square pulse of 10 mV through a path with \(\tau = 20\ \mu\)s, the pre-distorted pulse ramps up linearly from 10 mV to 10.5 mV during the pulse. But for \(\tau = 10\) ns (comparable to the 4x2's balun response at its low-frequency end), the correction would need a ramp of 100 times the pulse height, impossible. Pre-distortion can fix small droop, not a missing DC path.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. What frequency resolution does an FFT of 16 384 samples at 4423.68 MSPS have?</p>
+<details><summary>Show answer</summary><div>\(4423.68\times10^6/16384 = 270\) kHz per bin.</div></details>
+<p>2. Why must you filter before decimating?</p>
+<details><summary>Show answer</summary><div>After decimation by \(M\), all frequencies alias into the new, narrower Nyquist band. Without filtering, noise and signals from the whole original band fold in, adding noise and spurs.</div></details>
+<p>3. Why does pre-distortion fail to fix a balun-coupled output for millisecond pulses?</p>
+<details><summary>Show answer</summary><div>The balun's high-pass time constant is short (of order nanoseconds to tens of ns at a 10 MHz corner). Holding a level for milliseconds would require the pre-distorted waveform to grow without bound, far beyond the DAC's range.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Short pulses are spectrally wide; smooth shapes (Gaussian) avoid the side lobes of square pulses.</li>
+<li>The DFT/FFT has resolution \(f_s/N\); windows reduce leakage.</li>
+<li>FIR filters are weighted sums of past inputs; IIR filters feed back outputs.</li>
+<li>Decimation (filter then downsample) turns GSPS ADC streams into per-shot results; interpolation saves waveform memory.</li>
+<li>Pre-distortion cancels known, modest distortions of the pulse chain; it cannot create a DC path that does not exist.</li>
+</ul>
+</div>

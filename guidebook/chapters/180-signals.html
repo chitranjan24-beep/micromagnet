@@ -1,2 +1,122 @@
-<!--meta {"id": "signals", "part": "Part V \u00b7 Signals and software-defined radio", "title": "Signals, power, decibels and impedance"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "signals", "part": "Part V · Signals and software-defined radio", "title": "Signals, power, decibels and impedance"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>From here on, the book moves from physics to electronics. Every cable you connect to the RFSoC carries a signal described by amplitude, frequency and phase, measured in dBm, flowing through 50 Ω coax into components with gains and losses in dB. If you can do power budgets in your head, you can predict what reaches the device, avoid damaging the ADC, and understand data sheets. This chapter covers the vocabulary every RF engineer uses, following the fundamentals chapters of AMD's SDR book <cite data-r="sdrbook"></cite> and standard microwave engineering <cite data-r="pozar"></cite>.</p>
+</div>
+
+<h2>Sine waves: amplitude, frequency and phase</h2>
+
+<p>The basic signal of RF engineering is the sinusoid</p>
+\[ v(t) = A\cos(2\pi f t + \phi) = A\cos(\omega t + \phi). \]
+<ul>
+<li>\(A\) is the <b>amplitude</b> (peak voltage). The <b>peak-to-peak</b> value is \(2A\) and the <dfn data-def="Root-mean-square value; for a sine wave of amplitude A it is A/√2. Power is V_rms²/R.">RMS</dfn> value is \(A/\sqrt2\).</li>
+<li>\(f\) is the <b>frequency</b> in Hz; its inverse \(T = 1/f\) is the <b>period</b>; \(\omega = 2\pi f\) is the angular frequency in rad/s.</li>
+<li>\(\phi\) is the <b>phase</b> in radians or degrees: a shift of the wave along the time axis by \(\phi/\omega\).</li>
+</ul>
+
+<figure>
+<div class="figbody"><!--plot:sine-basics--></div>
+<figcaption>A cosine of amplitude 1 V and the same wave delayed in phase by 90° (which is a sine). Phase is a time shift measured in fractions of a period. The RMS value \(A/\sqrt2\) sets the power the wave delivers into a resistor.</figcaption>
+</figure>
+
+<p>Why sinusoids? Because linear systems (cables, filters, amplifiers in their linear range) do not change the frequency of a sinusoid; they only change its amplitude and phase. Any signal can be written as a sum of sinusoids (Fourier analysis, Chapter 21), so knowing a system's effect on each frequency tells you its effect on everything.</p>
+
+<h2>Power, decibels and dBm</h2>
+
+<p>The average power a sinusoid delivers into a resistance \(R\) is</p>
+\[ P = \frac{V_{\text{rms}}^2}{R} = \frac{A^2}{2R} . \]
+<p>RF power spans enormous ranges (from watts to below a femtowatt), so it is expressed logarithmically. A ratio of powers in decibels is \(10\log_{10}(P_2/P_1)\). For voltages (or currents) across the same resistance, power goes as voltage squared, so the voltage ratio in dB is \(20\log_{10}(V_2/V_1)\). The unit <dfn data-def="Power in decibels relative to 1 milliwatt: P(dBm) = 10 log10(P / 1 mW).">dBm</dfn> is power relative to 1 mW:</p>
+\[ P_{\text{dBm}} = 10\log_{10}\frac{P}{1\ \text{mW}} . \]
+
+<div class="tablewrap"><table>
+<thead><tr><th class="num">Power</th><th class="num">dBm</th><th class="num">RMS voltage in 50 Ω</th><th class="num">Amplitude in 50 Ω</th></tr></thead>
+<tbody>
+<tr><td class="num">1 W</td><td class="num">+30</td><td class="num">7.07 V</td><td class="num">10 V</td></tr>
+<tr><td class="num">10 mW</td><td class="num">+10</td><td class="num">707 mV</td><td class="num">1 V</td></tr>
+<tr><td class="num">1 mW</td><td class="num">0</td><td class="num">224 mV</td><td class="num">316 mV</td></tr>
+<tr><td class="num">1 µW</td><td class="num">−30</td><td class="num">7.07 mV</td><td class="num">10 mV</td></tr>
+<tr><td class="num">1 nW</td><td class="num">−60</td><td class="num">224 µV</td><td class="num">316 µV</td></tr>
+<tr><td class="num">10 fW</td><td class="num">−110</td><td class="num">0.71 µV</td><td class="num">1 µV</td></tr>
+</tbody></table></div>
+
+<p>Rules of thumb: +3 dB doubles power, +10 dB multiplies it by 10, +6 dB doubles voltage, +20 dB multiplies voltage by 10. Gains and losses in a chain simply add in dB, which is why engineers love them. Related units you will meet:</p>
+<ul>
+<li><b>dBc</b>: power relative to the carrier (for spurs and harmonics, e.g. "−60 dBc").</li>
+<li><b>dBFS</b>: power relative to a converter's full-scale signal (for ADC/DAC specs).</li>
+<li><b>dBm/Hz</b> and <b>dBFS/Hz</b>: noise power per hertz of bandwidth.</li>
+</ul>
+
+<h2>Impedance</h2>
+
+<p>For sinusoidal signals, resistors, capacitors and inductors are all described by a complex <dfn data-def="The complex ratio of voltage to current for a sinusoidal signal; Z = R for resistors, 1/(jωC) for capacitors, jωL for inductors.">impedance</dfn> \(Z = V/I\) (engineers write \(j\) for \(\sqrt{-1}\)):</p>
+\[ Z_R = R, \qquad Z_C = \frac{1}{j\omega C}, \qquad Z_L = j\omega L . \]
+<p>A capacitor blocks DC (infinite impedance at \(\omega = 0\)) and passes high frequencies; an inductor does the opposite. That is the whole idea behind bias tees, filters and the reflectometry tank circuit of Chapter 9.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>A 100 nF DC-blocking capacitor in series with a 50 Ω load forms a high-pass filter with cut-off \(f_c = 1/(2\pi RC) = 1/(2\pi\times50\times10^{-7}) \approx 32\) kHz. Below 32 kHz, the capacitor's impedance exceeds 50 Ω and the signal is increasingly blocked. That is why AC-coupled paths cannot pass slow signals or long flat pulses. The 4x2's SMA paths contain two 100 nF capacitors and a balun (Chapter 29); the balun limits the low-frequency end far more than the capacitors do.</p>
+</div>
+
+<h2>Transmission lines and why everything is 50 Ω</h2>
+
+<p>At high frequencies, a cable longer than a small fraction of a wavelength is not a simple wire. It is a <dfn data-def="A cable or trace along which signals travel as waves with a characteristic impedance; reflections occur at impedance mismatches.">transmission line</dfn>: signals travel along it as waves at about two-thirds of the speed of light (roughly 5 ns per metre in typical coax), and the ratio of voltage to current in a travelling wave is the line's <b>characteristic impedance</b> \(Z_0\), fixed by its geometry. Almost all RF equipment uses \(Z_0 = 50\) Ω, a historical compromise between low loss and high power handling in air-filled coax.</p>
+
+<p>When a wave meets a load with impedance \(Z \ne Z_0\), part of it reflects, with reflection coefficient \(\Gamma = (Z - Z_0)/(Z + Z_0)\) (Chapter 9). Three cases matter for your lab:</p>
+<ul>
+<li><b>Matched load</b> (\(Z = 50\) Ω): no reflection. Instruments and attenuators are designed for this.</li>
+<li><b>Open end</b> (\(Z\to\infty\)), for example a fast gate line ending on a tiny gate capacitance: \(\Gamma = +1\). The voltage at the open end is <b>twice</b> the incident wave's voltage, and the reflected wave travels back up the line.</li>
+<li><b>Short</b> (\(Z = 0\)): \(\Gamma = -1\); the voltage at the end is zero.</li>
+</ul>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Assuming the pulse amplitude at the gate equals the source's nominal 50 Ω amplitude. A gate at the end of a coax is essentially an open circuit at pulse frequencies, so the voltage there is up to twice the incident amplitude (after the line's attenuation), and reflections bounce between gate and source, ringing the pulse. Many groups put a 50 Ω termination or a resistive divider on the sample PCB, or calibrate the real amplitude with the qubit or with charge transitions. Always calibrate pulse amplitude at the device.</p>
+</div>
+
+<h2>Differential signals and baluns</h2>
+
+<p>The RFSoC's converters are differential: each DAC output and ADC input is a pair of pins (P and N) carrying opposite voltages, and the signal is their difference. Differential signalling rejects noise that appears equally on both pins. Lab equipment, however, is single-ended: one coax centre conductor relative to ground. A <dfn data-def="A balanced-to-unbalanced transformer that converts between differential and single-ended signals; transformer baluns block DC and have limited bandwidth.">balun</dfn> (balanced–unbalanced transformer) converts between the two. Transformer baluns are coupled magnetically, so they <b>cannot pass DC</b>, and they work only over a specified frequency range. On the 4x2, each SMA connector reaches the chip through decoupling capacitors and a MACOM MABA-011118 balun rated from 10 MHz to 10 GHz <cite data-r="rd4x2manual"></cite>. This one component explains most of the 4x2's limits for spin qubits.</p>
+
+<h2>Power budgets</h2>
+
+<p>A <dfn data-def="A step-by-step calculation of signal power through a chain of gains and losses, used to predict levels and avoid damage or saturation.">power budget</dfn> follows the signal from source to destination, adding gains and subtracting losses in dB. Do one for every new setup.</p>
+
+<figure>
+<div class="figbody"><!--plot:power-budget--></div>
+<figcaption>Example power budget for a reflectometry carrier: −10 dBm from the DAC, attenuated to about −100 dBm at the device, then amplified by a HEMT (+35 dB) and a room-temperature amplifier (+30 dB) to about −35 dBm at the ADC, well below its full scale. The numbers are illustrative; use your own line attenuations.</figcaption>
+</figure>
+
+<h2>Thermal noise and noise temperature</h2>
+
+<p>A resistor at temperature \(T\) delivers thermal noise power \(P_n = k_BTB\) into a matched load in a bandwidth \(B\). At 290 K this is −174 dBm per hertz, a number worth memorising: in a 1 MHz bandwidth, −174 + 60 = −114 dBm. Amplifiers add noise, described by a <b>noise temperature</b> \(T_N\) (the temperature of a resistor at the input that would produce the same added noise). For a chain of amplifiers with gains \(G_i\) and noise temperatures \(T_i\), the total is given by the Friis formula:</p>
+\[ T_{\text{sys}} = T_1 + \frac{T_2}{G_1} + \frac{T_3}{G_1G_2} + \dots \]
+<p>The first amplifier dominates when its gain is large. That is why a cryogenic HEMT (\(T_1\) of a few K, \(G_1\) about \(10^3\)–\(10^4\)) at 4 K makes a room-temperature amplifier's 100 K or more nearly irrelevant, and why the HEMT sets the readout SNR <cite data-r="pozar"></cite>.</p>
+
+<div class="box example"><span class="tag">Worked example: readout SNR in 1 µs</span>
+<p>The sensor's signal at the device is a change of −110 dBm in reflected power between charge states (a 10 fW difference). The HEMT has \(T_N = 4\) K. Noise power in a bandwidth of 1 MHz (about a 1 µs integration) is \(k_BT_NB = 1.38\times10^{-23}\times4\times10^6 = 5.5\times10^{-17}\) W = −132.6 dBm. The SNR in power is \(-110 - (-132.6) = 22.6\) dB, a factor of about 180 in power, or about 13 in amplitude. Plenty for single-shot readout, which is why a good HEMT at 4 K is essential.</p>
+</div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<ul>
+<li>All four ADC and two DAC SMA ports are 50 Ω single-ended (through the baluns) <cite data-r="rd4x2manual"></cite>.</li>
+<li>DAC output power is set by the DAC's current mode (QICK's printout for the 4x2 reports "20 mA" mode) and by the digital amplitude (QICK <code>gain</code>, 0 to 1). The maximum output of a Gen3 RF-DAC is of order 0 dBm, and on Gen3 devices it can be adjusted in fine steps with Variable Output Power (VOP) <cite data-r="sdrbook,qickrepo"></cite>. Measure the actual power at your frequency with a spectrum analyser before relying on a number.</li>
+<li>The ADC full-scale input is of order +1 dBm; Gen3 ADCs also include a digital step attenuator in front of the converter <cite data-r="sdrbook"></cite>. Check DS926 for your device's absolute maximum ratings <cite data-r="ds926"></cite>.</li>
+</ul>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Convert −40 dBm into amplitude in a 50 Ω system.</p>
+<details><summary>Show answer</summary><div>−40 dBm = 100 nW. \(V_{\text{rms}} = \sqrt{PR} = \sqrt{10^{-7}\times50} = 2.24\) mV, amplitude \(= 3.16\) mV.</div></details>
+<p>2. A chain has a DAC at 0 dBm, −20 dB, −20 dB, −10 dB attenuators and a −20 dB coupler. What power reaches the device?</p>
+<details><summary>Show answer</summary><div>0 − 20 − 20 − 10 − 20 = −70 dBm.</div></details>
+<p>3. Why does a balun block DC?</p>
+<details><summary>Show answer</summary><div>It is a transformer: energy is transferred between windings by a changing magnetic flux, which requires a changing current. A constant (DC) current produces no changing flux, so nothing is coupled.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A sinusoid has amplitude, frequency and phase; power into \(R\) is \(A^2/2R\).</li>
+<li>dB for ratios (10 log power, 20 log voltage), dBm relative to 1 mW; 0 dBm = 316 mV amplitude in 50 Ω.</li>
+<li>Capacitors block DC, inductors block high frequencies; transmission lines have a characteristic impedance (50 Ω) and reflect at mismatches; an open gate sees up to twice the incident voltage.</li>
+<li>The RFSoC's differential converters reach the 4x2's SMA ports through baluns, which block DC.</li>
+<li>Thermal noise is −174 dBm/Hz at 290 K; the first amplifier (HEMT) sets the system noise.</li>
+</ul>
+</div>

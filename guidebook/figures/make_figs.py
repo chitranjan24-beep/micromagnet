@@ -620,6 +620,175 @@ def eo_axes():
     save('eo-axes', b.svg(w=520))
 
 
+# ---------------------------------------------------------------- Part V figures
+@fig
+def sine_basics():
+    t = np.linspace(0, 2.2, 800)
+    ax = Axes(600, 260, xlim=(0, 2.2), ylim=(-1.3, 1.3), xlabel='time (in periods T = 1/f)', ylabel='voltage (V)')
+    ax.line(t, np.cos(2 * np.pi * t), 't1', 'A cos(2πft), A = 1 V')
+    ax.line(t, np.cos(2 * np.pi * t - np.pi / 2), 't2', 'same with phase −90° (a sine)')
+    ax.hline(1 / np.sqrt(2), 'thin dash', 'RMS = A/√2', lx=1.55)
+    ax.vline(1, 'thin dash', 'one period T', ly=-1.15)
+    save('sine-basics', ax.svg(legend_pos='br'))
+
+
+@fig
+def power_budget():
+    stages = ['DAC out', 'RT atten', '4 K atten', 'still', 'MXC atten', 'coupler', 'device', 'HEMT', 'RT amp', 'ADC in']
+    p = [-10, -30, -50, -60, -80, -100, -100, -65, -35, -35]
+    x = np.arange(len(stages))
+    ax = Axes(640, 300, xlim=(-0.5, len(stages) - 0.5), ylim=(-115, 14), xlabel='', ylabel='signal power (dBm)', xticks=list(x), xfmt=lambda v: stages[int(round(v))], mb=40)
+    xs, ys = [], []
+    for i, v in enumerate(p):
+        xs += [i - 0.4, i + 0.4]; ys += [v, v]
+    ax.line(xs, ys, 't1', 'readout carrier power along the chain')
+    ax.hline(1, 'thin dash', 'ADC full scale ≈ +1 dBm (check DS926)', lx=3.2)
+    save('power-budget', ax.svg(legend_pos='br'))
+
+
+@fig
+def aliasing_time():
+    fs = 9.8304
+    f_true = 7.0
+    t = np.linspace(0, 3.0, 2000)  # ns
+    ts = np.arange(0, 3.0, 1 / fs)
+    ax = Axes(640, 280, xlim=(0, 3), ylim=(-1.3, 1.3), xlabel='time (ns)', ylabel='amplitude')
+    ax.line(t, np.cos(2 * np.pi * f_true * t), 't1', '7.0 GHz signal')
+    fa = fs - f_true
+    ax.line(t, np.cos(2 * np.pi * fa * t), 't2 dash', f'alias at {fa:.2f} GHz')
+    ax.scatter(ts, np.cos(2 * np.pi * f_true * ts), 'f4', r=3.6, opacity=1.0, label=None)
+    ax.text(0.05, -1.2, 'dots: samples at 9.8304 GSPS fit both curves exactly', 'sm')
+    save('aliasing-time', ax.svg(legend_pos='tr'))
+
+
+@fig
+def nyquist_zones():
+    fs = 9.8304
+    f = np.linspace(0.001, 3 * fs / 2, 1500)
+    x = f / fs
+    normal = np.abs(np.sinc(x))
+    mix = np.abs(np.sinc(x / 2) * np.sin(np.pi * x / 2))
+    ax = Axes(640, 290, xlim=(0, 3 * fs / 2), ylim=(-30, 2), xlabel='output frequency (GHz)', ylabel='relative output power (dB)', xticks=[0, fs / 2, fs, 1.5 * fs], xfmt=lambda v: f'{v:.2f}')
+    ax.line(f, 20 * np.log10(normal + 1e-6), 't1', 'normal mode: sinc response')
+    ax.line(f, 20 * np.log10(mix + 1e-6), 't2', 'mix-mode: better in zone 2')
+    for k, lab in [(0.25, 'zone 1'), (0.75, 'zone 2'), (1.25, 'zone 3')]:
+        ax.text(k * fs, -27, lab, 'sm', anchor='middle')
+    ax.vline(fs / 2, 'thin dash'); ax.vline(fs, 'thin dash')
+    save('nyquist-zones', ax.svg(legend_pos='tr'))
+
+
+@fig
+def quantization():
+    t = np.linspace(0, 1, 800)
+    x = 0.95 * np.sin(2 * np.pi * t)
+    q = np.round(x * 3.5 + 3.5 - 0.5) + 0.5
+    q = (np.clip(np.floor((x + 1) * 4), 0, 7) - 3.5) / 4
+    ax = Axes(600, 260, xlim=(0, 1), ylim=(-1.1, 1.1), xlabel='time (one period)', ylabel='value (full scale = ±1)')
+    ax.line(t, x, 't1', 'analog input')
+    ax.line(t, q, 't2', '3-bit quantised (8 levels)')
+    ax.line(t, x - q, 't3', 'quantisation error')
+    save('quantization', ax.svg(legend_pos='tr'))
+
+
+@fig
+def mixer_spectrum():
+    ax = Axes(640, 280, xlim=(0, 16), ylim=(0, 1.15), xlabel='frequency (GHz)', ylabel='amplitude (arb.)', yticks=[0, 0.5, 1])
+    def peak(x0, h, cls):
+        xx = np.linspace(x0 - 0.12, x0 + 0.12, 30)
+        ax.line(xx, h * np.exp(-((xx - x0) / 0.04) ** 2), cls)
+    peak(1.5, 1.0, 't1'); ax.text(1.5, 1.05, 'IF 1.5 GHz (DAC)', 'sm', anchor='middle')
+    peak(12.0, 0.25, 't3'); ax.text(12.0, 0.32, 'LO leakage 12 GHz', 'sm', anchor='middle')
+    peak(13.5, 0.9, 't2'); ax.text(13.6, 1.06, 'wanted 13.5', 'sm', anchor='middle')
+    peak(10.5, 0.9, 't4'); ax.text(10.3, 1.06, 'image 10.5', 'sm', anchor='middle')
+    xx = np.linspace(12.7, 15, 50)
+    ax.area(xx, 0 * xx, 0 * xx + 1.12, 'fa3'); ax.text(14.3, 0.1, 'band-pass filter', 'sm', anchor='middle')
+    save('mixer-spectrum', ax.svg())
+
+
+@fig
+def pulse_spectra():
+    f = np.linspace(-60, 60, 1200)  # MHz
+    T = 0.1  # us square
+    sq = np.abs(np.sinc(f * T))
+    sig = T / 2.5
+    ga = np.exp(-(2 * np.pi * f * sig) ** 2 / 2)
+    ax = Axes(620, 290, xlim=(-60, 60), ylim=(-60, 3), xlabel='frequency offset from carrier (MHz)', ylabel='spectral power (dB)')
+    ax.line(f, 20 * np.log10(sq + 1e-6), 't1', '100 ns square pulse')
+    ax.line(f, 20 * np.log10(ga + 1e-6), 't2', 'Gaussian pulse of similar area')
+    ax.vline(30, 'thin dash')
+    ax.text(28, -8, 'neighbouring qubit at +30 MHz', 'sm', anchor='end')
+    save('pulse-spectra', ax.svg(legend_pos='tl'))
+
+
+@fig
+def fir_response():
+    from scipy.signal import firwin, freqz
+    h = firwin(63, 0.25)
+    w, H = freqz(h, worN=2048)
+    ax = Axes(600, 270, xlim=(0, 0.5), ylim=(-90, 5), xlabel='frequency (fraction of sample rate)', ylabel='filter gain (dB)')
+    ax.line(w / (2 * np.pi), 20 * np.log10(np.abs(H) + 1e-9), 't1', '63-tap low-pass FIR')
+    ax.vline(0.125, 'thin dash', 'cut-off', ly=-80)
+    save('fir-response', ax.svg(legend_pos='tr'))
+
+
+@fig
+def adc_spectrum():
+    rng = np.random.default_rng(2)
+    fs = 4423.68
+    N = 16384
+    t = np.arange(N) / fs
+    f0 = 410.3
+    x = 0.5 * np.cos(2 * np.pi * f0 * t) + 0.0008 * np.cos(2 * np.pi * 2 * f0 * t) + 0.0005 * np.cos(2 * np.pi * 3 * f0 * t) + 0.0003 * np.cos(2 * np.pi * (fs / 8) * t)
+    x += rng.normal(0, 0.0005, N)
+    X = np.fft.rfft(x * np.hanning(N))
+    P = 20 * np.log10(np.abs(X) / np.abs(X).max() + 1e-12)
+    f = np.fft.rfftfreq(N, 1 / fs)
+    ax = Axes(640, 290, xlim=(0, fs / 2), ylim=(-140, 5), xlabel='frequency (MHz)', ylabel='power relative to carrier (dBc)')
+    ax.line(f, P, 't1')
+    ax.text(f0 + 30, -6, 'carrier', 'sm'); ax.text(2 * f0 + 20, -52, '2nd harmonic', 'sm'); ax.text(3 * f0 + 20, -58, '3rd harmonic', 'sm')
+    ax.text(fs / 8 - 20, -70, 'spur at fs/8', 'sm', anchor='end')
+    ax.text(1750, -80, 'noise floor (per FFT bin)', 'sm', anchor='middle')
+    save('adc-spectrum', ax.svg())
+
+
+@fig
+def iq_blobs():
+    rng = np.random.default_rng(5)
+    n = 600
+    a = rng.normal([0.0, 0.0], 0.35, (n, 2)) + [1.0, 0.4]
+    b = rng.normal([0.0, 0.0], 0.35, (n, 2)) + [-0.6, 1.5]
+    relax = rng.random(n) < 0.08
+    frac = rng.random(n)
+    b[relax] = a[relax] * (1 - frac[relax, None]) * 0 + (np.array([-0.6, 1.5]) * (1 - frac[relax, None]) + np.array([1.0, 0.4]) * frac[relax, None]) + rng.normal(0, 0.35, (relax.sum(), 2))
+    ax1 = Axes(330, 320, xlim=(-2.2, 2.6), ylim=(-1.4, 3.2), xlabel='I (arb.)', ylabel='Q (arb.)', title='raw I/Q of single shots', mr=12)
+    ax1.scatter(a[:, 0], a[:, 1], 'f1', r=1.8, opacity=0.5, label='prepared |0⟩')
+    ax1.scatter(b[:, 0], b[:, 1], 'f2', r=1.8, opacity=0.5, label='prepared |1⟩')
+    # rotate so separation lies along I
+    d = np.array([-1.6, 1.1]); ang = np.arctan2(d[1], d[0])
+    R = np.array([[np.cos(-ang), -np.sin(-ang)], [np.sin(-ang), np.cos(-ang)]])
+    ra = a @ R.T; rb = b @ R.T
+    bins = np.linspace(-3, 3, 60)
+    ha, _ = np.histogram(ra[:, 0], bins); hb, _ = np.histogram(rb[:, 0], bins)
+    c = (bins[1:] + bins[:-1]) / 2
+    ax2 = Axes(330, 320, xlim=(-3, 3), ylim=(0, max(ha.max(), hb.max()) * 1.15), xlabel='rotated I (signal axis)', ylabel='counts', title='after rotation: histogram', mr=12)
+    ax2.line(c, ha, 't1'); ax2.line(c, hb, 't2')
+    thr = (ra[:, 0].mean() + rb[:, 0].mean()) / 2
+    ax2.vline(thr, 'acc', 'threshold', ly=ha.max())
+    save('iq-blobs', row(ax1.svg(legend_pos='tr'), ax2.svg()))
+
+
+@fig
+def optimal_weights():
+    t = np.linspace(0, 10, 400)  # us
+    T1ro = 6.0
+    w_box = np.where(t < 4, 1.0, 0.0)
+    w_opt = np.exp(-t / T1ro)
+    ax = Axes(600, 260, xlim=(0, 10), ylim=(0, 1.1), xlabel='time in readout window (µs)', ylabel='weight')
+    ax.line(t, w_box, 't1', 'boxcar: equal weight up to 4 µs')
+    ax.line(t, w_opt, 't2', 'decaying weight: trusts early samples more')
+    save('optimal-weights', ax.svg(legend_pos='tr'))
+
+
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)
     for n in names:

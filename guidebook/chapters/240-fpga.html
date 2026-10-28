@@ -1,2 +1,108 @@
-<!--meta {"id": "fpga", "part": "Part VI \u00b7 FPGAs and the RFSoC chip", "title": "Digital logic and FPGA fabric"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "fpga", "part": "Part VI · FPGAs and the RFSoC chip", "title": "Digital logic and FPGA fabric"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>QICK's signal generators, readouts and tProcessor are not programs running on a CPU. They are digital circuits configured into the RFSoC's FPGA fabric. You can use QICK without ever designing such circuits, but you need to understand what they are to read the documentation, interpret timing limits ("2.4 ns clock", "16 samples per cycle"), judge what a firmware change would involve, and talk to engineers. This chapter starts from bits and ends with the building blocks of a modern FPGA.</p>
+</div>
+
+<h2>Numbers in hardware</h2>
+
+<p>Digital hardware stores numbers as bits. An \(N\)-bit unsigned integer covers 0 to \(2^N - 1\). Signed integers almost always use <dfn data-def="The standard binary representation of signed integers, in which the most significant bit has weight −2^(N−1).">two's complement</dfn>, where the top bit has negative weight: a 16-bit value covers −32768 to +32767. ADC samples on the RFSoC are 14-bit (padded into 16-bit words), and QICK's gain values are signed integers scaled so that 1.0 corresponds to the largest positive value.</p>
+
+<p>Fractions are handled with <dfn data-def="Representing fractional numbers as integers with an implied binary point, e.g. Q1.15 for 16-bit values between −1 and 1.">fixed-point</dfn> arithmetic: an integer with an implied binary point. In "Q1.15" format, a 16-bit word represents values from −1 to \(1 - 2^{-15}\) in steps of \(2^{-15}\). Fixed point is cheap in hardware but you must track how many bits each operation needs: multiplying two 16-bit numbers gives 32 bits; summing 1024 of them needs 10 more bits to avoid overflow. This is why QICK's accumulators are wide and why its I/Q results are large integers that the Python library rescales.</p>
+
+<h2>Combinational logic, registers and clocks</h2>
+<p>Digital circuits are built from two kinds of element:</p>
+<ul>
+<li><b>Combinational logic</b> (AND, OR, NOT, adders, multiplexers): outputs depend only on current inputs, after a short propagation delay.</li>
+<li><b>Sequential elements</b>: a <dfn data-def="A one-bit memory element that captures its input at a clock edge and holds it until the next edge.">flip-flop</dfn> captures its input at the rising edge of a clock and holds it until the next edge. A group of flip-flops is a register.</li>
+</ul>
+<p>A synchronous design alternates registers and combinational logic. At each clock edge, registers capture the results computed since the previous edge. The clock period must exceed the longest combinational delay between two registers (the <dfn data-def="The slowest register-to-register path in a digital design, which sets the maximum clock frequency.">critical path</dfn>) plus setup times. Tools check this automatically ("timing closure"). At 614.4 MHz, the clock used by QICK's 4x2 generators, the period is only 1.63 ns, so each step of the logic must be very short.</p>
+
+<h3>Pipelining and parallelism</h3>
+<p>Two tricks let FPGAs process GHz data with sub-GHz clocks:</p>
+<ul>
+<li><b>Pipelining</b>: split a long calculation into stages separated by registers. Each stage is short, so the clock can be fast; the result appears several cycles later (latency), but a new input can enter every cycle (throughput).</li>
+<li><b>Parallelism</b>: process several samples per clock cycle. A 9.8304 GSPS DAC fed by a 614.4 MHz fabric clock needs 16 samples per cycle. QICK's signal generator computes 16 DDS outputs and 16 envelope samples in parallel every cycle, a 256-bit wide data path <cite data-r="qickdocs"></cite>.</li>
+</ul>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>The 4x2's ADCs run at 4423.68 MSPS and the readout fabric at 276.48 MHz. How many samples arrive per fabric cycle? \(4423.68/276.48 = 16\). After QICK's decimation by 8, the rate is 552.96 MSPS, which is 2 samples per cycle at 276.48 MHz.</p>
+</div>
+
+<h2>What an FPGA is made of</h2>
+
+<p>A <dfn data-def="Field-programmable gate array: a chip of configurable logic blocks, memories and arithmetic units connected by programmable routing.">field-programmable gate array (FPGA)</dfn> is a chip full of generic digital building blocks and programmable wiring between them. Loading a configuration file (the bitstream) sets every block's function and every connection, creating a custom circuit. The main resources in an AMD UltraScale+ FPGA, as in the RFSoC, are:</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 260" width="760" role="img" aria-label="FPGA fabric resources">
+  <g>
+    <rect x="20" y="20" width="720" height="220" rx="6" class="box"/>
+    <g>
+      <rect x="40" y="40" width="70" height="40" class="boxa"/><text class="sm" x="75" y="64" text-anchor="middle">CLB</text>
+      <rect x="40" y="96" width="70" height="40" class="boxa"/><text class="sm" x="75" y="120" text-anchor="middle">CLB</text>
+      <rect x="40" y="152" width="70" height="40" class="boxa"/><text class="sm" x="75" y="176" text-anchor="middle">CLB</text>
+      <rect x="130" y="40" width="60" height="152" class="boxl"/><text class="sm" x="160" y="110" text-anchor="middle">BRAM</text><text class="sm" x="160" y="126" text-anchor="middle">36 Kb</text>
+      <rect x="210" y="40" width="60" height="152" class="boxw"/><text class="sm" x="240" y="110" text-anchor="middle">DSP</text><text class="sm" x="240" y="126" text-anchor="middle">27×18</text>
+      <rect x="290" y="40" width="70" height="40" class="boxa"/><text class="sm" x="325" y="64" text-anchor="middle">CLB</text>
+      <rect x="290" y="96" width="70" height="40" class="boxa"/><text class="sm" x="325" y="120" text-anchor="middle">CLB</text>
+      <rect x="290" y="152" width="70" height="40" class="boxa"/><text class="sm" x="325" y="176" text-anchor="middle">CLB</text>
+      <rect x="380" y="40" width="60" height="152" class="boxl"/><text class="sm" x="410" y="110" text-anchor="middle">URAM</text><text class="sm" x="410" y="126" text-anchor="middle">288 Kb</text>
+    </g>
+    <text class="sm" x="40" y="214">columns of resources, connected by programmable routing (not drawn)</text>
+    <g transform="translate(470,40)">
+      <text class="ttl" x="0" y="0">Inside a CLB</text>
+      <text class="sm" x="0" y="22">• 8 six-input lookup tables (LUTs):</text>
+      <text class="sm" x="10" y="38">any logic function of 6 bits</text>
+      <text class="sm" x="0" y="58">• 16 flip-flops</text>
+      <text class="sm" x="0" y="78">• fast carry chain for adders</text>
+      <text class="ttl" x="0" y="110">DSP slice</text>
+      <text class="sm" x="0" y="132">multiply-accumulate in one clock:</text>
+      <text class="sm" x="10" y="148">P = P + A × B (27 × 18 bits)</text>
+      <text class="sm" x="0" y="168">used for DDS, mixers, filters</text>
+    </g>
+  </g>
+</svg>
+</div>
+<figcaption>The main building blocks of UltraScale+ fabric: configurable logic blocks (CLBs) with lookup tables and flip-flops, block RAM (BRAM) and UltraRAM (URAM) memories, and DSP slices for arithmetic, arranged in columns and connected by programmable routing <cite data-r="ug1085"></cite>.</figcaption>
+</figure>
+
+<ul>
+<li><b>Lookup tables (LUTs)</b>: a 6-input LUT is a tiny 64-entry memory that can implement any Boolean function of 6 inputs. LUTs are the "logic gates" of an FPGA.</li>
+<li><b>Flip-flops</b>: registers next to each LUT.</li>
+<li><b>Block RAM (BRAM)</b>: 36 Kbit dual-port memories, for waveform tables, FIFOs and buffers. QICK's envelope memories and readout buffers are made of BRAM.</li>
+<li><b>UltraRAM</b>: larger 288 Kbit blocks for bigger memories.</li>
+<li><b>DSP slices</b>: hardened multiply-accumulate units (27×18-bit multiplier plus a 48-bit accumulator) running at hundreds of MHz. Every multiplication in a DDS, mixer or filter uses them.</li>
+<li><b>Clocking</b>: PLLs and MMCMs (mixed-mode clock managers) generate and phase-align the many clocks a design uses.</li>
+</ul>
+<p>The XCZU48DR in the 4x2 contains roughly 930 000 logic cells, about 4 000 DSP slices and tens of megabits of block RAM and UltraRAM (see AMD's product tables for exact numbers). That is enough for QICK's full design with room to spare, and the same fabric resources exist in the ZCU216's ZU49DR: the boards differ mostly in their RF front ends <cite data-r="qickdocs"></cite>.</p>
+
+<h2>How designs are described</h2>
+<p>FPGA circuits are written in <b>hardware description languages</b> (HDLs) such as Verilog or VHDL, which describe registers and logic rather than sequential instructions. Higher-level tools exist: <b>high-level synthesis</b> (HLS) compiles C++ into circuits, and <b>IP blocks</b> (ready-made circuits such as the RF data converter interface, DMA engines and FIFOs) are connected graphically in a block design. QICK's firmware is a mix of custom Verilog/VHDL blocks (the tProcessor, generators, readouts) and AMD IP, assembled in a Vivado block design (Chapter 27).</p>
+
+<h2>Why an FPGA, not a fast CPU?</h2>
+<ul>
+<li><b>Determinism</b>: a circuit does exactly the same thing on every clock cycle. No operating system, caches or interrupts can delay a pulse.</li>
+<li><b>Bandwidth</b>: processing 16 samples per cycle per channel on several channels in parallel exceeds what any CPU can do in real time.</li>
+<li><b>Latency</b>: a decision computed from a measurement can affect the next pulse within hundreds of nanoseconds, which is essential for feedback.</li>
+</ul>
+<p>The price is development effort: changing a circuit means re-running synthesis and implementation (hours) and verifying timing. That is why QICK separates fixed firmware (circuits) from flexible software (programs for the tProcessor, written from Python).</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. What is the largest value of a 14-bit two's-complement number, and the smallest?</p>
+<details><summary>Show answer</summary><div>\(+8191\) and \(-8192\).</div></details>
+<p>2. A design must process 4.4 GSPS with a 276.48 MHz clock. What does that force the designer to do?</p>
+<details><summary>Show answer</summary><div>Process 16 samples in parallel every clock cycle (a wide data path), and pipeline every operation so that each stage fits in 3.6 ns.</div></details>
+<p>3. Why would summing 10 000 16-bit samples overflow a 16-bit register, and how many bits are needed?</p>
+<details><summary>Show answer</summary><div>The sum can reach 10 000 × 32767 ≈ 3.3 × 10⁸, which needs about 29 bits plus sign (16 + log₂10 000 ≈ 16 + 13.3). Accumulators must be wider than their inputs.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Hardware uses two's-complement integers and fixed-point fractions; bit growth must be managed.</li>
+<li>Synchronous logic alternates registers and combinational logic; the critical path sets the clock rate.</li>
+<li>Pipelining and parallel samples per cycle let sub-GHz fabric handle GSPS converters (16 samples per cycle in QICK on the 4x2).</li>
+<li>FPGAs contain LUTs, flip-flops, BRAM, UltraRAM, DSP slices and clock managers connected by programmable routing.</li>
+<li>FPGAs give determinism, bandwidth and low latency, at the cost of slow design iterations.</li>
+</ul>
+</div>

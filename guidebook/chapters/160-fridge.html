@@ -1,2 +1,107 @@
-<!--meta {"id": "fridge", "part": "Part IV \u00b7 The lab", "title": "The dilution refrigerator and its wiring"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "fridge", "part": "Part IV · The lab", "title": "The dilution refrigerator and its wiring"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Every signal from your RFSoC reaches the qubit only after travelling a metre or more through a dilution refrigerator, through attenuators, filters and bias tees that change its amplitude, shape and noise. If you do not know what is in the lines, you cannot predict the pulse amplitude at the gate, you cannot tell why your electrons are hot, and you can easily heat the mixing chamber with too much microwave power. This chapter explains how the refrigerator works and how its lines are designed, with numbers you can use to plan power levels.</p>
+</div>
+
+<h2>How a dilution refrigerator reaches 10 mK</h2>
+
+<p>A modern "dry" dilution refrigerator cools in stages, each a copper plate hanging below the previous one inside nested radiation shields and a vacuum can <cite data-r="pobell"></cite>:</p>
+<ol>
+<li><b>Pulse-tube cryocooler</b> (no liquid helium bath): a closed-cycle helium gas cooler driven by a compressor. Its first stage cools a plate and shield to about 40–60 K; its second stage reaches about 3–4 K with roughly 1 W of cooling power.</li>
+<li><b>The dilution unit</b> uses a mixture of helium-3 and helium-4. Below about 0.87 K the mixture separates into a <sup>3</sup>He-rich phase floating on a <sup>3</sup>He-poor (dilute) phase. In the <b>mixing chamber</b>, <sup>3</sup>He atoms crossing from the rich to the dilute phase absorb heat, like evaporation. The <b>still</b> (about 0.7–1 K) pumps <sup>3</sup>He out of the dilute phase, which is then recondensed and returned through heat exchangers. This cycle reaches about 10 mK at the mixing chamber.</li>
+</ol>
+<p>Cooling power falls steeply with temperature: roughly a watt at 4 K, a few tens of milliwatts at the still, hundreds of microwatts at 100 mK, and only around 10–20 µW at 20 mK. Every watt of heat you bring down with wiring or microwaves counts against these budgets <cite data-r="krinner2019"></cite>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Stage</th><th>Typical temperature</th><th>Cooling power (order of magnitude)</th><th>What sits there</th></tr></thead>
+<tbody>
+<tr><td>50 K plate</td><td>40–60 K</td><td>tens of W</td><td>first thermal anchors, radiation shield</td></tr>
+<tr><td>4 K plate</td><td>3–4 K</td><td>~1 W</td><td>cryogenic (HEMT) amplifiers, first attenuators, magnet</td></tr>
+<tr><td>Still</td><td>0.7–1 K</td><td>~10–40 mW</td><td>attenuators, filters</td></tr>
+<tr><td>Cold plate</td><td>~100 mK</td><td>~100 µW</td><td>attenuators</td></tr>
+<tr><td>Mixing chamber (MXC)</td><td>~10 mK</td><td>~10–20 µW at 20 mK</td><td>sample, final filters, bias tees, couplers</td></tr>
+</tbody></table></div>
+
+<p>A cooldown from room temperature takes one to three days; warming up takes about a day. Changing a sample therefore costs several days, which is why labs test devices carefully before cooling and plan wiring changes well in advance.</p>
+
+<h2>The magnet</h2>
+<p>Spin experiments need a static field of 0.1–2 T. It comes from a superconducting solenoid (or a vector magnet with two or three coils) mounted on the 4 K plate around the sample. For Si/SiGe devices with micromagnets, the field is usually applied in the plane of the chip. Magnets can be put in <b>persistent mode</b>, where a superconducting switch closes the loop and the current circulates without the power supply, giving a very stable field. Field ramps are slow (minutes), so the field is usually changed rarely.</p>
+
+<h2>Why the lines need attenuators: thermal noise</h2>
+
+<p>Every resistor at temperature \(T\) emits thermal (Johnson) noise with power \(k_BT\) per unit bandwidth into a matched load. A coaxial line connected to room-temperature electronics therefore carries 300 K of noise down to your device, even when the instrument is "off". That noise heats the electrons and drives unwanted transitions.</p>
+
+<p>An attenuator reduces both signal and incoming noise by its factor \(A\) (for example \(A = 100\) for 20 dB), but as a resistive component at temperature \(T_{\text{att}}\) it adds its own thermal noise. The output noise temperature is</p>
+\[ T_{\text{out}} = \frac{T_{\text{in}}}{A} + \Big(1 - \frac1A\Big)T_{\text{att}} . \]
+<p>So each attenuator replaces most of the incoming noise with noise at its own, lower temperature. Placing attenuators at successively colder stages steps the noise temperature down.</p>
+
+<div class="box example"><span class="tag">Worked example: noise temperature of a readout input line</span>
+<p>A line has −20 dB at 4 K, −10 dB at the still (0.8 K) and −20 dB at the mixing chamber (20 mK). Starting from 300 K:</p>
+<ul>
+<li>After 4 K: \(300/100 + 0.99\times4 = 6.96\) K.</li>
+<li>After the still: \(6.96/10 + 0.9\times0.8 = 1.42\) K.</li>
+<li>After the MXC: \(1.42/100 + 0.99\times0.02 = 0.034\) K = 34 mK.</li>
+</ul>
+<p>The noise reaching the sample is equivalent to 34 mK, close to the base temperature. Total attenuation is 50 dB. A −10 dBm source then gives −60 dBm at the coupler; add the coupler's −20 dB and the sample sees −80 dBm. For reflectometry you would add about 20–30 dB more to reach −100 to −110 dBm.</p>
+</div>
+
+<h2>The different kinds of lines</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Line</th><th>Typical construction</th><th>Bandwidth at the device</th><th>Typical attenuation / filtering</th></tr></thead>
+<tbody>
+<tr><td>DC gate lines (many, 24–100)</td><td>twisted pairs of resistive wire (constantan, phosphor bronze), thermally anchored at every stage</td><td>DC to ~10 Hz–100 kHz</td><td>RC low-pass and metal-powder or "Ag-epoxy" filters at the MXC to block RF noise</td></tr>
+<tr><td>Fast gate lines (baseband pulses)</td><td>coax: stainless steel or CuNi above 4 K, often superconducting NbTi below</td><td>DC (via bias tee: ~Hz) to a few GHz</td><td>−10 to −30 dB total, low-pass filters; kept low so pulses stay large</td></tr>
+<tr><td>Microwave drive (EDSR)</td><td>coax as above</td><td>up to 20–40 GHz</td><td>−20 to −40 dB total</td></tr>
+<tr><td>Readout input</td><td>coax</td><td>100 MHz–1 GHz (reflectometry)</td><td>−40 to −60 dB plus a directional coupler</td></tr>
+<tr><td>Readout output</td><td>coax, superconducting between MXC and 4 K</td><td>same</td><td>no attenuation; cryogenic amplifier at 4 K (sometimes circulators or a parametric amplifier first)</td></tr>
+</tbody></table></div>
+<p>Values are typical for spin-qubit setups and vary between labs <cite data-r="krinner2019,vigneau2023"></cite>.</p>
+
+<h3>Combining DC and fast signals: bias tees and adders</h3>
+<p>A gate often needs both a precise DC voltage (from the DC source, through a heavily filtered line) and fast pulses (from an AWG, through a coax). A <dfn data-def="A circuit that combines a DC voltage (through a resistor or inductor) with an AC signal (through a capacitor) onto one line.">bias tee</dfn> on the sample PCB combines them: the DC arrives through a large resistor (for example 1–10 MΩ), the pulses through a capacitor (for example 10–100 nF). This RC network passes pulses above its cut-off \(1/(2\pi RC)\), typically well below 1 Hz to a few Hz, so pulses of microseconds to milliseconds pass with little droop. Some groups instead use resistive "adder" circuits, which are DC-coupled for the fast signal as well; HRL's spinQICK setup used a room-temperature voltage divider combined with a resistive bias tee at the mixing chamber <cite data-r="wessels2026"></cite>.</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Forgetting that a bias tee is a high-pass filter for the pulse path. A long square pulse through an RC bias tee with time constant \(\tau_{RC}\) droops exponentially, and any pulse sequence with a non-zero average shifts the gate's DC level over time. For \(\tau_{RC} = 0.1\) s, a 1 ms pulse droops by 1%. The 4x2's own outputs add a second high-pass, from the board's baluns, at a much higher frequency (Chapter 29).</p>
+</div>
+
+<h2>The sample PCB</h2>
+<p>The device chip is glued and wire-bonded to a printed circuit board mounted on the cold finger of the mixing chamber. The PCB carries the bias tees, RC filters on DC lines, the reflectometry inductor and sometimes varactors for tuning the match, and connectors to the fridge wiring. Parasitic capacitance of its traces and bond pads sets the reflectometry resonance (Chapter 9), so PCB design is part of readout design.</p>
+
+<h2>Electron temperature, grounding and other enemies</h2>
+<ul>
+<li><b>Electron temperature</b> is usually 30–150 mK even when the MXC is at 10 mK. Causes: insufficient filtering of DC lines, noise on fast lines, poor thermalisation of the PCB, and heating by microwaves. Measure it from Coulomb-peak widths (Chapter 7).</li>
+<li><b>Ground loops</b> between instruments, fridge and PC inject mains-frequency (50/60 Hz) noise. Use a single grounding point, isolation transformers or DC blocks, and battery- or isolated-powered DC sources.</li>
+<li><b>Pulse-tube vibrations</b> at about 1.4 Hz and harmonics can appear as noise, through moving cables (triboelectric charge) or microphonics.</li>
+<li><b>Microwave heating</b>: EDSR drive power dissipated in attenuators and in the device warms the MXC and the electrons. Long bursts at high power can warm the MXC by several mK.</li>
+</ul>
+
+<h2>Hot qubits</h2>
+<p>Silicon spin qubits have been operated at temperatures around 1 K, where the cooling power is a thousand times larger. Readout then relies on PSB (which tolerates temperature) and coherence is shorter. This research direction matters for integrating cryogenic control electronics next to the qubits in the future <cite data-r="burkard2023"></cite>.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The 4x2 sits at room temperature, next to the fridge. Use these rules when connecting it:</p>
+<ul>
+<li>Know the attenuation and filtering of every line before connecting a DAC output. Write a power budget from DAC output to device (Chapter 18).</li>
+<li>Keep the board's ground and the fridge's ground connected at one point only. Use DC blocks or isolators on SMA lines if you see mains-frequency pickup.</li>
+<li>The ADC input must never see more than its maximum rated power. After a HEMT (+35 dB) and a room-temperature amplifier (+30 dB), a −100 dBm readout signal becomes about −35 dBm, comfortably within range; but a large DAC signal leaking through the coupler could be amplified far above that. Add a limiter or extra attenuation while setting up (Appendix B).</li>
+</ul>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why are attenuators placed at several stages instead of one big attenuator at the mixing chamber?</p>
+<details><summary>Show answer</summary><div>An attenuator dissipates the power it removes. Removing the large thermal noise and signal power at the 4 K stage (with ~1 W cooling) is cheap; doing it all at the MXC (~µW) would heat it. Stepping down also reduces the noise temperature progressively.</div></details>
+<p>2. A fast gate line has −20 dB total attenuation. You want a 5 mV pulse at the gate. What amplitude must the source produce (ignoring other losses)?</p>
+<details><summary>Show answer</summary><div>−20 dB in voltage is a factor 10, so 50 mV. (Remember that a 50 Ω source driving a high-impedance gate through a matched line can double the voltage at an unterminated end; real setups need calibration of the actual amplitude at the device, for example with photon-assisted tunnelling or by measuring pulse-induced shifts of charge transitions.)</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A dry dilution refrigerator uses a pulse tube to ~4 K and <sup>3</sup>He/<sup>4</sup>He dilution to ~10 mK, with cooling power falling from ~1 W (4 K) to ~10 µW (20 mK).</li>
+<li>Attenuators at successive stages reduce thermal noise; \(T_{\text{out}} = T_{\text{in}}/A + (1-1/A)T_{\text{att}}\).</li>
+<li>DC lines are heavily filtered; fast lines are lightly attenuated coax; readout outputs have a cryogenic amplifier at 4 K.</li>
+<li>Bias tees on the sample PCB combine DC and pulses but act as high-pass filters for the pulses.</li>
+<li>Electron temperature, grounding and microwave heating are the common practical problems.</li>
+</ul>
+</div>

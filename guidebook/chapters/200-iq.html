@@ -1,2 +1,119 @@
-<!--meta {"id": "iq", "part": "Part V \u00b7 Signals and software-defined radio", "title": "I/Q signals, mixing, NCOs and digital up/down-conversion"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "iq", "part": "Part V · Signals and software-defined radio", "title": "I/Q signals, mixing, NCOs and digital up/down-conversion"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>"I and Q" appear everywhere in qubit control: the readout returns I/Q values, microwave pulses are built from I/Q envelopes, and IQ mixers shift waveforms to GHz. The reason is that a sinusoid of a given frequency has two independent knobs, amplitude and phase, and I/Q is the cleanest way to handle both. This chapter builds the idea from complex numbers, then explains mixers, numerically controlled oscillators (NCOs) and the digital up- and down-converters inside the RFSoC and QICK. It follows the SDR book's chapters on quadrature modulation and SDR architectures <cite data-r="sdrbook"></cite>.</p>
+</div>
+
+<h2>A sinusoid as a rotating arrow</h2>
+
+<p>Euler's formula \(e^{i\theta} = \cos\theta + i\sin\theta\) lets us write any sinusoid as the real part of a rotating complex number:</p>
+\[ A\cos(\omega t + \phi) = \Re\big\{A e^{i\phi}\,e^{i\omega t}\big\}. \]
+<p>The complex number \(\tilde A = Ae^{i\phi}\) is the <dfn data-def="A complex number Ae^{iφ} encoding the amplitude and phase of a sinusoid of known frequency.">phasor</dfn>. It contains everything about the signal except its frequency. If the amplitude and phase change slowly over time, \(\tilde A(t)\) is called the <dfn data-def="The slowly varying complex amplitude I(t) + iQ(t) of a modulated carrier; the information-carrying part of the signal.">complex envelope</dfn>.</p>
+
+<p>Write the phasor in Cartesian form, \(\tilde A = I + iQ\), with \(I = A\cos\phi\) and \(Q = A\sin\phi\). Expanding the cosine:</p>
+\[ A\cos(\omega t+\phi) = I\cos\omega t - Q\sin\omega t . \]
+<p>So any sinusoid at frequency \(\omega\) is a sum of a cosine with weight \(I\) (the <b>in-phase</b> component) and a sine with weight \(Q\) (the <b>quadrature</b> component, 90° shifted). Amplitude is \(\sqrt{I^2+Q^2}\), phase is \(\operatorname{atan2}(Q, I)\).</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 700 300" width="700" role="img" aria-label="Phasor diagram">
+  <line class="thin" x1="60" y1="150" x2="300" y2="150"/><line class="thin" x1="180" y1="270" x2="180" y2="30"/>
+  <text class="sm" x="302" y="154">I (in-phase)</text><text class="sm" x="186" y="34">Q (quadrature)</text>
+  <circle cx="180" cy="150" r="100" class="thin dash"/>
+  <line class="t1" x1="180" y1="150" x2="257" y2="86" style="stroke-width:2.6"/><circle cx="257" cy="86" r="4" class="f1"/>
+  <line class="thin dash" x1="257" y1="86" x2="257" y2="150"/><line class="thin dash" x1="257" y1="86" x2="180" y2="86"/>
+  <text class="sm t1t" x="262" y="80">Ae<tspan baseline-shift="super" font-size="8">iφ</tspan> = I + iQ</text>
+  <text class="sm" x="250" y="166">I</text><text class="sm" x="166" y="90">Q</text>
+  <path class="acc" d="M210,150 A30,30 0 0,0 203,131"/><text class="sm tacc" x="214" y="140">φ</text>
+  <text class="sm" x="120" y="290">the arrow rotates at ω; I and Q are its components</text>
+  <text class="sm" x="120" y="304"></text>
+  <g transform="translate(410,40)">
+    <text class="ttl" x="0" y="0">What changes what</text>
+    <text class="sm" x="0" y="24">larger arrow → more amplitude (power)</text>
+    <text class="sm" x="0" y="44">rotate arrow → change phase (qubit axis!)</text>
+    <text class="sm" x="0" y="64">arrow turning slowly → frequency offset</text>
+    <text class="sm" x="0" y="96">In readout: the sensor's state moves</text>
+    <text class="sm" x="0" y="112">the reflected phasor to a different point;</text>
+    <text class="sm" x="0" y="128">each charge state is a point in the IQ plane.</text>
+    <text class="sm" x="0" y="160">In control: I(t), Q(t) envelopes set the</text>
+    <text class="sm" x="0" y="176">rotation angle and axis of a qubit pulse.</text>
+  </g>
+</svg>
+</div>
+<figcaption>The phasor (I/Q) picture of a sinusoid. Its length is the amplitude, its angle the phase. Changing I and Q over time is all that is needed to modulate a carrier's amplitude and phase. In a frame rotating at the carrier frequency, a small frequency offset appears as a slow rotation of the arrow.</figcaption>
+</figure>
+
+<h2>Mixing: multiplying signals shifts frequencies</h2>
+
+<p>A <dfn data-def="A device that multiplies two signals, producing sum and difference frequencies; used to shift signals up or down in frequency.">mixer</dfn> multiplies two signals. From \(\cos a\cos b = \tfrac12[\cos(a-b) + \cos(a+b)]\), multiplying a signal at frequency \(f_{IF}\) (the <i>intermediate frequency</i>) by a local oscillator at \(f_{LO}\) produces two outputs, at \(f_{LO} - f_{IF}\) and \(f_{LO}+f_{IF}\). These are the lower and upper <b>sidebands</b>. Usually you want only one; the other is the <dfn data-def="The unwanted sideband at LO − IF (or LO + IF) produced by a simple mixer; must be filtered or cancelled.">image</dfn>.</p>
+
+<h3>Single-sideband (IQ) upconversion</h3>
+<p>An <dfn data-def="A mixer with two internal mixers driven by LO signals 90° apart, combining I and Q inputs into a single-sideband output.">IQ mixer</dfn> contains two mixers driven by copies of the LO 90° apart. Feed it baseband I and Q signals at the IF:</p>
+\[ I(t) = \cos\omega_{IF}t,\quad Q(t) = \sin\omega_{IF}t \;\;\Rightarrow\;\; I\cos\omega_{LO}t - Q\sin\omega_{LO}t = \cos\big((\omega_{LO}+\omega_{IF})t\big). \]
+<p>The image cancels exactly, leaving only the upper sideband. Swapping the sign of Q selects the lower sideband. Real mixers are imperfect: unequal gains and a phase error of a degree or so leave an image at −25 to −40 dBc, and a small DC offset on I or Q lets the LO leak through. Both are calibrated by adjusting small offsets and amplitude/phase corrections while watching a spectrum analyser. IQ upconversion is how commercial controllers produce qubit drive at 10–20 GHz <cite data-r="krantz2019"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:mixer-spectrum--></div>
+<figcaption>Upconverting a 1.5 GHz IF with a 12 GHz LO using a simple (double-sideband) mixer. Both sidebands appear at 10.5 and 13.5 GHz, plus some LO leakage. A band-pass filter keeps the wanted sideband. A large IF makes this easier, because the image is \(2f_{IF}\) away from the wanted signal.</figcaption>
+</figure>
+
+<h2>Downconversion and demodulation</h2>
+
+<p>The reverse operation recovers I and Q from a received signal \(r(t) = A\cos(\omega t + \phi)\). Multiply it by \(\cos\omega t\) and by \(-\sin\omega t\):</p>
+\[ r(t)\cos\omega t = \tfrac{A}{2}\cos\phi + \tfrac{A}{2}\cos(2\omega t + \phi), \qquad -r(t)\sin\omega t = \tfrac{A}{2}\sin\phi - \tfrac{A}{2}\sin(2\omega t+\phi). \]
+<p>A low-pass filter removes the \(2\omega\) terms, leaving \(I/2\) and \(Q/2\). In complex notation this is a single multiplication by \(e^{-i\omega t}\) followed by filtering. This is the core of every reflectometry receiver, lock-in amplifier and qubit readout chain.</p>
+
+<h2>Numerically controlled oscillators</h2>
+
+<p>In digital hardware, the reference sinusoids are generated by a <dfn data-def="A digital oscillator: a phase accumulator incremented by a frequency word each clock, with a sine/cosine lookup or computation; also called DDS.">numerically controlled oscillator (NCO)</dfn>, also called direct digital synthesis (DDS). Each clock cycle, an \(N\)-bit <b>phase accumulator</b> adds a frequency word \(W\):</p>
+\[ \theta[n+1] = \theta[n] + W \pmod{2^N}, \qquad f = \frac{W}{2^N}f_{\text{clk}} . \]
+<p>The accumulator value is converted to \(\cos\theta\) and \(\sin\theta\) (by a lookup table or a CORDIC circuit). The frequency resolution is \(f_{\text{clk}}/2^N\), and the phase stays continuous when \(W\) changes, which is exactly what qubit control needs.</p>
+
+<div class="box example"><span class="tag">Worked example: QICK frequency resolution</span>
+<p>QICK's generators use 32-bit DDS running at the DAC sample rate. On the 4x2, \(9830.4\ \text{MHz}/2^{32} = 2.29\) Hz. The QICK documentation quotes 2.3 Hz for the generator and 20.6 Hz for the common step that both a generator and a readout can hit exactly <cite data-r="qickdocs"></cite>. A 9 Hz mismatch between them would rotate the demodulated phase once every 0.1 s, which is why QICK provides frequency matching (Chapter 36).</p>
+</div>
+
+<h2>Digital up- and down-conversion in the RFSoC</h2>
+
+<p>The RFSoC's data converters contain hardened <b>digital up-converters (DUC)</b> and <b>digital down-converters (DDC)</b>: interpolation or decimation filters, a complex mixer with an NCO (a 48-bit fine mixer, plus a coarse mixer for fixed shifts like \(f_s/4\)), and quadrature-error correction. In Gen3 devices, interpolation and decimation factors from 1× to 40× are available <cite data-r="sdrbook,pg269"></cite>. A 5G radio uses them to move low-rate baseband data to GHz without burdening the FPGA.</p>
+
+<p>QICK takes a different approach on the 4x2. Its standard firmware sets the DACs to 1× interpolation and the ADCs to 1× decimation, and does the frequency synthesis and down-conversion in the FPGA fabric itself <cite data-r="qickrepo"></cite>:</p>
+<ul>
+<li>Each <b>signal generator</b> computes 16 output samples per fabric clock cycle (614.4 MHz × 16 = 9830.4 MSPS), multiplying its envelope by its own DDS, so the output frequency, phase and amplitude can change from one pulse to the next under tProcessor control.</li>
+<li>Each <b>readout</b> takes the full-rate ADC stream, mixes it with its own DDS, filters and decimates by 8 (to 552.96 MSPS on the 4x2), and accumulates over the readout window.</li>
+</ul>
+<p>Doing it in fabric gives QICK precise, per-pulse control and phase coherence between generators and readouts, at the cost of FPGA resources. Chapter 33 describes these blocks in detail.</p>
+
+<h2>Upconversion options for EDSR with the 4x2</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Option</th><th>Hardware</th><th>Frequencies</th><th>DACs used</th><th>Pros / cons</th></tr></thead>
+<tbody>
+<tr><td>Direct, zone 1</td><td>none</td><td>up to ~4.9 GHz</td><td>1</td><td>Simplest, phase-coherent, clean; needs a low-field operating point</td></tr>
+<tr><td>Direct, zone 2</td><td>band-pass filter recommended</td><td>~4.9–9.8 GHz</td><td>1</td><td>No mixer; lower, frequency-dependent power; images and spurs to check</td></tr>
+<tr><td>DSB mixer + filter</td><td>LO source, mixer, band-pass filter</td><td>any (LO ± IF)</td><td>1</td><td>Leaves the second DAC free for readout; IF must be large (≥1 GHz) for easy filtering</td></tr>
+<tr><td>IQ mixer (SSB)</td><td>LO source, IQ mixer</td><td>any</td><td>2</td><td>Clean single sideband after calibration; uses both DACs, so readout needs another source</td></tr>
+</tbody></table></div>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Forgetting that the external LO is a separate oscillator. Its phase is not locked to the RFSoC unless both share a 10 MHz reference. Without a shared reference, the qubit drive phase drifts relative to QICK's timing, and Ramsey or echo experiments with long sequences lose phase coherence. Lock the LO and the 4x2 (via its external reference input, Chapter 30) to the same 10 MHz clock.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A signal has I = 0.3, Q = −0.4. What are its amplitude and phase?</p>
+<details><summary>Show answer</summary><div>Amplitude \(\sqrt{0.09+0.16} = 0.5\); phase \(\operatorname{atan2}(-0.4, 0.3) \approx -53°\).</div></details>
+<p>2. With an LO at 14 GHz and an IF of 600 MHz into a simple mixer, where are the outputs? How far apart are wanted and image?</p>
+<details><summary>Show answer</summary><div>13.4 and 14.6 GHz, 1.2 GHz apart (\(2f_{IF}\)). Filtering one out needs a sharp filter; an IF of 1.5 GHz would separate them by 3 GHz.</div></details>
+<p>3. Why must the phase accumulator be continuous when the frequency word changes?</p>
+<details><summary>Show answer</summary><div>So that the oscillator's phase, which is the qubit's reference frame, does not jump. A phase jump would rotate the effective drive axis and corrupt subsequent gates.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A sinusoid at known frequency is a phasor \(I + iQ\): amplitude and phase.</li>
+<li>Mixers multiply signals, producing sum and difference frequencies; IQ mixers cancel the image for single-sideband output.</li>
+<li>Demodulation multiplies by \(e^{-i\omega t}\) and low-pass filters, giving I and Q.</li>
+<li>NCOs (DDS) generate phase-continuous sinusoids with resolution \(f_{\text{clk}}/2^N\); QICK uses 32-bit DDS (2.3 Hz steps on the 4x2).</li>
+<li>QICK synthesises and demodulates in FPGA fabric; external mixers and an LO extend the 4x2's range for EDSR.</li>
+</ul>
+</div>

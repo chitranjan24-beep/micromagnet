@@ -1,2 +1,94 @@
-<!--meta {"id": "rfdc", "part": "Part VI \u00b7 FPGAs and the RFSoC chip", "title": "Inside the RFSoC data converters"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "rfdc", "part": "Part VI · FPGAs and the RFSoC chip", "title": "Inside the RFSoC data converters"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The RF data converters are the part of the RFSoC that touches the analog world. They are organised into tiles with their own clocks and PLLs, they have built-in mixers, filters and calibration engines, and they are configured from software through an interface called the RF Data Converter (RFDC) driver. QICK sets them up for you, but when you check power levels, debug a missing signal, add an external clock, or read a QICK printout that says "DAC tile 2, blk 0 is DAC_A", you need this map. This chapter summarises the SDR book's three data-converter chapters and AMD's PG269 product guide for the parts that matter to you <cite data-r="sdrbook,pg269"></cite>.</p>
+</div>
+
+<h2>Tiles and blocks</h2>
+
+<p>The converters are grouped into <dfn data-def="A group of RF-ADCs or RF-DACs on an RFSoC sharing a clock input and PLL; numbered (for example ADC tiles 224–227, DAC tiles 228–231).">tiles</dfn>. Each tile has its own clock input and PLL, and contains two or four converter <b>blocks</b>, each with its own digital signal-processing pipeline. In AMD's naming, ADC tiles are numbered 224–227 and DAC tiles 228–231. In software (PYNQ's <code>xrfdc</code> and QICK) the same tiles are numbered 0–3 within each type.</p>
+
+<p>On the RFSoC 4x2, the XCZU48DR has 8 ADCs and 8 DACs, of which the board brings out 4 ADCs and 2 DACs <cite data-r="rd4x2manual"></cite>:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Board label</th><th>Tile (AMD)</th><th>Tile index (software)</th><th>QICK standard firmware use</th></tr></thead>
+<tbody>
+<tr><td>DAC_A</td><td>DAC tile 230</td><td>DAC tile 2, block 0</td><td>generator 1</td></tr>
+<tr><td>DAC_B</td><td>DAC tile 228</td><td>DAC tile 0, block 0</td><td>generator 0</td></tr>
+<tr><td>ADC_A, ADC_B</td><td>ADC tile 226</td><td>ADC tile 2</td><td>not used by the standard tProc v1 firmware printout</td></tr>
+<tr><td>ADC_C</td><td>ADC tile 224</td><td>ADC tile 0, block 2</td><td>readout 1</td></tr>
+<tr><td>ADC_D</td><td>ADC tile 224</td><td>ADC tile 0, block 0</td><td>readout 0</td></tr>
+</tbody></table></div>
+<p>The QICK column comes from the configuration printout of the 4x2 standard firmware in QICK's demo notebooks <cite data-r="qickrepo"></cite>; check your own firmware's printout, because firmware versions differ. QICK's quick-start guide confirms "DAC_B and ADC_D ... will be generator 0 and readout 0" <cite data-r="qickdocs"></cite>.</p>
+
+<h2>The RF-ADC pipeline</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 150" width="900" role="img" aria-label="RF-ADC pipeline">
+  <text class="sm" x="10" y="20">analog in (differential)</text>
+  <rect x="10" y="40" width="100" height="56" rx="3" class="box"/><text class="sm" x="60" y="64" text-anchor="middle">input buffer</text><text class="sm" x="60" y="80" text-anchor="middle">+ DSA (Gen3)</text>
+  <rect x="130" y="40" width="100" height="56" rx="3" class="boxb"/><text class="sm" x="180" y="64" text-anchor="middle">14-bit ADC</text><text class="sm" x="180" y="80" text-anchor="middle">up to 5 GSPS</text>
+  <rect x="250" y="40" width="100" height="56" rx="3" class="box"/><text class="sm" x="300" y="64" text-anchor="middle">threshold</text><text class="sm" x="300" y="80" text-anchor="middle">detector</text>
+  <rect x="370" y="40" width="100" height="56" rx="3" class="box"/><text class="sm" x="420" y="64" text-anchor="middle">QMC (I/Q</text><text class="sm" x="420" y="80" text-anchor="middle">correction)</text>
+  <rect x="490" y="40" width="120" height="56" rx="3" class="box"/><text class="sm" x="550" y="64" text-anchor="middle">complex mixer</text><text class="sm" x="550" y="80" text-anchor="middle">48-bit NCO</text>
+  <rect x="630" y="40" width="110" height="56" rx="3" class="box"/><text class="sm" x="685" y="64" text-anchor="middle">decimation</text><text class="sm" x="685" y="80" text-anchor="middle">1× to 40×</text>
+  <rect x="760" y="40" width="120" height="56" rx="3" class="boxa"/><text class="sm" x="820" y="64" text-anchor="middle">FIFO → AXI-Stream</text><text class="sm" x="820" y="80" text-anchor="middle">to fabric</text>
+  <g class="acc"><line x1="110" y1="68" x2="130" y2="68"/><line x1="230" y1="68" x2="250" y2="68"/><line x1="350" y1="68" x2="370" y2="68"/><line x1="470" y1="68" x2="490" y2="68"/><line x1="610" y1="68" x2="630" y2="68"/><line x1="740" y1="68" x2="760" y2="68"/></g>
+  <text class="sm" x="250" y="124">QICK on the 4x2: decimation 1×, mixer bypassed; full-rate samples go to QICK's readout logic</text>
+</svg>
+</div>
+<figcaption>The RF-ADC signal path in a Gen3 RFSoC (simplified from the SDR book's Chapter 9 and PG269 <cite data-r="sdrbook,pg269"></cite>). Every stage can be configured or bypassed.</figcaption>
+</figure>
+
+<ul>
+<li><b>Input buffer and digital step attenuator (DSA)</b>: Gen3 devices can attenuate the input in steps before conversion, useful if your signal is too strong.</li>
+<li><b>The ADC core</b>: 14 bits at up to 5 GSPS on Gen3, built from interleaved sub-converters with background calibration (Chapter 22).</li>
+<li><b>Threshold detectors</b>: flag over-range inputs.</li>
+<li><b>Complex mixer</b>: a coarse mixer (shifts by \(f_s/4\), \(f_s/2\)) and a fine mixer with a 48-bit NCO, converting real input to complex baseband.</li>
+<li><b>Decimation filters</b>: 1× to 40× on Gen3.</li>
+<li><b>FIFO and AXI-Stream</b>: hand the samples to the fabric at the fabric clock rate.</li>
+</ul>
+
+<h2>The RF-DAC pipeline</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 150" width="900" role="img" aria-label="RF-DAC pipeline">
+  <rect x="10" y="40" width="120" height="56" rx="3" class="boxa"/><text class="sm" x="70" y="64" text-anchor="middle">AXI-Stream</text><text class="sm" x="70" y="80" text-anchor="middle">from fabric, FIFO</text>
+  <rect x="150" y="40" width="110" height="56" rx="3" class="box"/><text class="sm" x="205" y="64" text-anchor="middle">interpolation</text><text class="sm" x="205" y="80" text-anchor="middle">1× to 40×</text>
+  <rect x="280" y="40" width="120" height="56" rx="3" class="box"/><text class="sm" x="340" y="64" text-anchor="middle">complex mixer</text><text class="sm" x="340" y="80" text-anchor="middle">48-bit NCO</text>
+  <rect x="420" y="40" width="110" height="56" rx="3" class="box"/><text class="sm" x="475" y="64" text-anchor="middle">QMC, IMR,</text><text class="sm" x="475" y="80" text-anchor="middle">inverse sinc</text>
+  <rect x="550" y="40" width="120" height="56" rx="3" class="boxb"/><text class="sm" x="610" y="64" text-anchor="middle">14-bit DAC</text><text class="sm" x="610" y="80" text-anchor="middle">up to 9.85 GSPS</text>
+  <rect x="690" y="40" width="190" height="56" rx="3" class="box"/><text class="sm" x="785" y="64" text-anchor="middle">output stage: normal or mix-mode,</text><text class="sm" x="785" y="80" text-anchor="middle">20/32 mA or VOP (Gen3)</text>
+  <g class="acc"><line x1="130" y1="68" x2="150" y2="68"/><line x1="260" y1="68" x2="280" y2="68"/><line x1="400" y1="68" x2="420" y2="68"/><line x1="530" y1="68" x2="550" y2="68"/><line x1="670" y1="68" x2="690" y2="68"/></g>
+  <text class="sm" x="150" y="124">QICK on the 4x2: interpolation 1×, the fabric supplies 16 full-rate samples per 614.4 MHz cycle</text>
+</svg>
+</div>
+<figcaption>The RF-DAC signal path in a Gen3 RFSoC (simplified). IMR is an image-rejection filter used with interpolation; VOP (variable output power) gives fine control of output current on Gen3 devices <cite data-r="sdrbook"></cite>.</figcaption>
+</figure>
+
+<h2>Clocks and PLLs</h2>
+<p>Each tile needs a sampling clock. It can come from an external clock pin directly, or from the tile's internal PLL multiplying a lower reference. On the 4x2, external LMX2594 synthesisers feed the tiles (Chapter 30), and the QICK firmware configures the tiles with a 491.52 MHz reference, generating 9830.4 MSPS for the DACs and 4423.68 MSPS for the ADCs <cite data-r="qickrepo"></cite>. Because different tiles have different PLLs, their sampling clocks can have different phases after power-up. AMD's <dfn data-def="Multi-tile synchronisation: an RFSoC feature that aligns the sample clocks and data latency of several converter tiles.">multi-tile synchronisation (MTS)</dfn> feature aligns tiles to each other, and QICK's documentation describes how clocks are grouped ("Groups of related clocks: [tProc clock, DAC tile 0, DAC tile 2], [ADC tile 0]" in the 4x2 printout) <cite data-r="qickrepo"></cite>.</p>
+
+<h2>Configuration from software</h2>
+<p>The RFDC is configured through the <code>xrfdc</code> driver, which PYNQ exposes in Python: you can read and set Nyquist zones, mixer frequencies, decimation and interpolation, DSA and VOP settings, and check PLL lock status. QICK wraps the settings it needs, for example <code>set_nyquist()</code> (Chapter 19) and the DAC current mode, and leaves the rest at the firmware's defaults. Changing a converter's sampling rate is possible but involves reprogramming clocks; QICK's documentation has a dedicated page on it <cite data-r="qickdocs"></cite>.</p>
+
+<div class="box warn"><span class="tag">Common mistake</span>
+<p>Changing RFDC settings directly with <code>xrfdc</code> while a QICK program runs, or changing them behind QICK's back. QICK caches some settings (Nyquist zone, mixer frequency) and assumes it controls them. Make changes through QICK's methods, or reload the firmware afterwards.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A QICK printout says "ADC tile 0, blk 0 is ADC_D". Which AMD tile number is that, and which SMA connector?</p>
+<details><summary>Show answer</summary><div>ADC tile 224 (software index 0), the SMA labelled ADC_D on the board.</div></details>
+<p>2. Why does QICK not use the converters' built-in mixers and decimators on the 4x2?</p>
+<details><summary>Show answer</summary><div>It needs per-pulse, phase-coherent control of frequency and phase by the tProcessor, and several independent readout configurations. Doing synthesis and down-conversion in the fabric gives that flexibility; the hardened DUC/DDC are configured from software and are less suited to changing every pulse.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Converters are grouped into tiles with their own clocks and PLLs; ADC tiles 224–227, DAC tiles 228–231 (software 0–3).</li>
+<li>On the 4x2: DAC_A = tile 230, DAC_B = tile 228, ADC_A/B = tile 226, ADC_C/D = tile 224; QICK standard firmware uses DAC_B, DAC_A, ADC_D, ADC_C.</li>
+<li>ADC path: buffer/DSA, ADC, threshold, QMC, mixer, decimation; DAC path: interpolation, mixer, QMC/IMR/inverse sinc, DAC, output mode.</li>
+<li>QICK sets 1× rates and does DSP in fabric; tile clocks are aligned with multi-tile synchronisation.</li>
+</ul>
+</div>

@@ -1,2 +1,79 @@
-<!--meta {"id": "flow", "part": "Part VI \u00b7 FPGAs and the RFSoC chip", "title": "The design flow: Vivado, bitstreams and overlays"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "flow", "part": "Part VI · FPGAs and the RFSoC chip", "title": "The design flow: Vivado, bitstreams and overlays"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>QICK ships ready-made firmware files for the 4x2, so you can do a great deal without ever opening an FPGA tool. Sooner or later, though, you may want something the standard firmware does not have: all four ADCs, a different sample rate, a custom real-time filter, a crosstalk matrix like spinQICK's. Then you need the design flow. This chapter explains what the files are, what each tool does, how long it takes, and what a QICK firmware project looks like, so you can judge when a change is a Python change and when it is a firmware change <cite data-r="sdrbook"></cite>.</p>
+</div>
+
+<h2>From block design to bitstream</h2>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 200" width="900" role="img" aria-label="FPGA design flow">
+  <rect x="10" y="30" width="150" height="70" rx="4" class="box"/><text class="ttl" x="20" y="52">Sources</text><text class="sm" x="20" y="72">HDL (Verilog/VHDL), HLS,</text><text class="sm" x="20" y="88">IP, block design (Tcl)</text>
+  <rect x="190" y="30" width="130" height="70" rx="4" class="boxa"/><text class="ttl" x="200" y="52">Synthesis</text><text class="sm" x="200" y="72">HDL → netlist of</text><text class="sm" x="200" y="88">LUTs, FFs, DSPs, RAMs</text>
+  <rect x="350" y="30" width="150" height="70" rx="4" class="boxa"/><text class="ttl" x="360" y="52">Implementation</text><text class="sm" x="360" y="72">place and route,</text><text class="sm" x="360" y="88">timing analysis</text>
+  <rect x="530" y="30" width="150" height="70" rx="4" class="boxa"/><text class="ttl" x="540" y="52">Bitstream</text><text class="sm" x="540" y="72">.bit (configuration)</text><text class="sm" x="540" y="88">.hwh (hardware handoff)</text>
+  <rect x="710" y="30" width="180" height="70" rx="4" class="boxb"/><text class="ttl" x="720" y="52">On the board</text><text class="sm" x="720" y="72">PYNQ loads the overlay;</text><text class="sm" x="720" y="88">QICK reads the .hwh</text>
+  <g class="acc"><line x1="160" y1="65" x2="190" y2="65"/><line x1="320" y1="65" x2="350" y2="65"/><line x1="500" y1="65" x2="530" y2="65"/><line x1="680" y1="65" x2="710" y2="65"/></g>
+  <text class="sm" x="190" y="130">minutes</text><text class="sm" x="350" y="130">tens of minutes to hours;</text><text class="sm" x="350" y="146">may fail timing and need fixes</text>
+  <text class="sm" x="530" y="130">files of tens of MB</text>
+  <text class="sm" x="710" y="130">seconds to load</text>
+  <text class="sm" x="10" y="180">All steps run in AMD Vivado on a workstation (not on the board). QICK's 4x2 projects are written for Vivado 2023.1.</text>
+</svg>
+</div>
+<figcaption>The FPGA design flow. Synthesis turns descriptions into a netlist; implementation places it on the chip and routes the wires, checking that every path meets its clock period; the bitstream configures the device. PYNQ calls the pair of files <code>.bit</code> + <code>.hwh</code> an <i>overlay</i>.</figcaption>
+</figure>
+
+<ul>
+<li><b>Vivado</b> is AMD's FPGA tool suite. Its <b>IP Integrator</b> lets you assemble a <b>block design</b> from IP blocks (the Zynq PS, the RF Data Converter, DMAs, custom blocks) and connect them with AXI interfaces; the design can be saved and recreated as a Tcl script.</li>
+<li><b>Synthesis</b> converts HDL into a netlist of device primitives.</li>
+<li><b>Implementation</b> places the primitives on specific sites and routes the connections, then performs static timing analysis. If any path is too slow for its clock, the design "fails timing" and must be changed (pipelining, different placement, lower clock).</li>
+<li><b>The bitstream</b> (<code>.bit</code>) configures the PL. The <b>hardware handoff</b> (<code>.hwh</code>) is an XML description of the block design: which IP blocks exist, their names, addresses and parameters.</li>
+</ul>
+
+<h2>Overlays: PYNQ's name for firmware</h2>
+<p>In PYNQ, an <dfn data-def="In PYNQ, a bitstream plus its hardware description (.hwh), loaded at run time to configure the PL with a particular design.">overlay</dfn> is a bitstream plus its <code>.hwh</code>. When Python loads it, PYNQ programs the PL and parses the <code>.hwh</code> so that every IP block becomes a Python object with its registers mapped at the right address <cite data-r="pynq"></cite>. QICK builds on this: <code>QickSoc('qick_4x2.bit')</code> loads the overlay, discovers the generators, readouts and buffers from the hardware description, and builds the configuration you see when you print <code>soc</code> <cite data-r="qickrepo"></cite>. Swapping overlays takes seconds, so you can keep several firmware variants on the SD card.</p>
+
+<h2>A QICK firmware project</h2>
+<p>The QICK repository contains, under <code>firmware/projects/</code>, one directory per board and processor version, for example <code>qick_tprocv1_4x2_standard</code> and <code>qick_tprocv2_4x2_standard</code>. Each holds <cite data-r="qickrepo"></cite>:</p>
+<ul>
+<li><code>proj.tcl</code>: creates the Vivado project and adds sources;</li>
+<li><code>bd_2023-1.tcl</code>: recreates the block design (for Vivado 2023.1);</li>
+<li><code>ios.xdc</code>, <code>timing.xdc</code>: pin assignments and timing constraints;</li>
+<li><code>out/</code>: the pre-built <code>qick_4x2.bit</code> and <code>.hwh</code>.</li>
+</ul>
+<p>The custom IP (tProcessor, signal generators, readouts, buffers) lives in <code>firmware/ip</code> and <code>firmware/hdl</code>, with testbenches for simulation. Reading the block-design Tcl file is the most reliable way to see what a firmware contains. For example, the 4x2 tProc v2 standard design instantiates two <code>axis_signal_gen_v6</code> generators, three <code>axis_dyn_readout_v1</code> readouts, two averaging buffers, a weighted buffer, a DDR4 buffer, a multi-rate buffer and a time tagger <cite data-r="qickrepo"></cite>.</p>
+
+<h2>When do you need to rebuild firmware?</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Change</th><th>Python only</th><th>New firmware</th></tr></thead>
+<tbody>
+<tr><td>New pulse sequence, sweep, feedback logic in the tProcessor program</td><td>✓</td><td></td></tr>
+<tr><td>Different frequencies, phases, gains, envelopes</td><td>✓</td><td></td></tr>
+<tr><td>Readout window length, number of shots</td><td>✓</td><td></td></tr>
+<tr><td>Nyquist zone, DAC current mode</td><td>✓ (through QICK/RFDC)</td><td></td></tr>
+<tr><td>Using ADC_A/ADC_B as additional readouts</td><td></td><td>✓</td></tr>
+<tr><td>Different converter sample rates or clock plan</td><td>sometimes (clock reprogramming)</td><td>often</td></tr>
+<tr><td>Real-time crosstalk matrix, custom filters, ML inference</td><td></td><td>✓</td></tr>
+<tr><td>Longer waveform memories, more generators per DAC</td><td></td><td>✓</td></tr>
+</tbody></table></div>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Before building your own firmware, ask on the QICK community channels and check the QICK and spinQICK repositories: many variants already exist, for example spinQICK's 16-output ZCU216 firmware and its crosstalk-compensation build <cite data-r="spinqick"></cite>. Building QICK firmware needs a Linux or Windows workstation with Vivado installed (tens of GB) and several hours per build. Check that your Vivado edition supports the XCZU48DR device: large RFSoC devices typically need a paid licence edition, and AMD's University Program can help academic users with licences.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. What two files make a PYNQ overlay, and what does each contain?</p>
+<details><summary>Show answer</summary><div>The <code>.bit</code> bitstream (the PL configuration) and the <code>.hwh</code> hardware handoff (an XML description of the IP blocks, addresses and parameters that Python uses to build drivers).</div></details>
+<p>2. You want the tProcessor to apply a crosstalk matrix to two DAC outputs in real time. Python change or firmware change?</p>
+<details><summary>Show answer</summary><div>Firmware: real-time arithmetic on output samples needs new logic in the generator data path (as in spinQICK's crosstalk firmware). With only two outputs you could instead precompute compensated waveforms in Python, which is a Python-only change.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Vivado turns HDL, IP and block designs into a netlist (synthesis), a placed and routed design (implementation, with timing checks), and a bitstream.</li>
+<li>A PYNQ overlay is <code>.bit</code> + <code>.hwh</code>; QICK reads the <code>.hwh</code> to discover its blocks.</li>
+<li>QICK firmware projects are Tcl scripts per board; pre-built 4x2 bitstreams are included.</li>
+<li>Most experiment changes are Python changes; new hardware features need a firmware rebuild.</li>
+</ul>
+</div>

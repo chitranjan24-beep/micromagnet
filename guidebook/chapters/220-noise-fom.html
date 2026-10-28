@@ -1,2 +1,85 @@
-<!--meta {"id": "noise-fom", "part": "Part V \u00b7 Signals and software-defined radio", "title": "Noise, converter figures of merit and frequency planning"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "noise-fom", "part": "Part V · Signals and software-defined radio", "title": "Noise, converter figures of merit and frequency planning"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>A real DAC does not output a perfect sine, and a real ADC does not record one perfectly. Both add noise and spurious tones ("spurs") at predictable frequencies. If a spur lands on your readout carrier, your readout signal fluctuates; if broadband DAC noise reaches a gate, it acts like charge noise; if a clock's phase noise is high, your qubit drive's phase wanders. This chapter teaches you to read a converter data sheet, to recognise the usual spurs in a measured spectrum, and to choose frequencies so the spurs land where they do no harm. It follows the SDR book's figures-of-merit and frequency-planning chapter and its notebooks <cite data-r="sdrbook"></cite>.</p>
+</div>
+
+<h2>The figures of merit</h2>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Name</th><th>Definition</th><th>What it tells you</th></tr></thead>
+<tbody>
+<tr><td>SNR</td><td>Signal power / noise power over the Nyquist band (excluding harmonics)</td><td>Random noise level</td></tr>
+<tr><td>SINAD</td><td>Signal / (noise + distortion)</td><td>Overall quality; gives ENOB</td></tr>
+<tr><td><dfn data-def="Spurious-free dynamic range: the ratio between the carrier and the largest spur in the spectrum, in dB.">SFDR</dfn></td><td>Carrier / largest spur, in dBc</td><td>How clean the spectrum is</td></tr>
+<tr><td>HD2, HD3</td><td>Power of 2nd and 3rd harmonics, dBc</td><td>Nonlinearity</td></tr>
+<tr><td>IMD3</td><td>Third-order intermodulation products of two tones at \(2f_1 - f_2\), \(2f_2 - f_1\)</td><td>Matters when several tones share one output (multiplexed readout or drive)</td></tr>
+<tr><td><dfn data-def="Noise spectral density: noise power per hertz relative to full scale, in dBFS/Hz; the standard noise spec for RF-sampling converters.">NSD</dfn></td><td>Noise power per Hz relative to full scale, dBFS/Hz</td><td>Noise in any bandwidth you choose</td></tr>
+</tbody></table></div>
+
+<p>For RF-sampling converters with GHz Nyquist bands, NSD is the most useful noise specification. The noise in a bandwidth \(B\) is</p>
+\[ P_{\text{noise}}\ (\text{dBFS}) = \text{NSD} + 10\log_{10}B . \]
+<p>The SDR book quotes typical NSD for first-generation RF-ADC tiles of −150 dBFS/Hz at 240 MHz input and −146 dBFS/Hz at 2.4 GHz <cite data-r="sdrbook"></cite>; Gen3 devices are of a similar order (see DS926 for the exact values <cite data-r="ds926"></cite>).</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>With NSD = −150 dBFS/Hz and a readout integration bandwidth of 1 MHz (about 1 µs), the ADC's own noise is −150 + 60 = −90 dBFS. If your amplified readout signal reaches the ADC at −35 dBm and full scale is about +1 dBm, the signal is at −36 dBFS, so the ADC adds noise 54 dB below the signal. The amplifier chain's noise (Chapter 18) is usually far larger. In a well-designed chain, the ADC is not the limit; the HEMT is.</p>
+</div>
+
+<h2>Where spurs come from</h2>
+
+<figure>
+<div class="figbody"><!--plot:adc-spectrum--></div>
+<figcaption>Simulated ADC spectrum of a single tone, showing the typical features: the carrier, its 2nd and 3rd harmonics, a spur at a fixed fraction of the sample rate, and the noise floor. Real RFSoC spectra also show interleaving spurs and images that depend on the input frequency.</figcaption>
+</figure>
+
+<ul>
+<li><b>Harmonics</b> at \(2f, 3f, \dots\) from nonlinearity. Above the Nyquist frequency they alias back into zone 1 at predictable places.</li>
+<li><b>Interleaving spurs</b>: GHz ADCs are built from several slower sub-ADCs taking turns. Small mismatches between them create spurs at \(f_s/M \pm f\) (with \(M\) the number of sub-converters). The RFSoC calibrates these in the background, but residues remain.</li>
+<li><b>Clock and fabric spurs</b> at fixed frequencies related to the reference and fabric clocks (for example \(f_s/8\), \(f_s/16\)), from digital activity coupling into the analog parts.</li>
+<li><b>DAC images</b> at \(f_s \pm f\) (Chapter 19) and harmonics of the DAC output.</li>
+<li><b>Phase noise</b>: random phase fluctuations of the sample clock or LO spread the carrier into "skirts" around it, measured in dBc/Hz at an offset frequency.</li>
+</ul>
+
+<h2>Frequency planning</h2>
+
+<p><dfn data-def="Choosing carrier, IF and sample-rate frequencies so that harmonics, images and spurs fall outside the bands of interest.">Frequency planning</dfn> means choosing your frequencies so that the predictable spurs fall outside the bands you use. The SDR book's Notebook Set F includes an interactive RFSoC frequency planner that plots where harmonics, images and interleaving spurs land for a given sample rate and signal frequency <cite data-r="sdrbook"></cite>.</p>
+
+<div class="box example"><span class="tag">Worked example: choosing a readout frequency</span>
+<p>On the 4x2 with QICK, the ADC runs at 4423.68 MSPS (Nyquist 2211.84 MHz). Candidate readout carrier: 500 MHz.</p>
+<ul>
+<li>HD2 = 1000 MHz, HD3 = 1500 MHz, HD4 = 2000 MHz: all in zone 1, away from 500 MHz. Fine.</li>
+<li>HD5 = 2500 MHz, in zone 2, aliases to 4423.68 − 2500 = 1923.68 MHz. Fine.</li>
+<li>\(f_s/8 = 553\) MHz and \(f_s/4 = 1106\) MHz are possible fixed spurs. 500 MHz is 53 MHz from \(f_s/8\): fine if your readout bandwidth is a few MHz, but avoid carriers within a few MHz of such frequencies.</li>
+<li>If the 4x2 also drives EDSR at, say, 3.9 GHz on the other DAC, any leakage of that tone into the ADC aliases to 4423.68 − 3900 = 523.68 MHz, only 24 MHz from your readout. Move the readout to, for example, 350 MHz, or filter the ADC input.</li>
+</ul>
+<p>Write such a table every time you choose frequencies. It takes ten minutes and can save days of chasing "noise".</p>
+</div>
+
+<h2>Noise that matters for qubits</h2>
+<ul>
+<li><b>DAC noise on gate lines</b>: broadband noise from a DAC (or AWG) at the device's gates is indistinguishable from charge noise. Attenuating the line by 20 dB lowers it by 20 dB, together with the signal, so large-amplitude needs and low noise conflict. HRL measured that their room-temperature amplifier chain, not the RFSoC itself, dominated the high-frequency noise seen by their qubit <cite data-r="wessels2026"></cite>.</li>
+<li><b>Phase noise of the drive</b>: phase fluctuations of the microwave drive are rotations of the qubit's drive axis. Use a low-phase-noise LO and a common 10 MHz reference.</li>
+<li><b>Spurs near the qubit frequency</b>: a weak, constant spur close to resonance drives the qubit slowly all the time, causing errors that look like reduced \(T_1\) or extra decoherence.</li>
+<li><b>Readout carrier leakage</b>: the readout carrier and its harmonics can reach other lines through crosstalk on the PCB or in the fridge. Turn the readout off during manipulation when possible (QICK pulses it only during readout).</li>
+</ul>
+
+<div class="box lab"><span class="tag">In the lab</span>
+<p>Before connecting the board to the fridge, connect each DAC to a spectrum analyser and record the spectrum for the frequencies you plan to use, from 10 MHz to 10 GHz. Then loop a DAC back into an ADC through attenuators and look at the ADC's FFT (with QICK's decimated or raw capture). You will learn your board's actual spurs, and you will have a reference to compare against if something changes.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. NSD is −147 dBFS/Hz. What is the noise level in a 10 MHz bandwidth?</p>
+<details><summary>Show answer</summary><div>−147 + 70 = −77 dBFS.</div></details>
+<p>2. A 1300 MHz readout tone is sampled at 4423.68 MSPS. Where does its 2nd harmonic appear?</p>
+<details><summary>Show answer</summary><div>2600 MHz is in zone 2 and aliases to 4423.68 − 2600 = 1823.68 MHz.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>Converters are characterised by SNR, SINAD/ENOB, SFDR, harmonic distortion, intermodulation and NSD.</li>
+<li>Noise in a bandwidth \(B\) is NSD + 10 log B (dBFS).</li>
+<li>Spurs come from harmonics (aliased), interleaving, clocks and DAC images; phase noise spreads carriers.</li>
+<li>Frequency planning places carriers away from predictable spurs; check every new configuration with a spectrum analyser.</li>
+<li>For qubits, gate-line noise, drive phase noise and spurs near resonance matter most.</li>
+</ul>
+</div>

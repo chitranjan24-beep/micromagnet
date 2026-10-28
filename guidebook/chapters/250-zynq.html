@@ -1,2 +1,105 @@
-<!--meta {"id": "zynq", "part": "Part VI \u00b7 FPGAs and the RFSoC chip", "title": "Zynq UltraScale+: processing system, programmable logic, AXI and DMA"}-->
-<p class="status">This chapter is being written.</p>
+<!--meta {"id": "zynq", "part": "Part VI · FPGAs and the RFSoC chip", "title": "Zynq UltraScale+: processing system, programmable logic, AXI and DMA"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>The RFSoC is a <i>system-on-chip</i>: a full computer (ARM processors, memory controller, Ethernet, USB) and an FPGA on the same piece of silicon, talking to each other through standard on-chip buses. When your Python code writes a QICK program to the tProcessor, or reads back a buffer of I/Q values, it travels across these buses. Knowing how they work explains where data-transfer limits come from, why some operations are fast and others slow, and what the terms in QICK's and PYNQ's documentation ("AXI-Lite register", "DMA", "MMIO", "AXI-Stream") mean.</p>
+</div>
+
+<h2>Two halves of one chip</h2>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 800 330" width="800" role="img" aria-label="Zynq UltraScale+ RFSoC block diagram">
+  <rect x="20" y="20" width="330" height="290" rx="6" class="boxa"/>
+  <text class="ttl" x="34" y="44">Processing System (PS)</text>
+  <rect x="40" y="60" width="140" height="56" rx="3" class="box"/><text class="sm" x="110" y="84" text-anchor="middle">4 × ARM Cortex-A53</text><text class="sm" x="110" y="100" text-anchor="middle">Linux, Python</text>
+  <rect x="190" y="60" width="140" height="56" rx="3" class="box"/><text class="sm" x="260" y="84" text-anchor="middle">2 × ARM Cortex-R5F</text><text class="sm" x="260" y="100" text-anchor="middle">real-time (optional)</text>
+  <rect x="40" y="128" width="290" height="40" rx="3" class="box"/><text class="sm" x="185" y="152" text-anchor="middle">DDR4 controller → 4 GB PS memory on the 4x2</text>
+  <rect x="40" y="180" width="290" height="56" rx="3" class="box"/><text class="sm" x="185" y="204" text-anchor="middle">peripherals: Gigabit Ethernet, USB 3.0, SD card,</text><text class="sm" x="185" y="220" text-anchor="middle">UART, I²C, SPI (clock chips), DisplayPort</text>
+  <rect x="40" y="248" width="290" height="44" rx="3" class="box"/><text class="sm" x="185" y="274" text-anchor="middle">AXI interconnect: PS ↔ PL ports</text>
+  <rect x="450" y="20" width="330" height="290" rx="6" class="boxb"/>
+  <text class="ttl" x="464" y="44">Programmable Logic (PL)</text>
+  <rect x="470" y="60" width="290" height="56" rx="3" class="box"/><text class="sm" x="615" y="84" text-anchor="middle">FPGA fabric: QICK tProcessor, signal</text><text class="sm" x="615" y="100" text-anchor="middle">generators, readouts, buffers, DMA engines</text>
+  <rect x="470" y="128" width="140" height="40" rx="3" class="box"/><text class="sm" x="540" y="152" text-anchor="middle">RF-DACs (8 on chip)</text>
+  <rect x="620" y="128" width="140" height="40" rx="3" class="box"/><text class="sm" x="690" y="152" text-anchor="middle">RF-ADCs (8 on chip)</text>
+  <rect x="470" y="180" width="290" height="40" rx="3" class="box"/><text class="sm" x="615" y="204" text-anchor="middle">4 GB PL DDR4 (QICK's DDR4 capture buffer)</text>
+  <rect x="470" y="232" width="290" height="60" rx="3" class="box"/><text class="sm" x="615" y="254" text-anchor="middle">other hardened blocks: SD-FEC decoders,</text><text class="sm" x="615" y="270" text-anchor="middle">100G Ethernet MAC, GTY transceivers (QSFP28)</text>
+  <line class="acc" x1="330" y1="270" x2="470" y2="270"/><line class="acc" x1="330" y1="262" x2="470" y2="96"/>
+  <text class="sm tacc" x="352" y="160">AXI buses</text><text class="sm tacc" x="352" y="176">(control, data)</text>
+</svg>
+</div>
+<figcaption>Simplified block diagram of the Zynq UltraScale+ RFSoC as used on the 4x2. The PS is a complete multi-core computer; the PL holds the FPGA fabric, the RF data converters and other hardened blocks. They communicate through AXI buses <cite data-r="ug1085,rd4x2manual"></cite>.</figcaption>
+</figure>
+
+<h3>The processing system (PS)</h3>
+<p>The <dfn data-def="The hard ARM-based computer part of a Zynq chip: CPUs, memory controller and peripherals.">processing system</dfn> contains four ARM Cortex-A53 application cores (QICK's 4x2 firmware sets them to 1.2 GHz <cite data-r="qickrepo"></cite>), two Cortex-R5F real-time cores, a DDR4 memory controller and the usual computer peripherals. On the 4x2 it boots Linux from the micro-SD card and runs PYNQ and Jupyter. The PS is a normal (if modest) computer: running Python on it is convenient but not fast, which is why heavy analysis is usually done on your lab PC.</p>
+
+<h3>The programmable logic (PL)</h3>
+<p>The <dfn data-def="The FPGA part of a Zynq chip, together with hardened blocks such as the RF data converters.">programmable logic</dfn> is the FPGA fabric of Chapter 24 plus hardened blocks: the RF-ADCs and RF-DACs, SD-FEC decoders, high-speed transceivers and Ethernet MACs. On the 4x2, the PL also has its own 4 GB of DDR4 memory, which QICK uses as a long capture buffer <cite data-r="rd4x2manual,qickrepo"></cite>.</p>
+
+<h2>AXI: how the halves talk</h2>
+
+<p>All communication between PS and PL, and between blocks inside the PL, uses ARM's AMBA <dfn data-def="ARM's on-chip bus standard (AXI4, AXI4-Lite, AXI4-Stream) used to connect processors, memories and FPGA blocks.">AXI</dfn> protocols. Three flavours matter:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Protocol</th><th>Used for</th><th>Example in QICK</th></tr></thead>
+<tbody>
+<tr><td>AXI4-Lite</td><td>Reading and writing individual 32-bit registers at memory addresses ("memory-mapped I/O")</td><td>Setting a readout's frequency register, starting the tProcessor</td></tr>
+<tr><td>AXI4 (full)</td><td>Burst transfers to and from memory</td><td>DMA engines copying buffers to PS DDR4</td></tr>
+<tr><td>AXI4-Stream</td><td>Continuous one-way data flow, no addresses</td><td>ADC samples into readouts; tProcessor commands to generators; generator samples to DACs</td></tr>
+</tbody></table></div>
+
+<h3>The valid/ready handshake</h3>
+<p>AXI4-Stream (and the channels of AXI4) move data with a simple handshake: the sender raises <code>TVALID</code> when it has data; the receiver raises <code>TREADY</code> when it can accept; a transfer happens on every clock edge where both are high. This lets fast and slow blocks connect safely: a receiver that is busy just holds <code>TREADY</code> low.</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 700 170" width="700" role="img" aria-label="AXI stream handshake timing">
+  <text class="sm" x="10" y="38">clock</text>
+  <path class="ln" d="M90,46 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0 l0,-20 l30,0 l0,20 l30,0"/>
+  <text class="sm" x="10" y="78">TVALID</text>
+  <path class="t1" d="M90,86 l60,0 l0,-20 l330,0 l0,20 l70,0"/>
+  <text class="sm" x="10" y="118">TREADY</text>
+  <path class="t2" d="M90,126 l90,0 l0,-20 l120,0 l0,20 l60,0 l0,-20 l180,0"/>
+  <text class="sm" x="10" y="156">transfer?</text>
+  <text class="sm" x="206" y="156">✓</text><text class="sm" x="266" y="156">✓</text><text class="sm" x="386" y="156">✓</text><text class="sm" x="446" y="156">✓</text>
+  <text class="sm" x="490" y="156">data moves only when both are high at a rising edge</text>
+</svg>
+</div>
+<figcaption>The AXI valid/ready handshake (schematic). The sender's data is accepted only on clock edges where both TVALID and TREADY are high. Because the RF converters cannot wait, QICK's data paths to and from the DACs and ADCs are designed never to stall.</figcaption>
+</figure>
+
+<h2>Memory-mapped I/O and DMA</h2>
+
+<p>From Linux, PL registers appear at physical addresses. PYNQ's <code>MMIO</code> class lets Python read and write them like elements of an array (Chapter 32). Each access takes of order a microsecond from Python, fine for configuration but far too slow for moving data.</p>
+
+<p>For bulk data, a <dfn data-def="Direct memory access: hardware that copies data between devices and memory without the CPU moving each word.">DMA</dfn> (direct memory access) engine in the PL copies blocks of data between a stream and PS memory by itself, at hundreds of MB/s to GB/s, while the CPU waits or does other work. QICK uses DMA engines to load programs into the tProcessor, upload waveform envelopes into generators, and read back readout buffers <cite data-r="qickrepo"></cite>. PYNQ allocates the contiguous memory buffers DMA needs.</p>
+
+<div class="box example"><span class="tag">Worked example: data rates</span>
+<p>One readout returns one complex I/Q pair (two 32-bit integers, 8 bytes) per shot. 16 384 shots make 128 KiB, transferred by DMA in well under a millisecond. Raw ADC data is another story: 4423.68 MSPS × 2 bytes = 8.8 GB/s per channel. No PS–PL path can stream that continuously to Linux, which is why decimation and accumulation must happen in the PL, and why the long DDR4 capture buffer sits on the PL side.</p>
+</div>
+
+<h2>Interrupts and timing</h2>
+<p>The PL can signal the PS with interrupts (for example "buffer full"), but Linux's response time is microseconds to milliseconds and not deterministic. Anything that must happen at a precise time, such as a pulse after a measurement, must therefore be done in the PL. That is the design principle behind QICK: the PS prepares and collects, the PL acts in real time.</p>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<ul>
+<li>PS: quad Cortex-A53, 4 GB DDR4, Gigabit Ethernet, USB 3.0, micro-SD, Mini DisplayPort <cite data-r="rfsocpynq4x2"></cite>.</li>
+<li>PL: 8 RF-ADCs and 8 RF-DACs on the chip (4 ADCs and 2 DACs wired to SMA connectors), 4 GB PL DDR4, a QSFP28 cage for up to 100 Gb/s Ethernet, PMOD and SYZYGY connectors <cite data-r="rfsocpynq4x2,rd4x2manual"></cite>.</li>
+<li>The 100G QSFP28 port could stream large amounts of data to a PC, but QICK's standard firmware does not use it; data reaches the PC through the PS and Gigabit Ethernet.</li>
+</ul>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why can't the tProcessor be replaced by a Python loop on the ARM cores?</p>
+<details><summary>Show answer</summary><div>Linux and Python give no timing guarantees: interrupts, scheduling and garbage collection cause delays of microseconds to milliseconds, and each register access takes about a microsecond. Pulses need nanosecond-precise, deterministic timing, which only logic in the PL provides.</div></details>
+<p>2. What is the difference between AXI4-Lite and AXI4-Stream?</p>
+<details><summary>Show answer</summary><div>AXI4-Lite reads and writes single registers at addresses (control). AXI4-Stream moves a continuous flow of data from one block to the next without addresses (data paths such as ADC samples).</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>The RFSoC combines a processing system (ARM cores, DDR4, peripherals, Linux) with programmable logic (fabric, RF converters, hardened blocks).</li>
+<li>AXI4-Lite carries register accesses, AXI4 burst transfers, AXI4-Stream continuous data, all with a valid/ready handshake.</li>
+<li>MMIO is for configuration; DMA is for bulk data; real-time actions must be in the PL.</li>
+<li>GSPS raw data cannot be streamed to Linux, so QICK reduces it in the PL.</li>
+</ul>
+</div>
