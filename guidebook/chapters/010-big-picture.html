@@ -1,0 +1,244 @@
+<!--meta {"id": "big-picture", "part": "Part 0 · Orientation", "title": "The big picture: from one electron to a Python notebook"}-->
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Before learning any single topic in depth, you need a mental map of the whole experiment: what the device is, why it sits in a refrigerator colder than outer space, what kinds of electrical signals it needs, which instrument makes each signal, and where the RFSoC 4x2 fits. Every later chapter zooms into one box of the map drawn here. If you ever feel lost later, come back to Figure 1.1.</p>
+</div>
+
+<p class="lede">A spin-qubit experiment is, at its heart, a conversation between a computer and a single electron. The computer sends carefully timed voltages and microwaves down wires into a refrigerator. Those signals move the electron around, rotate its spin, and then ask it a question: "is your spin up or down?" The answer comes back as a tiny change in an electrical signal, which is amplified, digitised and analysed. This chapter walks through that conversation once, end to end, in plain language.</p>
+
+<h2>What the lab is trying to do</h2>
+
+<p>A <dfn data-def="A quantum two-level system used to store and process quantum information; the quantum version of a bit.">qubit</dfn> is a physical object with two distinguishable quantum states, which we call \(\ket{0}\) and \(\ket{1}\). Unlike a classical bit, it can also be in a <dfn data-def="A quantum state that is a weighted combination of basis states, such as a|0⟩ + b|1⟩.">superposition</dfn> of both. Chapter 2 explains what that means precisely. For now, think of it like this: a classical bit is a switch that is either off or on. A qubit is more like an arrow that can point in any direction on a sphere, where "north" means \(\ket{0}\) and "south" means \(\ket{1}\).</p>
+
+<p>Many physical systems can play this role: superconducting circuits, trapped ions, neutral atoms, defects in diamond, photons, and the system this book is about, <b>the spin of an electron (or hole) trapped in a semiconductor quantum dot</b>. An electron has an intrinsic angular momentum called spin. In a magnetic field its two spin states, "up" and "down", have slightly different energies, and that pair of states is a natural qubit. This idea was proposed by Daniel Loss and David DiVincenzo in 1998 and is now called the Loss–DiVincenzo or single-spin qubit <cite data-r="lossdiv1998"></cite>.</p>
+
+<p>Why semiconductors? Three reasons dominate the research literature <cite data-r="burkard2023,zwanenburg2013"></cite>:</p>
+<ul>
+<li><b>Size.</b> A quantum dot is about 50–100 nm across. Billions could fit on a chip, much like transistors.</li>
+<li><b>Manufacturing.</b> Silicon spin qubits are made with processes close to those that make computer chips, so the semiconductor industry's know-how can, in principle, be reused.</li>
+<li><b>Coherence.</b> In isotopically purified silicon (<sup>28</sup>Si), the electron's spin is very well isolated from its surroundings, so its quantum state survives a long time compared with how fast we can manipulate it.</li>
+</ul>
+
+<p>The lab's job is to build such devices, cool them down, find the right voltages to trap exactly one or a few electrons, and then demonstrate and improve the basic operations: preparing a known state, rotating the spin (single-qubit gates), coupling two spins (two-qubit gates), and measuring the spin (readout). Everything else in this book serves those four tasks.</p>
+
+<h2>The device: a chip with gates on top</h2>
+
+<p>Figure 1.1 shows a simplified cross-section of a Si/SiGe quantum-dot device, the platform you will use. Read it from the bottom up:</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 330" width="760" role="img" aria-label="Cross-section of a Si/SiGe quantum dot device">
+  <text class="sm" x="40" y="22">External magnetic field B<tspan baseline-shift="sub" font-size="8">0</tspan> (≈0.3–1 T) along the surface →</text>
+  <rect x="150" y="34" width="160" height="26" class="boxw"/><text class="sm" x="230" y="51" text-anchor="middle">Co micromagnet</text>
+  <rect x="410" y="34" width="160" height="26" class="boxw"/><text class="sm" x="490" y="51" text-anchor="middle">Co micromagnet</text>
+  <rect x="200" y="98" width="46" height="30" class="boxb"/><text class="sm" x="223" y="117" text-anchor="middle">B1</text>
+  <rect x="262" y="86" width="56" height="42" class="boxb"/><text class="sm" x="290" y="111" text-anchor="middle">P1</text>
+  <rect x="334" y="98" width="46" height="30" class="boxb"/><text class="sm" x="357" y="117" text-anchor="middle">B2</text>
+  <rect x="396" y="86" width="56" height="42" class="boxb"/><text class="sm" x="424" y="111" text-anchor="middle">P2</text>
+  <rect x="468" y="98" width="46" height="30" class="boxb"/><text class="sm" x="491" y="117" text-anchor="middle">B3</text>
+  <text class="lbl" x="540" y="102">metal gate electrodes</text>
+  <text class="sm" x="540" y="118">P = plunger, B = barrier (20–40 nm wide)</text>
+  <rect x="40" y="128" width="680" height="12" class="box"/>
+  <text class="sm" x="44" y="138" style="font-size:10px">oxide (Al₂O₃)</text>
+  <rect x="40" y="140" width="680" height="44" class="boxa"/>
+  <text class="lbl" x="56" y="167">SiGe spacer (~30–50 nm): keeps the electrons away from the surface</text>
+  <rect x="40" y="184" width="680" height="30" class="boxl"/>
+  <circle cx="290" cy="199" r="6" class="f1"/><circle cx="424" cy="199" r="6" class="f1"/>
+  <text class="sm" x="306" y="203" style="fill: var(--sig-i)">dot 1</text>
+  <text class="sm" x="440" y="203" style="fill: var(--sig-i)">dot 2</text>
+  <text class="lbl" x="500" y="204">strained Si quantum well (~10 nm): the 2DEG</text>
+  <rect x="40" y="214" width="680" height="44" class="boxa"/>
+  <text class="lbl" x="56" y="241">Si<tspan baseline-shift="sub" font-size="9">0.7</tspan>Ge<tspan baseline-shift="sub" font-size="9">0.3</tspan> barrier layer</text>
+  <rect x="40" y="258" width="680" height="56" class="box"/>
+  <text class="lbl" x="56" y="291">Silicon substrate and graded SiGe buffer (relaxes the crystal lattice)</text>
+</svg>
+</div>
+<figcaption>A simplified cross-section through a Si/SiGe double quantum dot (not to scale). Positive voltages on the plunger gates (P1, P2) pull electrons up from a reservoir into small "puddles" in the silicon quantum well. These puddles are the quantum dots. Barrier gates (B1–B3) control how easily electrons tunnel between dots and to the reservoirs. The cobalt micromagnets on top create a magnetic field that changes with position, which lets an oscillating gate voltage rotate the electron's spin (Chapter 12). Real devices have several gate layers that overlap each other and also include a charge sensor (Chapter 9). Layer thicknesses follow typical values from the literature <cite data-r="burkard2023,zwanenburg2013"></cite>.</figcaption>
+</figure>
+
+<ol>
+<li><b>Substrate and buffer.</b> Germanium atoms are slightly larger than silicon atoms. A thick, graded SiGe layer slowly changes the lattice spacing so that the top layers grow as a nearly perfect crystal.</li>
+<li><b>The quantum well.</b> A thin (about 10 nm) layer of pure silicon is sandwiched between SiGe layers. Because of how the conduction band energies line up (Chapter 6), electrons prefer to sit in this silicon layer. They can move freely in the plane but not up or down, so they form a <dfn data-def="Electrons that can move freely in a plane but are confined in the perpendicular direction, typically in a quantum well or at an interface.">two-dimensional electron gas (2DEG)</dfn>.</li>
+<li><b>Spacer and oxide.</b> A SiGe spacer keeps the electrons away from the messy surface, and a thin oxide insulates the gates from the semiconductor.</li>
+<li><b>Gates.</b> Metal electrodes, a few tens of nanometres wide, sit on top. A voltage on a gate changes the electrostatic potential underneath it. Positive voltage attracts electrons, negative repels them. With the right combination of voltages you carve the 2DEG into tiny islands (dots) that each hold a controlled number of electrons, typically one.</li>
+<li><b>Micromagnet.</b> A small ferromagnet (often cobalt) on top of the device. Chapter 12 explains why its <i>non-uniform</i> stray field is so useful.</li>
+</ol>
+
+<p>GaAs devices look similar but use a GaAs/AlGaAs interface instead of a Si quantum well. In GaAs the 2DEG often forms by itself (thanks to doping) and the gates are negative, pushing electrons <i>away</i> to define dots. Chapter 6 compares the two materials, including why GaAs spins lose their coherence faster (nuclear spins) and why silicon has an extra complication called valleys.</p>
+
+<h2>Why the device must be so cold</h2>
+
+<p>The energies involved are tiny. The energy needed to add one more electron to a dot (the charging energy) is a few milli-electronvolts (meV). The energy difference between spin up and spin down in a 1 T field is about 0.1 meV. Thermal energy at temperature \(T\) is about \(k_B T\), where \(k_B = 86\ \mu\text{eV/K}\) is Boltzmann's constant. At room temperature (300 K), \(k_B T \approx 26\) meV, far larger than all of these energies, so thermal jiggling would wash everything out.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>What temperature makes thermal energy 10 times smaller than the spin splitting at 0.5 T?</p>
+<p>The spin splitting is \(E_Z = g \mu_B B\), with \(g \approx 2\) for electrons in silicon and \(\mu_B = 57.9\ \mu\text{eV/T}\) (the Bohr magneton). At \(B = 0.5\) T: \(E_Z = 2 \times 57.9 \times 0.5 = 57.9\ \mu\text{eV}\). We want \(k_B T = E_Z / 10 = 5.8\ \mu\text{eV}\), so \(T = 5.8 / 86 \approx 0.067\) K = 67 mK.</p>
+<p>That is why spin-qubit devices sit in a <dfn data-def="A refrigerator that reaches about 10 mK by mixing helium-3 into helium-4; the standard cryostat for qubit experiments.">dilution refrigerator</dfn>, whose coldest stage (the mixing chamber) reaches about 10 mK. The electrons themselves usually end up somewhat hotter (often 50–150 mK) because of electrical noise coming down the wires. Chapter 16 explains how the wiring is designed to minimise this.</p>
+</div>
+
+<p>Interestingly, there is a strong research push towards running silicon spin qubits at 1 K or above ("hot qubits"), where much more cooling power is available. The physics is the same; the trade-offs are discussed in Chapter 16.</p>
+
+<h2>The signals an experiment needs</h2>
+
+<p>Every experiment in this book is built from a small set of signal types. Learning to recognise them is the single most useful skill for understanding what any piece of lab equipment, including the RFSoC, is for.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Signal</th><th>What it does</th><th>Typical size and speed</th><th>Traditional instrument</th></tr></thead>
+<tbody>
+<tr><td><b>DC gate voltages</b></td><td>Form the dots: set how many electrons each dot holds and how strongly they couple</td><td>0 to ±2 V (or more), set to µV precision, changed slowly (ms–s); 10–100 gates</td><td>Multi-channel low-noise DC source (e.g. QDevil QDAC, Basel LNHR DAC)</td></tr>
+<tr><td><b>Fast gate pulses</b> ("baseband")</td><td>Move electrons between charge states within nanoseconds; turn exchange on/off; select readout and load points</td><td>1–100 mV at the device, rise times ~1 ns, lengths ns to ms, on a few to tens of gates</td><td>Arbitrary waveform generator (AWG)</td></tr>
+<tr><td><b>Microwave drive</b></td><td>Rotate the spin (ESR or EDSR)</td><td>Carrier 1–40 GHz (set by the magnetic field), bursts of ns to µs, precise phase</td><td>Vector microwave source + IQ modulation from an AWG</td></tr>
+<tr><td><b>Readout stimulus and response</b></td><td>Measure the charge sensor quickly</td><td>RF reflectometry: a carrier of about 100 MHz–1 GHz; or a low-frequency AC excitation (kHz–MHz); response is µV–mV after amplification</td><td>RF source + demodulator/digitiser, or a lock-in amplifier</td></tr>
+<tr><td><b>Triggers and markers</b></td><td>Keep all instruments in step</td><td>Digital 0/3.3 V edges with ns timing</td><td>AWG marker outputs, pulse generators</td></tr>
+<tr><td><b>Magnetic field</b></td><td>Splits spin up/down; sets the spin resonance frequency</td><td>0.1–2 T, very stable, changed rarely</td><td>Superconducting magnet + current supply</td></tr>
+</tbody></table></div>
+
+<p>A well-equipped spin-qubit lab traditionally fills a rack with separate instruments for these jobs: DC sources, AWGs, microwave sources with IQ mixers, lock-in amplifiers, fast digitisers, and a computer that tries to keep them all synchronised. Commercial integrated controllers from companies such as Quantum Machines, Zurich Instruments, Qblox and Keysight combine several of these functions into one system, at a price of tens to hundreds of thousands of dollars. Chapter 17 takes the rack apart box by box.</p>
+
+<h2>Where the RFSoC 4x2 fits</h2>
+
+<p>The <dfn data-def="Radio-Frequency System-on-Chip: an AMD (Xilinx) chip combining multi-GHz ADCs and DACs, FPGA fabric and ARM processors on one die.">RFSoC</dfn> (Radio-Frequency System-on-Chip) is a single chip made by AMD (formerly Xilinx) that contains four things that used to be separate:</p>
+<ol>
+<li><b>Fast DACs</b> (digital-to-analog converters) that turn numbers into voltages billions of times per second. On the 4x2 they run at up to 9.85 billion samples per second (GSPS).</li>
+<li><b>Fast ADCs</b> (analog-to-digital converters) that turn voltages into numbers, up to 5 GSPS on this chip.</li>
+<li><b>FPGA fabric</b>: millions of programmable logic elements that can be wired into custom digital circuits, for example a circuit that generates a pulse with nanosecond timing, or one that demodulates a readout signal in real time.</li>
+<li><b>ARM processors</b> that run Linux, so the board is a small computer you can talk to over Ethernet.</li>
+</ol>
+
+<p>Originally designed for 5G base stations and radar, this combination turns out to be very close to what a qubit controller needs. The <dfn data-def="Quantum Instrumentation Control Kit: open-source firmware and Python software that turns an AMD RFSoC board into a qubit controller.">QICK</dfn> project (Quantum Instrumentation Control Kit), started at Fermilab and Princeton, provides open-source firmware and Python software that turn an RFSoC board into a qubit controller <cite data-r="stefanazzi2022,qickrepo"></cite>. HRL Laboratories has published <dfn data-def="HRL Laboratories' open-source extension of QICK with experiments for gate-defined spin qubits (charge stability, PSB readout, LD and exchange-only control).">spinQICK</dfn>, an extension of QICK made specifically for gate-defined spin qubits <cite data-r="spinqick"></cite>, and demonstrated full control of an exchange-only qubit with it in October 2026 <cite data-r="wessels2026"></cite>.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 570" width="900" role="img" aria-label="Signal chain of a spin qubit experiment">
+  <rect x="16" y="30" width="140" height="96" rx="4" class="box"/>
+  <text class="ttl" x="28" y="52">Control PC</text>
+  <text class="sm" x="28" y="72">Jupyter notebook</text>
+  <text class="sm" x="28" y="88">Python, QICK library</text>
+  <text class="sm" x="28" y="104">analysis, plotting</text>
+  <line class="ln" x1="156" y1="78" x2="214" y2="78"/>
+  <text class="sm" x="160" y="70">Ethernet</text>
+  <rect x="214" y="14" width="300" height="200" rx="4" class="boxb"/>
+  <text class="ttl" x="228" y="36">RFSoC 4x2 board</text>
+  <rect x="228" y="46" width="128" height="58" class="box"/>
+  <text class="sm" x="236" y="64">ARM CPU (PS)</text><text class="sm" x="236" y="80">Linux + PYNQ</text><text class="sm" x="236" y="96">talks to the PC</text>
+  <rect x="366" y="46" width="134" height="58" class="box"/>
+  <text class="sm" x="374" y="64">FPGA fabric (PL)</text><text class="sm" x="374" y="80">QICK tProcessor,</text><text class="sm" x="374" y="96">generators, readouts</text>
+  <rect x="228" y="116" width="128" height="40" class="boxa"/><text class="sm" x="292" y="140" text-anchor="middle">2 DACs, 9.8 GSPS</text>
+  <rect x="366" y="116" width="134" height="40" class="boxa"/><text class="sm" x="433" y="140" text-anchor="middle">4 ADCs, 5 GSPS</text>
+  <text class="sm" x="228" y="180">baluns: AC-coupled SMA ports</text>
+  <text class="sm" x="228" y="196">PMOD pins: digital triggers</text>
+  <rect x="560" y="14" width="324" height="200" rx="4" class="box"/>
+  <text class="ttl" x="574" y="36">Room-temperature electronics</text>
+  <text class="sm" x="574" y="58">• multi-channel DC voltage source (all gates)</text>
+  <text class="sm" x="574" y="76">• amplifiers, attenuators, filters</text>
+  <text class="sm" x="574" y="94">• bias tees or adders: DC + fast pulse on one gate</text>
+  <text class="sm" x="574" y="112">• optional IQ mixer + local oscillator for &gt;6 GHz</text>
+  <text class="sm" x="574" y="130">• readout amplifier, directional coupler</text>
+  <text class="sm" x="574" y="148">• magnet power supply</text>
+  <line class="ln" x1="514" y1="136" x2="560" y2="136"/>
+  <text class="sm" x="520" y="128">coax</text>
+  <rect x="220" y="250" width="664" height="306" rx="6" class="box"/>
+  <text class="ttl" x="234" y="272">Dilution refrigerator</text>
+  <line class="thin dash" x1="220" y1="300" x2="884" y2="300"/><text class="sm" x="232" y="296">300 K top plate</text>
+  <line class="thin dash" x1="220" y1="340" x2="884" y2="340"/><text class="sm" x="232" y="336">~50 K</text>
+  <line class="thin dash" x1="220" y1="380" x2="884" y2="380"/><text class="sm" x="232" y="376">~4 K</text>
+  <line class="thin dash" x1="220" y1="420" x2="884" y2="420"/><text class="sm" x="232" y="416">still ~1 K</text>
+  <line class="thin dash" x1="220" y1="456" x2="884" y2="456"/><text class="sm" x="232" y="452">cold plate ~100 mK</text>
+  <line class="thin dash" x1="220" y1="490" x2="884" y2="490"/><text class="sm" x="232" y="486">mixing chamber ~10 mK</text>
+  <text class="sm" x="232" y="540">small squares: attenuators and filters; triangle: amplifier</text>
+  <line class="t3" x1="590" y1="214" x2="590" y2="505"/><text class="sm t3t" x="596" y="232">DC lines</text>
+  <rect x="583" y="430" width="14" height="14" class="boxl"/>
+  <line class="t1" x1="650" y1="214" x2="650" y2="505"/><text class="sm t1t" x="656" y="232">fast</text><text class="sm t1t" x="656" y="246">pulses</text>
+  <rect x="643" y="372" width="14" height="14" class="boxa"/><rect x="643" y="448" width="14" height="14" class="boxa"/>
+  <line class="t4" x1="710" y1="214" x2="710" y2="505"/><text class="sm t4t" x="716" y="232">micro-</text><text class="sm t4t" x="716" y="246">wave</text>
+  <rect x="703" y="372" width="14" height="14" class="boxa"/><rect x="703" y="448" width="14" height="14" class="boxa"/>
+  <line class="t2" x1="770" y1="214" x2="770" y2="505"/><text class="sm t2t" x="776" y="232">readout</text><text class="sm t2t" x="776" y="246">in</text>
+  <rect x="763" y="372" width="14" height="14" class="boxa"/>
+  <line class="t2" x1="840" y1="505" x2="840" y2="214"/><text class="sm t2t" x="846" y="232">readout</text><text class="sm t2t" x="846" y="246">out</text>
+  <polygon points="832,392 848,392 840,374" class="f2"/>
+  <text class="sm" x="790" y="414">HEMT</text>
+  <rect x="560" y="505" width="310" height="30" rx="3" class="boxw"/>
+  <text class="sm" x="715" y="524" text-anchor="middle">quantum-dot device on a sample PCB</text>
+</svg>
+</div>
+<figcaption>The whole experiment on one page. The PC sends a program to the RFSoC. The RFSoC's FPGA plays pulses through its DACs and records the returning signal with its ADCs. Room-temperature electronics shape these signals and add the many DC gate voltages. Inside the dilution refrigerator, lines going down are attenuated and filtered to block heat and noise; the readout signal coming up is amplified by a cryogenic amplifier before it leaves the fridge. Chapters 16–17 explain each part.</figcaption>
+</figure>
+
+<p>Here is how one "shot" of a typical spin-qubit experiment flows through Figure 1.1:</p>
+<ol>
+<li>You write a short Python program in a Jupyter notebook. With QICK it might say: "pulse gate P1 to −5 mV for 1 µs (initialise), apply a 20 ns microwave burst at 5.2 GHz (rotate the spin), pulse P1 to the readout point and record the sensor signal for 2 µs; repeat 10 000 times."</li>
+<li>The QICK library compiles this into a program for the <dfn data-def="QICK's timed processor: a small custom CPU in the FPGA that schedules pulses and readouts with clock-cycle precision.">tProcessor</dfn>, a small processor built in the FPGA fabric that executes commands at precise clock ticks, and sends it to the board over Ethernet.</li>
+<li>The tProcessor tells the signal generators exactly when to start. The generators compute waveform samples and feed them to the DACs at 9.8 GSPS.</li>
+<li>Analog signals leave the SMA connectors, pass through room-temperature electronics and down the fridge lines to the device.</li>
+<li>The electron responds. Its spin state is converted into a charge state (Chapter 11), which changes the conductance of a nearby charge sensor, which changes the readout signal reflected back up the fridge.</li>
+<li>The ADC samples the returning signal. FPGA logic multiplies it by a reference sine wave, filters and adds up the result, so that each shot gives just two numbers, I and Q (Chapter 23).</li>
+<li>After all repetitions the averaged or single-shot I/Q values are sent back to the PC, where you plot them, fit them and decide what to change.</li>
+</ol>
+
+<h2>What the 4x2 can and cannot do, at a glance</h2>
+
+<p>The details fill Chapters 28–30 and 45, but you should know the headline facts now so that nothing surprises you later. They come from the board's documentation <cite data-r="rfsocpynq4x2,rd4x2manual"></cite> and the QICK firmware for this board <cite data-r="qickrepo"></cite>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Feature</th><th>RFSoC 4x2</th><th>What it means for spin qubits</th></tr></thead>
+<tbody>
+<tr><td>Analog outputs</td><td>2 DACs on SMA connectors, 14-bit, up to 9.85 GSPS (QICK uses 9.8304 GSPS)</td><td>Two independent fast output channels. Enough for readout plus one drive or gate, not for a full multi-gate device.</td></tr>
+<tr><td>Analog inputs</td><td>4 ADCs on SMA, 14-bit, up to 5 GSPS (QICK uses 4.42368 GSPS); QICK standard firmware reads 2 of them</td><td>Plenty for reading charge sensors.</td></tr>
+<tr><td>Coupling</td><td>Every SMA port passes through capacitors and a balun rated 10 MHz–10 GHz</td><td>No DC and no slow signals. Long flat gate pulses droop. Baseband gate pulsing needs either hardware modification or a different board.</td></tr>
+<tr><td>Frequency range</td><td>Direct synthesis up to about 6 GHz analog bandwidth</td><td>Reflectometry (100 MHz–1 GHz) is easy. EDSR at low fields (a few GHz) is direct; higher frequencies need an external mixer.</td></tr>
+<tr><td>Real-time logic</td><td>FPGA + QICK tProcessor with conditional branching</td><td>Feedback, active reset, real-time averaging, fast 2D scans.</td></tr>
+<tr><td>Digital I/O</td><td>2 PMOD headers (QICK uses 8 outputs as triggers)</td><td>Trigger DC sources, scopes, other instruments.</td></tr>
+<tr><td>Price</td><td>$2,499 academic (2026), universities and research institutes only</td><td>Far cheaper than commercial qubit controllers.</td></tr>
+</tbody></table></div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The most important single fact for your work is the third row. Spin qubits in gate-defined dots are controlled mostly by <i>baseband</i> gate voltages, meaning pulses that start and end at a DC level, last anything from nanoseconds to milliseconds, and have no carrier frequency. The 4x2's outputs are transformer-coupled and AC-coupled, so they cannot hold a DC level. The experiments that used RFSoCs on spin qubits so far all used the larger ZCU216 board with DC-coupled amplifiers <cite data-r="wessels2026,spinqick"></cite>. With the 4x2 you can still do a great deal: RF reflectometry readout, microwave EDSR drive, fast charge-stability maps using AC-coupled tricks, single-shot readout analysis and real-time feedback. Baseband pulsing needs extra hardware, discussed honestly in Chapters 29 and 38.</p>
+</div>
+
+<h2>The software stack, from top to bottom</h2>
+
+<p>Several layers of software and firmware sit between your notebook and the DAC pins. You will meet each in its own chapter, so here is the list:</p>
+<ol>
+<li><b>Jupyter notebook</b>: an interactive Python document in your browser (Chapter 31).</li>
+<li><b>Your experiment code</b>: Python classes describing pulse sequences, sweeps and analysis. With spinQICK, many standard spin-qubit experiments are already written.</li>
+<li><b>QICK Python library</b>: translates your pulse sequence into tProcessor machine code, configures generators and readouts, and collects data (Chapters 33–35).</li>
+<li><b>PYNQ</b>: AMD's Python framework that loads FPGA designs ("overlays") and gives Python access to their registers and memories (Chapters 31–32).</li>
+<li><b>Linux</b> on the ARM cores.</li>
+<li><b>The bitstream</b>: the file that configures the FPGA fabric into QICK's circuits (Chapter 27).</li>
+<li><b>The RF data converters</b>: hard-wired DAC and ADC blocks on the chip, configured by the bitstream and by Python (Chapter 26).</li>
+</ol>
+
+<div class="box analogy"><span class="tag">Analogy</span>
+<p>Think of the RFSoC as an orchestra. The ARM CPU is the manager who talks to the outside world (you) and hands out the sheet music. The tProcessor in the FPGA is the conductor who keeps perfect time. The signal generators are the musicians who play the notes, and the DACs are their instruments. The ADCs and readout blocks are the recording engineers. QICK is the arrangement that tells everyone their part. PYNQ is the stage crew who set up the hall.</p>
+</div>
+
+<h2>How the rest of the book is organised</h2>
+
+<p>The book climbs from physics to hardware to experiments:</p>
+<ul>
+<li><b>Part I (Chapters 2–5)</b> builds the quantum mechanics of a two-level system: states, rotations, decoherence and measurement. This is the language every qubit paper uses.</li>
+<li><b>Parts II and III (Chapters 6–15)</b> are the heart of the physics: how quantum dots form, how we see single electrons, how spin qubits of every kind (single-spin, singlet–triplet, exchange-only and others) are made, controlled and read out, and how a real device is tuned.</li>
+<li><b>Part IV (Chapters 16–17)</b> tours the lab: refrigerator, wiring and instruments.</li>
+<li><b>Parts V and VI (Chapters 18–27)</b> teach signals, sampling, I/Q, digital signal processing, FPGAs and the RFSoC chip, following and extending AMD's SDR book <cite data-r="sdrbook"></cite>.</li>
+<li><b>Parts VII–IX (Chapters 28–37)</b> cover the 4x2 board, PYNQ, QICK and spinQICK in depth.</li>
+<li><b>Part X (Chapters 38–44)</b> describes each real experiment: what it measures, the pulse sequence, how to run it on the 4x2, what extra hardware is needed, and what good data looks like.</li>
+<li><b>Part XI (Chapters 45–46)</b> gives an honest capability map and a step-by-step plan for your own work with the board.</li>
+</ul>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why can't spin-qubit experiments be done at room temperature?</p>
+<details><summary>Show answer</summary><div>Thermal energy \(k_BT\) at 300 K (about 26 meV) is much larger than the charging energy (a few meV) and the spin splitting (about 0.1 meV at 1 T), so thermal excitations would randomise both the electron number and the spin. Cooling to about 10–100 mK makes \(k_BT\) of order 1–10 µeV, well below these energies.</div></details>
+<p>2. Name the four kinds of electrical signal most spin-qubit experiments need, and say which one the 4x2 cannot produce without modification.</p>
+<details><summary>Show answer</summary><div>DC gate voltages, fast baseband gate pulses, microwave drive, and readout stimulus/response (plus triggers). The 4x2 cannot produce DC voltages or long baseband pulses because its outputs are AC-coupled through capacitors and baluns.</div></details>
+<p>3. In one sentence each, what do the DAC, ADC, FPGA fabric and ARM CPU of an RFSoC do in a qubit experiment?</p>
+<details><summary>Show answer</summary><div>The DAC turns computed waveform samples into the analog pulses sent to the device; the ADC digitises the returning readout signal; the FPGA fabric runs the timing processor, waveform generators and real-time demodulation; the ARM CPU runs Linux and Python, receives programs from the PC and returns data.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A spin qubit is the spin of a single electron (or hole) trapped in a gate-defined quantum dot, cooled to millikelvin temperatures in a dilution refrigerator.</li>
+<li>Experiments need DC gate voltages, fast baseband pulses, microwave drive, readout signals and triggers.</li>
+<li>An RFSoC combines fast DACs, fast ADCs, FPGA logic and ARM CPUs; QICK and spinQICK turn it into a qubit controller.</li>
+<li>The 4x2 has 2 outputs and 4 inputs, all AC-coupled (10 MHz–10 GHz baluns). It is excellent for readout and microwave work and needs extra hardware for baseband gate pulsing.</li>
+</ul>
+</div>

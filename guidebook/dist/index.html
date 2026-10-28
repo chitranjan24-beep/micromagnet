@@ -1,0 +1,1196 @@
+<title>RFSoC 4x2 Spin-Qubit Guidebook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A from-zero guidebook to semiconductor spin-qubit experiments with the RFSoC 4x2 board, PYNQ and QICK.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap">
+<style>
+/* Layout: fixed contents rail on the left, one reading column (about 70ch) on the right; wide figures may break out of the column. */
+:root {
+  --bg: #f6f7f9;
+  --paper: #ffffff;
+  --ink: #18202b;
+  --ink-2: #4a5566;
+  --ink-3: #7b8696;
+  --rule: #dfe3ea;
+  --accent: #2346b8;
+  --accent-soft: #e6ecfb;
+  --sig-i: #1f6fd1;      /* I quadrature, DAC traces, "signal 1" */
+  --sig-q: #d46a12;      /* Q quadrature, ADC traces, "signal 2" */
+  --sig-3: #188a5c;
+  --sig-4: #9b3fb5;
+  --warn: #b3261e;
+  --warn-soft: #fbeceb;
+  --lab: #0f7a6c;
+  --lab-soft: #e5f4f1;
+  --board: #6b4fbf;
+  --board-soft: #f0ecfa;
+  --code-bg: #f0f2f6;
+  --font-body: "Literata", "Iowan Old Style", "Georgia", serif;
+  --font-head: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --rail: 300px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1218; --paper: #141a22; --ink: #e3e8ef; --ink-2: #aab4c3; --ink-3: #7d8899;
+    --rule: #263040; --accent: #8fb0ff; --accent-soft: #1b2640;
+    --sig-i: #6aa8ff; --sig-q: #ffa25a; --sig-3: #4fd19a; --sig-4: #d08bff;
+    --warn: #ff8a80; --warn-soft: #2c1a1a; --lab: #5fd3c1; --lab-soft: #11262a;
+    --board: #b9a3ff; --board-soft: #1f1a33; --code-bg: #10161e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1218; --paper: #141a22; --ink: #e3e8ef; --ink-2: #aab4c3; --ink-3: #7d8899;
+  --rule: #263040; --accent: #8fb0ff; --accent-soft: #1b2640;
+  --sig-i: #6aa8ff; --sig-q: #ffa25a; --sig-3: #4fd19a; --sig-4: #d08bff;
+  --warn: #ff8a80; --warn-soft: #2c1a1a; --lab: #5fd3c1; --lab-soft: #11262a;
+  --board: #b9a3ff; --board-soft: #1f1a33; --code-bg: #10161e;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 72px; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.68;
+  -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--paper); }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--paper); border-bottom: 1px solid var(--rule);
+  font-family: var(--font-ui); font-size: 14px;
+}
+.topbar .brand { font-family: var(--font-head); font-weight: 600; font-size: 17px; letter-spacing: .01em; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.topbar .brand span { color: var(--ink-3); font-weight: 400; }
+.topbar .where { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.topbar button {
+  font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; cursor: pointer;
+}
+.topbar button:hover { background: var(--accent-soft); }
+#menuBtn { display: none; }
+
+/* ---------- frame ---------- */
+.frame { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: calc(100vh - 50px); }
+.rail {
+  position: sticky; top: calc(50px + env(safe-area-inset-top, 0px)); align-self: start;
+  height: calc(100vh - 50px - env(safe-area-inset-top, 0px)); overflow-y: auto;
+  border-right: 1px solid var(--rule); background: var(--paper);
+  padding: 14px 10px 40px max(14px, env(safe-area-inset-left, 0px));
+  font-family: var(--font-ui); font-size: 13.5px; line-height: 1.4;
+}
+.rail input[type="search"] {
+  width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--bg); color: var(--ink); margin-bottom: 10px;
+}
+.rail .part { margin: 14px 4px 4px; font-family: var(--font-head); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.rail a.toc { display: grid; grid-template-columns: 2.2em 1fr; gap: 2px; padding: 5px 6px; border-radius: 5px; color: var(--ink-2); text-decoration: none; }
+.rail a.toc:hover { background: var(--accent-soft); color: var(--ink); }
+.rail a.toc.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rail a.toc .n { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.rail .hits { margin: 6px 0 10px; }
+.rail .hits a { display: block; padding: 4px 6px; color: var(--ink-2); text-decoration: none; border-radius: 4px; }
+.rail .hits a:hover { background: var(--accent-soft); }
+.rail .hits small { color: var(--ink-3); }
+
+main {
+  padding-block: 28px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  min-width: 0;
+}
+.chapter { max-width: 74ch; margin: 0 auto; }
+.chapter[hidden] { display: none !important; }
+
+/* ---------- headings ---------- */
+.chapter .kicker { font-family: var(--font-head); font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); margin: 8px 0 2px; }
+h1, h2, h3, h4 { font-family: var(--font-head); color: var(--ink); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: 38px; font-weight: 600; margin: 0 0 18px; letter-spacing: -.005em; }
+h2 { font-size: 26px; font-weight: 600; margin: 44px 0 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+h3 { font-size: 20px; font-weight: 600; margin: 30px 0 6px; }
+h4 { font-size: 17px; font-weight: 600; margin: 22px 0 4px; color: var(--ink-2); }
+h2 .sn, h3 .sn { color: var(--ink-3); font-weight: 500; margin-right: .4em; font-variant-numeric: tabular-nums; }
+p { margin: 0 0 14px; }
+.lede { font-size: 19px; color: var(--ink-2); }
+ul, ol { padding-left: 1.4em; margin: 0 0 14px; }
+li { margin: 3px 0; }
+strong { font-weight: 650; }
+dfn { font-style: normal; font-weight: 650; border-bottom: 1px dotted var(--ink-3); cursor: help; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 30px 0; }
+
+/* ---------- code ---------- */
+code, kbd { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+pre { font-family: var(--font-mono); font-size: 13.5px; line-height: 1.55; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 0 0 16px; }
+pre code { background: none; padding: 0; font-size: inherit; }
+pre .c { color: var(--ink-3); }
+
+/* ---------- math ---------- */
+mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 10px 0 14px !important; }
+.eq { display: block; overflow-x: auto; }
+
+/* ---------- boxes ---------- */
+.box { border: 1px solid var(--rule); background: var(--paper); border-radius: 4px; padding: 14px 16px 4px; margin: 20px 0; }
+.box > .tag { display: inline-block; font-family: var(--font-head); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; padding: 2px 8px; border-radius: 3px; margin-bottom: 8px; }
+.box.why { background: var(--accent-soft); border-color: transparent; }
+.box.why > .tag { background: var(--accent); color: var(--paper); }
+.box.lab { background: var(--lab-soft); border-color: transparent; }
+.box.lab > .tag { background: var(--lab); color: var(--paper); }
+.box.warn { background: var(--warn-soft); border-color: transparent; }
+.box.warn > .tag { background: var(--warn); color: var(--paper); }
+.box.board { background: var(--board-soft); border-color: transparent; }
+.box.board > .tag { background: var(--board); color: var(--paper); }
+.box.key > .tag { background: var(--ink); color: var(--paper); }
+.box.check > .tag { background: var(--ink-2); color: var(--paper); }
+.box.example > .tag { background: var(--sig-3); color: var(--paper); }
+.box.analogy > .tag { background: var(--sig-q); color: var(--paper); }
+details { margin: 6px 0 10px; }
+summary { cursor: pointer; font-family: var(--font-ui); font-size: 14px; color: var(--accent); }
+details > div { padding: 8px 0 0 2px; }
+
+/* ---------- figures & tables ---------- */
+figure { margin: 22px 0; }
+figure.wide { margin-left: calc(-1 * min(8vw, 90px)); margin-right: calc(-1 * min(8vw, 90px)); }
+.figbody { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; }
+.figbody svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.figbody img { display: block; margin: 0 auto; }
+figcaption { font-family: var(--font-ui); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); margin-top: 8px; }
+figcaption b { color: var(--ink); }
+.tablewrap { overflow-x: auto; margin: 16px 0 20px; }
+table { border-collapse: collapse; font-family: var(--font-ui); font-size: 14px; line-height: 1.45; min-width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; color: var(--ink); border-bottom: 2px solid var(--ink-3); white-space: nowrap; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+caption { caption-side: bottom; text-align: left; color: var(--ink-2); font-size: 13px; padding-top: 6px; }
+
+/* ---------- SVG drawing vocabulary (theme-aware) ---------- */
+svg text { font-family: var(--font-ui); fill: var(--ink); }
+svg .lbl { font-size: 13px; fill: var(--ink); }
+svg .sm { font-size: 11px; fill: var(--ink-2); }
+svg .ttl { font-size: 14px; font-weight: 600; fill: var(--ink); }
+svg .mono { font-family: var(--font-mono); font-size: 11.5px; }
+svg .ln { stroke: var(--ink); fill: none; stroke-width: 1.4; }
+svg .ln2 { stroke: var(--ink-2); fill: none; stroke-width: 1.1; }
+svg .thin { stroke: var(--ink-3); fill: none; stroke-width: .8; }
+svg .dash { stroke-dasharray: 4 3; }
+svg .grid { stroke: var(--rule); fill: none; stroke-width: .8; }
+svg .box { fill: var(--paper); stroke: var(--ink-2); stroke-width: 1.2; }
+svg .boxa { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+svg .boxl { fill: var(--lab-soft); stroke: var(--lab); stroke-width: 1.2; }
+svg .boxb { fill: var(--board-soft); stroke: var(--board); stroke-width: 1.2; }
+svg .boxw { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.2; }
+svg .fillbg { fill: var(--bg); }
+svg .fillink { fill: var(--ink); }
+svg .fillink2 { fill: var(--ink-3); }
+svg .fillacc { fill: var(--accent); }
+svg .t1 { stroke: var(--sig-i); fill: none; stroke-width: 2; }
+svg .t2 { stroke: var(--sig-q); fill: none; stroke-width: 2; }
+svg .t3 { stroke: var(--sig-3); fill: none; stroke-width: 2; }
+svg .t4 { stroke: var(--sig-4); fill: none; stroke-width: 2; }
+svg .f1 { fill: var(--sig-i); } svg .f2 { fill: var(--sig-q); } svg .f3 { fill: var(--sig-3); } svg .f4 { fill: var(--sig-4); }
+svg .fa1 { fill: var(--sig-i); fill-opacity: .16; } svg .fa2 { fill: var(--sig-q); fill-opacity: .16; } svg .fa3 { fill: var(--sig-3); fill-opacity: .16; }
+svg .acc { stroke: var(--accent); fill: none; stroke-width: 1.8; }
+svg .wrn { stroke: var(--warn); fill: none; stroke-width: 1.8; }
+svg .tacc { fill: var(--accent); } svg .twrn { fill: var(--warn); } svg .tlab { fill: var(--lab); } svg .tbrd { fill: var(--board); }
+svg .t1t { fill: var(--sig-i); } svg .t2t { fill: var(--sig-q); } svg .t3t { fill: var(--sig-3); } svg .t4t { fill: var(--sig-4); }
+
+/* ---------- chapter nav ---------- */
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 50px; padding-top: 16px; border-top: 1px solid var(--rule); font-family: var(--font-ui); font-size: 14px; flex-wrap: wrap; }
+.pager a { text-decoration: none; display: flex; flex-direction: column; max-width: 48%; }
+.pager a small { color: var(--ink-3); }
+.pager a.next { text-align: right; margin-left: auto; }
+
+/* ---------- cover / contents ---------- */
+.cover h1 { font-size: 46px; margin-top: 10px; }
+.cover .sub { font-family: var(--font-head); font-size: 20px; color: var(--ink-2); margin: -6px 0 22px; }
+.contents-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 20px 0; }
+.contents-grid section { border: 1px solid var(--rule); background: var(--paper); border-radius: 6px; padding: 12px 14px; min-width: 0; }
+.contents-grid h3 { margin: 0 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.contents-grid ol { margin: 0; padding-left: 0; list-style: none; font-family: var(--font-ui); font-size: 14px; }
+.contents-grid li { margin: 3px 0; display: grid; grid-template-columns: 2em 1fr; }
+.contents-grid li .n { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.status { font-family: var(--font-ui); font-size: 12px; color: var(--ink-3); }
+
+/* ---------- references ---------- */
+ol.refs { font-family: var(--font-ui); font-size: 14px; line-height: 1.5; padding-left: 2.6em; }
+ol.refs li { margin: 6px 0; }
+ol.refs li:target { background: var(--accent-soft); }
+cite.r { font-style: normal; font-family: var(--font-ui); font-size: .8em; vertical-align: .25em; }
+cite.r a { text-decoration: none; }
+dl.gloss dt { font-family: var(--font-head); font-weight: 600; margin-top: 12px; }
+dl.gloss dd { margin: 2px 0 0 0; color: var(--ink-2); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 960px) {
+  .frame { grid-template-columns: minmax(0, 1fr); }
+  #menuBtn { display: inline-block; }
+  .rail {
+    position: fixed; top: calc(50px + env(safe-area-inset-top, 0px)); left: 0; bottom: 0; width: min(86vw, 340px); height: auto; z-index: 15;
+    transform: translateX(-102%); transition: transform .2s ease; box-shadow: 0 0 0 100vmax transparent;
+  }
+  body.menu-open .rail { transform: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.35); }
+  figure.wide { margin-left: 0; margin-right: 0; }
+  h1 { font-size: 31px; } .cover h1 { font-size: 36px; }
+  .topbar .brand span, .topbar .where { display: none; }
+  .figbody svg { max-width: none; min-width: 580px; }
+  #themeBtn { margin-left: auto; }
+  body { font-size: 16.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .rail { transition: none; } }
+
+</style>
+<header class="topbar">
+  <button id="menuBtn" type="button" aria-label="Open contents">Contents</button>
+  <a class="brand" href="#cover">RFSoC 4x2 <span>Spin-Qubit Guidebook</span></a>
+  <div class="where" id="where"></div>
+  <button id="themeBtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+</header>
+<div class="frame">
+  <nav class="rail" aria-label="Contents">
+    <input type="search" id="q" placeholder="Search headings and terms" aria-label="Search headings and terms">
+    <div class="hits" id="hits"></div>
+    <div class="part">Front matter</div>
+    <a class="toc" href="#cover"><span class="n"></span><span>Contents</span></a>
+    <div class="part">Part 0 · Orientation</div>
+    <a class="toc" href="#big-picture"><span class="n">1</span><span>The big picture: from one electron to a Python notebook</span></a>
+    <div class="part">Part I · Quantum mechanics you need</div>
+    <a class="toc" href="#bloch"><span class="n">2</span><span>Two-level systems, states and the Bloch sphere</span></a>
+    <a class="toc" href="#rabi"><span class="n">3</span><span>Driving a qubit: resonance, Rabi oscillations and the rotating frame</span></a>
+    <a class="toc" href="#decoherence"><span class="n">4</span><span>Decoherence and noise: T1, T2*, T2 and noise spectra</span></a>
+    <a class="toc" href="#gates-fidelity"><span class="n">5</span><span>Gates, measurement and fidelity</span></a>
+    <div class="part">Part II · Semiconductor quantum dots</div>
+    <a class="toc" href="#semiconductors"><span class="n">6</span><span>Electrons in semiconductors: bands, heterostructures and 2DEGs</span></a>
+    <a class="toc" href="#coulomb"><span class="n">7</span><span>Making a quantum dot: Coulomb blockade and the constant-interaction model</span></a>
+    <a class="toc" href="#double-dots"><span class="n">8</span><span>Double and multiple dots: charge stability diagrams and virtual gates</span></a>
+    <a class="toc" href="#sensing"><span class="n">9</span><span>Charge sensing and RF reflectometry</span></a>
+    <div class="part">Part III · Spin qubits</div>
+    <a class="toc" href="#spin-physics"><span class="n">10</span><span>An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys</span></a>
+    <a class="toc" href="#spin-readout"><span class="n">11</span><span>Spin readout: Elzerman, Pauli spin blockade and latching</span></a>
+    <a class="toc" href="#ld-qubits"><span class="n">12</span><span>Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets</span></a>
+    <a class="toc" href="#st-eo"><span class="n">13</span><span>Singlet–triplet, exchange-only and other encoded qubits</span></a>
+    <a class="toc" href="#two-qubit"><span class="n">14</span><span>Two-qubit gates and multi-qubit devices</span></a>
+    <a class="toc" href="#tuning"><span class="n">15</span><span>Tuning a device: from first cooldown to a working qubit</span></a>
+    <div class="part">Part IV · The lab</div>
+    <a class="toc" href="#fridge"><span class="n">16</span><span>The dilution refrigerator and its wiring</span></a>
+    <a class="toc" href="#rack"><span class="n">17</span><span>The traditional instrument rack, box by box</span></a>
+    <div class="part">Part V · Signals and software-defined radio</div>
+    <a class="toc" href="#signals"><span class="n">18</span><span>Signals, power, decibels and impedance</span></a>
+    <a class="toc" href="#sampling"><span class="n">19</span><span>Sampling, quantisation and Nyquist zones</span></a>
+    <a class="toc" href="#iq"><span class="n">20</span><span>I/Q signals, mixing, NCOs and digital up/down-conversion</span></a>
+    <a class="toc" href="#filters"><span class="n">21</span><span>Spectra, filters, decimation and interpolation</span></a>
+    <a class="toc" href="#noise-fom"><span class="n">22</span><span>Noise, converter figures of merit and frequency planning</span></a>
+    <a class="toc" href="#demod"><span class="n">23</span><span>From waveform to qubit result: demodulation, integration and thresholds</span></a>
+    <div class="part">Part VI · FPGAs and the RFSoC chip</div>
+    <a class="toc" href="#fpga"><span class="n">24</span><span>Digital logic and FPGA fabric</span></a>
+    <a class="toc" href="#zynq"><span class="n">25</span><span>Zynq UltraScale+: processing system, programmable logic, AXI and DMA</span></a>
+    <a class="toc" href="#rfdc"><span class="n">26</span><span>Inside the RFSoC data converters</span></a>
+    <a class="toc" href="#flow"><span class="n">27</span><span>The design flow: Vivado, bitstreams and overlays</span></a>
+    <div class="part">Part VII · The RFSoC 4x2 board</div>
+    <a class="toc" href="#board-tour"><span class="n">28</span><span>A tour of the RFSoC 4x2 board</span></a>
+    <a class="toc" href="#frontend"><span class="n">29</span><span>The analog front end: baluns, limits, protection and modifications</span></a>
+    <a class="toc" href="#clocks"><span class="n">30</span><span>Clocks, references, synchronisation and triggers</span></a>
+    <div class="part">Part VIII · PYNQ</div>
+    <a class="toc" href="#pynq"><span class="n">31</span><span>PYNQ: Linux, Jupyter, overlays and first boot</span></a>
+    <a class="toc" href="#pynq-hw"><span class="n">32</span><span>Talking to hardware from Python, and the SDR book labs</span></a>
+    <div class="part">Part IX · QICK and spinQICK</div>
+    <a class="toc" href="#qick-arch"><span class="n">33</span><span>QICK architecture</span></a>
+    <a class="toc" href="#qick-4x2"><span class="n">34</span><span>QICK on the 4x2: firmware, channels and numbers</span></a>
+    <a class="toc" href="#qick-prog"><span class="n">35</span><span>Programming QICK with tProcessor v2</span></a>
+    <a class="toc" href="#qick-cal"><span class="n">36</span><span>Calibrations: loopback, time of flight, frequency and phase</span></a>
+    <a class="toc" href="#spinqick"><span class="n">37</span><span>spinQICK, remote control and lab software</span></a>
+    <div class="part">Part X · Experiments with the 4x2</div>
+    <a class="toc" href="#setup"><span class="n">38</span><span>Planning a spin-qubit setup around a 4x2</span></a>
+    <a class="toc" href="#exp-reflecto"><span class="n">39</span><span>Experiment: RF reflectometry readout</span></a>
+    <a class="toc" href="#exp-csd"><span class="n">40</span><span>Experiment: fast charge-stability maps and pulsed-gate spectroscopy</span></a>
+    <a class="toc" href="#exp-spinro"><span class="n">41</span><span>Experiment: spin readout, single shots and T1</span></a>
+    <a class="toc" href="#exp-ld"><span class="n">42</span><span>Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking</span></a>
+    <a class="toc" href="#exp-st-eo"><span class="n">43</span><span>Experiment: singlet–triplet and exchange-only qubits</span></a>
+    <a class="toc" href="#exp-2q"><span class="n">44</span><span>Experiment: two-qubit gates, feedback and stabilisation</span></a>
+    <div class="part">Part XI · Capability map and roadmap</div>
+    <a class="toc" href="#capability"><span class="n">45</span><span>What the 4x2 can and cannot do</span></a>
+    <a class="toc" href="#roadmap"><span class="n">46</span><span>Your roadmap with the board</span></a>
+    <div class="part">Back matter</div>
+    <a class="toc" href="#appx-math"><span class="n"></span><span>Appendix A: Mathematics refresher</span></a>
+    <a class="toc" href="#appx-safety"><span class="n"></span><span>Appendix B: Handling, safety and protecting the board</span></a>
+    <a class="toc" href="#glossary"><span class="n"></span><span>Glossary</span></a>
+    <a class="toc" href="#references"><span class="n"></span><span>References</span></a>
+  </nav>
+  <main id="main">
+<article class="chapter" id="cover" data-label="Contents">
+<p class="kicker">Front matter</p>
+
+
+<div class="cover">
+<p class="kicker">A from-zero guidebook</p>
+<h1>The RFSoC 4x2 for Semiconductor Spin Qubits</h1>
+<p class="sub">Quantum dots, spin qubits, signals, FPGAs, PYNQ and QICK, explained from the inside out</p>
+
+<p class="lede">This book is written for someone who has undergraduate physics, maths and solid-state physics, and who is new to FPGAs, software-defined radio, PYNQ, QICK and to how a quantum-dot or spin-qubit lab actually works. It starts from the beginning of each topic and builds up until you can design, run and understand the experiments that research groups run on Si/SiGe and GaAs quantum-dot devices, and see exactly which parts of that work an RFSoC 4x2 board can do.</p>
+
+<p>Use the contents list on the left (or the <b>Contents</b> button on a phone) to move between chapters. The search box finds section headings and defined terms. Every chapter ends with links to the previous and next chapter.</p>
+
+<h2 id="cover-map" data-nonum>The map of the book</h2>
+<div class="contents-grid"><section><h3>Front matter</h3><ol><li><span class="n"></span><a href="#cover">Contents</a></li></ol></section><section><h3>Part 0 · Orientation</h3><ol><li><span class="n">1</span><a href="#big-picture">The big picture: from one electron to a Python notebook</a></li></ol></section><section><h3>Part I · Quantum mechanics you need</h3><ol><li><span class="n">2</span><a href="#bloch">Two-level systems, states and the Bloch sphere</a></li><li><span class="n">3</span><a href="#rabi">Driving a qubit: resonance, Rabi oscillations and the rotating frame</a></li><li><span class="n">4</span><a href="#decoherence">Decoherence and noise: T1, T2*, T2 and noise spectra</a></li><li><span class="n">5</span><a href="#gates-fidelity">Gates, measurement and fidelity</a></li></ol></section><section><h3>Part II · Semiconductor quantum dots</h3><ol><li><span class="n">6</span><a href="#semiconductors">Electrons in semiconductors: bands, heterostructures and 2DEGs</a></li><li><span class="n">7</span><a href="#coulomb">Making a quantum dot: Coulomb blockade and the constant-interaction model</a></li><li><span class="n">8</span><a href="#double-dots">Double and multiple dots: charge stability diagrams and virtual gates</a></li><li><span class="n">9</span><a href="#sensing">Charge sensing and RF reflectometry</a></li></ol></section><section><h3>Part III · Spin qubits</h3><ol><li><span class="n">10</span><a href="#spin-physics">An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys</a></li><li><span class="n">11</span><a href="#spin-readout">Spin readout: Elzerman, Pauli spin blockade and latching</a></li><li><span class="n">12</span><a href="#ld-qubits">Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets</a></li><li><span class="n">13</span><a href="#st-eo">Singlet–triplet, exchange-only and other encoded qubits</a></li><li><span class="n">14</span><a href="#two-qubit">Two-qubit gates and multi-qubit devices</a></li><li><span class="n">15</span><a href="#tuning">Tuning a device: from first cooldown to a working qubit</a></li></ol></section><section><h3>Part IV · The lab</h3><ol><li><span class="n">16</span><a href="#fridge">The dilution refrigerator and its wiring</a></li><li><span class="n">17</span><a href="#rack">The traditional instrument rack, box by box</a></li></ol></section><section><h3>Part V · Signals and software-defined radio</h3><ol><li><span class="n">18</span><a href="#signals">Signals, power, decibels and impedance</a></li><li><span class="n">19</span><a href="#sampling">Sampling, quantisation and Nyquist zones</a></li><li><span class="n">20</span><a href="#iq">I/Q signals, mixing, NCOs and digital up/down-conversion</a></li><li><span class="n">21</span><a href="#filters">Spectra, filters, decimation and interpolation</a></li><li><span class="n">22</span><a href="#noise-fom">Noise, converter figures of merit and frequency planning</a></li><li><span class="n">23</span><a href="#demod">From waveform to qubit result: demodulation, integration and thresholds</a></li></ol></section><section><h3>Part VI · FPGAs and the RFSoC chip</h3><ol><li><span class="n">24</span><a href="#fpga">Digital logic and FPGA fabric</a></li><li><span class="n">25</span><a href="#zynq">Zynq UltraScale+: processing system, programmable logic, AXI and DMA</a></li><li><span class="n">26</span><a href="#rfdc">Inside the RFSoC data converters</a></li><li><span class="n">27</span><a href="#flow">The design flow: Vivado, bitstreams and overlays</a></li></ol></section><section><h3>Part VII · The RFSoC 4x2 board</h3><ol><li><span class="n">28</span><a href="#board-tour">A tour of the RFSoC 4x2 board</a></li><li><span class="n">29</span><a href="#frontend">The analog front end: baluns, limits, protection and modifications</a></li><li><span class="n">30</span><a href="#clocks">Clocks, references, synchronisation and triggers</a></li></ol></section><section><h3>Part VIII · PYNQ</h3><ol><li><span class="n">31</span><a href="#pynq">PYNQ: Linux, Jupyter, overlays and first boot</a></li><li><span class="n">32</span><a href="#pynq-hw">Talking to hardware from Python, and the SDR book labs</a></li></ol></section><section><h3>Part IX · QICK and spinQICK</h3><ol><li><span class="n">33</span><a href="#qick-arch">QICK architecture</a></li><li><span class="n">34</span><a href="#qick-4x2">QICK on the 4x2: firmware, channels and numbers</a></li><li><span class="n">35</span><a href="#qick-prog">Programming QICK with tProcessor v2</a></li><li><span class="n">36</span><a href="#qick-cal">Calibrations: loopback, time of flight, frequency and phase</a></li><li><span class="n">37</span><a href="#spinqick">spinQICK, remote control and lab software</a></li></ol></section><section><h3>Part X · Experiments with the 4x2</h3><ol><li><span class="n">38</span><a href="#setup">Planning a spin-qubit setup around a 4x2</a></li><li><span class="n">39</span><a href="#exp-reflecto">Experiment: RF reflectometry readout</a></li><li><span class="n">40</span><a href="#exp-csd">Experiment: fast charge-stability maps and pulsed-gate spectroscopy</a></li><li><span class="n">41</span><a href="#exp-spinro">Experiment: spin readout, single shots and T1</a></li><li><span class="n">42</span><a href="#exp-ld">Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking</a></li><li><span class="n">43</span><a href="#exp-st-eo">Experiment: singlet–triplet and exchange-only qubits</a></li><li><span class="n">44</span><a href="#exp-2q">Experiment: two-qubit gates, feedback and stabilisation</a></li></ol></section><section><h3>Part XI · Capability map and roadmap</h3><ol><li><span class="n">45</span><a href="#capability">What the 4x2 can and cannot do</a></li><li><span class="n">46</span><a href="#roadmap">Your roadmap with the board</a></li></ol></section><section><h3>Back matter</h3><ol><li><span class="n"></span><a href="#appx-math">Appendix A: Mathematics refresher</a></li><li><span class="n"></span><a href="#appx-safety">Appendix B: Handling, safety and protecting the board</a></li><li><span class="n"></span><a href="#glossary">Glossary</a></li><li><span class="n"></span><a href="#references">References</a></li></ol></section></div>
+
+<h2 id="cover-how" data-nonum>How the chapters are built</h2>
+<p>Every chapter follows the same pattern, so you always know where you are:</p>
+<ol>
+<li><b>Why you need this.</b> One short box that ties the chapter to a real task in the lab.</li>
+<li><b>The picture.</b> An analogy and a diagram before any equations.</li>
+<li><b>The precise idea.</b> The physics or engineering, with every symbol explained and no skipped steps.</li>
+<li><b>On the 4x2.</b> Where the idea shows up on the board, in PYNQ or in QICK.</li>
+<li><b>Worked examples.</b> Numbers you can check with a calculator, or short code.</li>
+<li><b>Common mistakes.</b> What goes wrong in real labs.</li>
+<li><b>Check yourself.</b> Questions with hidden answers you can open.</li>
+<li><b>Summary.</b> The few lines to remember.</li>
+</ol>
+<p>The coloured boxes mean:</p>
+<div class="box why"><span class="tag">Why you need this</span><p>The reason the chapter matters for your experiments.</p></div>
+<div class="box board"><span class="tag">On the 4x2</span><p>How the idea maps onto the RFSoC 4x2 board, PYNQ or QICK.</p></div>
+<div class="box lab"><span class="tag">In the lab</span><p>How research groups actually do it, with practical numbers.</p></div>
+<div class="box warn"><span class="tag">Common mistake</span><p>A trap that costs people days, or hardware.</p></div>
+<div class="box example"><span class="tag">Worked example</span><p>A calculation worked through step by step.</p></div>
+
+<h2 id="cover-sources" data-nonum>Sources</h2>
+<p>Facts that need a source carry a bracketed number like <cite class="r">[<a href="#ref-rfsocpynq4x2" title="RFSoC-PYNQ 4x2 overview page">1</a>]</cite>. Click it to jump to the full reference in the <a href="#references">References</a> chapter at the end. Board numbers come from the RFSoC-PYNQ board page and the Real Digital reference manual <cite class="r">[<a href="#ref-rd4x2manual" title="Real Digital RFSoC 4x2 Reference Manual">2</a>]</cite>, QICK numbers from the QICK source code and documentation as of October 2026 <cite class="r">[<a href="#ref-qickrepo" title="QICK GitHub repository">3</a>, <a href="#ref-qickdocs" title="QICK documentation">4</a>]</cite>, and the signal-processing background follows AMD's free RFSoC SDR book <cite class="r">[<a href="#ref-sdrbook" title="Crockett, Northcote, Stewart, SDR with RFSoC (2023)">5</a>]</cite>. Where sources disagree, the text says so.</p>
+<div class="box warn"><span class="tag">About the SDR book file</span><p>The SDR book's licence allows free use for non-profit teaching and research, but it says the PDF must only be distributed from the book's own website and must not be hosted on third-party sites. If the GitHub repository holding <code>RFSoC_SDR_book.zip</code> is public, consider removing the zip and linking to <a href="https://www.rfsocbook.com">rfsocbook.com</a> instead.</p></div>
+</div>
+
+<nav class="pager"><a class="next" href="#big-picture"><small>Next</small>Chapter 1 · The big picture: from one electron to a Python notebook</a></nav>
+</article>
+<article class="chapter" id="big-picture" data-label="Chapter 1 · The big picture: from one electron to a Python notebook" hidden>
+<p class="kicker">Part 0 · Orientation · Chapter 1</p>
+<h1>The big picture: from one electron to a Python notebook</h1>
+
+
+<div class="box why"><span class="tag">Why you need this</span>
+<p>Before learning any single topic in depth, you need a mental map of the whole experiment: what the device is, why it sits in a refrigerator colder than outer space, what kinds of electrical signals it needs, which instrument makes each signal, and where the RFSoC 4x2 fits. Every later chapter zooms into one box of the map drawn here. If you ever feel lost later, come back to Figure 1.1.</p>
+</div>
+
+<p class="lede">A spin-qubit experiment is, at its heart, a conversation between a computer and a single electron. The computer sends carefully timed voltages and microwaves down wires into a refrigerator. Those signals move the electron around, rotate its spin, and then ask it a question: "is your spin up or down?" The answer comes back as a tiny change in an electrical signal, which is amplified, digitised and analysed. This chapter walks through that conversation once, end to end, in plain language.</p>
+
+<h2 id="big-picture-what-the-lab-is-trying-to-do"><span class="sn">1.1</span>What the lab is trying to do</h2>
+
+<p>A <dfn id="g-qubit" title="A quantum two-level system used to store and process quantum information; the quantum version of a bit.">qubit</dfn> is a physical object with two distinguishable quantum states, which we call \(\ket{0}\) and \(\ket{1}\). Unlike a classical bit, it can also be in a <dfn id="g-superposition" title="A quantum state that is a weighted combination of basis states, such as a|0⟩ + b|1⟩.">superposition</dfn> of both. Chapter 2 explains what that means precisely. For now, think of it like this: a classical bit is a switch that is either off or on. A qubit is more like an arrow that can point in any direction on a sphere, where "north" means \(\ket{0}\) and "south" means \(\ket{1}\).</p>
+
+<p>Many physical systems can play this role: superconducting circuits, trapped ions, neutral atoms, defects in diamond, photons, and the system this book is about, <b>the spin of an electron (or hole) trapped in a semiconductor quantum dot</b>. An electron has an intrinsic angular momentum called spin. In a magnetic field its two spin states, "up" and "down", have slightly different energies, and that pair of states is a natural qubit. This idea was proposed by Daniel Loss and David DiVincenzo in 1998 and is now called the Loss–DiVincenzo or single-spin qubit <cite class="r">[<a href="#ref-lossdiv1998" title="Loss &amp; DiVincenzo, PRA 1998">6</a>]</cite>.</p>
+
+<p>Why semiconductors? Three reasons dominate the research literature <cite class="r">[<a href="#ref-burkard2023" title="Burkard et al., RMP 2023">7</a>, <a href="#ref-zwanenburg2013" title="Zwanenburg et al., RMP 2013">8</a>]</cite>:</p>
+<ul>
+<li><b>Size.</b> A quantum dot is about 50–100 nm across. Billions could fit on a chip, much like transistors.</li>
+<li><b>Manufacturing.</b> Silicon spin qubits are made with processes close to those that make computer chips, so the semiconductor industry's know-how can, in principle, be reused.</li>
+<li><b>Coherence.</b> In isotopically purified silicon (<sup>28</sup>Si), the electron's spin is very well isolated from its surroundings, so its quantum state survives a long time compared with how fast we can manipulate it.</li>
+</ul>
+
+<p>The lab's job is to build such devices, cool them down, find the right voltages to trap exactly one or a few electrons, and then demonstrate and improve the basic operations: preparing a known state, rotating the spin (single-qubit gates), coupling two spins (two-qubit gates), and measuring the spin (readout). Everything else in this book serves those four tasks.</p>
+
+<h2 id="big-picture-the-device-a-chip-with-gates-on-top"><span class="sn">1.2</span>The device: a chip with gates on top</h2>
+
+<p>Figure 1.1 shows a simplified cross-section of a Si/SiGe quantum-dot device, the platform you will use. Read it from the bottom up:</p>
+
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 760 330" width="760" role="img" aria-label="Cross-section of a Si/SiGe quantum dot device">
+  <text class="sm" x="40" y="22">External magnetic field B<tspan baseline-shift="sub" font-size="8">0</tspan> (≈0.3–1 T) along the surface →</text>
+  <rect x="150" y="34" width="160" height="26" class="boxw"/><text class="sm" x="230" y="51" text-anchor="middle">Co micromagnet</text>
+  <rect x="410" y="34" width="160" height="26" class="boxw"/><text class="sm" x="490" y="51" text-anchor="middle">Co micromagnet</text>
+  <rect x="200" y="98" width="46" height="30" class="boxb"/><text class="sm" x="223" y="117" text-anchor="middle">B1</text>
+  <rect x="262" y="86" width="56" height="42" class="boxb"/><text class="sm" x="290" y="111" text-anchor="middle">P1</text>
+  <rect x="334" y="98" width="46" height="30" class="boxb"/><text class="sm" x="357" y="117" text-anchor="middle">B2</text>
+  <rect x="396" y="86" width="56" height="42" class="boxb"/><text class="sm" x="424" y="111" text-anchor="middle">P2</text>
+  <rect x="468" y="98" width="46" height="30" class="boxb"/><text class="sm" x="491" y="117" text-anchor="middle">B3</text>
+  <text class="lbl" x="540" y="102">metal gate electrodes</text>
+  <text class="sm" x="540" y="118">P = plunger, B = barrier (20–40 nm wide)</text>
+  <rect x="40" y="128" width="680" height="12" class="box"/>
+  <text class="sm" x="44" y="138" style="font-size:10px">oxide (Al₂O₃)</text>
+  <rect x="40" y="140" width="680" height="44" class="boxa"/>
+  <text class="lbl" x="56" y="167">SiGe spacer (~30–50 nm): keeps the electrons away from the surface</text>
+  <rect x="40" y="184" width="680" height="30" class="boxl"/>
+  <circle cx="290" cy="199" r="6" class="f1"/><circle cx="424" cy="199" r="6" class="f1"/>
+  <text class="sm" x="306" y="203" style="fill: var(--sig-i)">dot 1</text>
+  <text class="sm" x="440" y="203" style="fill: var(--sig-i)">dot 2</text>
+  <text class="lbl" x="500" y="204">strained Si quantum well (~10 nm): the 2DEG</text>
+  <rect x="40" y="214" width="680" height="44" class="boxa"/>
+  <text class="lbl" x="56" y="241">Si<tspan baseline-shift="sub" font-size="9">0.7</tspan>Ge<tspan baseline-shift="sub" font-size="9">0.3</tspan> barrier layer</text>
+  <rect x="40" y="258" width="680" height="56" class="box"/>
+  <text class="lbl" x="56" y="291">Silicon substrate and graded SiGe buffer (relaxes the crystal lattice)</text>
+</svg>
+</div>
+<figcaption><b>Figure 1.1.</b> A simplified cross-section through a Si/SiGe double quantum dot (not to scale). Positive voltages on the plunger gates (P1, P2) pull electrons up from a reservoir into small "puddles" in the silicon quantum well. These puddles are the quantum dots. Barrier gates (B1–B3) control how easily electrons tunnel between dots and to the reservoirs. The cobalt micromagnets on top create a magnetic field that changes with position, which lets an oscillating gate voltage rotate the electron's spin (Chapter 12). Real devices have several gate layers that overlap each other and also include a charge sensor (Chapter 9). Layer thicknesses follow typical values from the literature <cite class="r">[<a href="#ref-burkard2023" title="Burkard et al., RMP 2023">7</a>, <a href="#ref-zwanenburg2013" title="Zwanenburg et al., RMP 2013">8</a>]</cite>.</figcaption>
+</figure>
+
+<ol>
+<li><b>Substrate and buffer.</b> Germanium atoms are slightly larger than silicon atoms. A thick, graded SiGe layer slowly changes the lattice spacing so that the top layers grow as a nearly perfect crystal.</li>
+<li><b>The quantum well.</b> A thin (about 10 nm) layer of pure silicon is sandwiched between SiGe layers. Because of how the conduction band energies line up (Chapter 6), electrons prefer to sit in this silicon layer. They can move freely in the plane but not up or down, so they form a <dfn id="g-two-dimensional-electron-gas-2deg" title="Electrons that can move freely in a plane but are confined in the perpendicular direction, typically in a quantum well or at an interface.">two-dimensional electron gas (2DEG)</dfn>.</li>
+<li><b>Spacer and oxide.</b> A SiGe spacer keeps the electrons away from the messy surface, and a thin oxide insulates the gates from the semiconductor.</li>
+<li><b>Gates.</b> Metal electrodes, a few tens of nanometres wide, sit on top. A voltage on a gate changes the electrostatic potential underneath it. Positive voltage attracts electrons, negative repels them. With the right combination of voltages you carve the 2DEG into tiny islands (dots) that each hold a controlled number of electrons, typically one.</li>
+<li><b>Micromagnet.</b> A small ferromagnet (often cobalt) on top of the device. Chapter 12 explains why its <i>non-uniform</i> stray field is so useful.</li>
+</ol>
+
+<p>GaAs devices look similar but use a GaAs/AlGaAs interface instead of a Si quantum well. In GaAs the 2DEG often forms by itself (thanks to doping) and the gates are negative, pushing electrons <i>away</i> to define dots. Chapter 6 compares the two materials, including why GaAs spins lose their coherence faster (nuclear spins) and why silicon has an extra complication called valleys.</p>
+
+<h2 id="big-picture-why-the-device-must-be-so-cold"><span class="sn">1.3</span>Why the device must be so cold</h2>
+
+<p>The energies involved are tiny. The energy needed to add one more electron to a dot (the charging energy) is a few milli-electronvolts (meV). The energy difference between spin up and spin down in a 1 T field is about 0.1 meV. Thermal energy at temperature \(T\) is about \(k_B T\), where \(k_B = 86\ \mu\text{eV/K}\) is Boltzmann's constant. At room temperature (300 K), \(k_B T \approx 26\) meV, far larger than all of these energies, so thermal jiggling would wash everything out.</p>
+
+<div class="box example"><span class="tag">Worked example</span>
+<p>What temperature makes thermal energy 10 times smaller than the spin splitting at 0.5 T?</p>
+<p>The spin splitting is \(E_Z = g \mu_B B\), with \(g \approx 2\) for electrons in silicon and \(\mu_B = 57.9\ \mu\text{eV/T}\) (the Bohr magneton). At \(B = 0.5\) T: \(E_Z = 2 \times 57.9 \times 0.5 = 57.9\ \mu\text{eV}\). We want \(k_B T = E_Z / 10 = 5.8\ \mu\text{eV}\), so \(T = 5.8 / 86 \approx 0.067\) K = 67 mK.</p>
+<p>That is why spin-qubit devices sit in a <dfn id="g-dilution-refrigerator" title="A refrigerator that reaches about 10 mK by mixing helium-3 into helium-4; the standard cryostat for qubit experiments.">dilution refrigerator</dfn>, whose coldest stage (the mixing chamber) reaches about 10 mK. The electrons themselves usually end up somewhat hotter (often 50–150 mK) because of electrical noise coming down the wires. Chapter 16 explains how the wiring is designed to minimise this.</p>
+</div>
+
+<p>Interestingly, there is a strong research push towards running silicon spin qubits at 1 K or above ("hot qubits"), where much more cooling power is available. The physics is the same; the trade-offs are discussed in Chapter 16.</p>
+
+<h2 id="big-picture-the-signals-an-experiment-needs"><span class="sn">1.4</span>The signals an experiment needs</h2>
+
+<p>Every experiment in this book is built from a small set of signal types. Learning to recognise them is the single most useful skill for understanding what any piece of lab equipment, including the RFSoC, is for.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Signal</th><th>What it does</th><th>Typical size and speed</th><th>Traditional instrument</th></tr></thead>
+<tbody>
+<tr><td><b>DC gate voltages</b></td><td>Form the dots: set how many electrons each dot holds and how strongly they couple</td><td>0 to ±2 V (or more), set to µV precision, changed slowly (ms–s); 10–100 gates</td><td>Multi-channel low-noise DC source (e.g. QDevil QDAC, Basel LNHR DAC)</td></tr>
+<tr><td><b>Fast gate pulses</b> ("baseband")</td><td>Move electrons between charge states within nanoseconds; turn exchange on/off; select readout and load points</td><td>1–100 mV at the device, rise times ~1 ns, lengths ns to ms, on a few to tens of gates</td><td>Arbitrary waveform generator (AWG)</td></tr>
+<tr><td><b>Microwave drive</b></td><td>Rotate the spin (ESR or EDSR)</td><td>Carrier 1–40 GHz (set by the magnetic field), bursts of ns to µs, precise phase</td><td>Vector microwave source + IQ modulation from an AWG</td></tr>
+<tr><td><b>Readout stimulus and response</b></td><td>Measure the charge sensor quickly</td><td>RF reflectometry: a carrier of about 100 MHz–1 GHz; or a low-frequency AC excitation (kHz–MHz); response is µV–mV after amplification</td><td>RF source + demodulator/digitiser, or a lock-in amplifier</td></tr>
+<tr><td><b>Triggers and markers</b></td><td>Keep all instruments in step</td><td>Digital 0/3.3 V edges with ns timing</td><td>AWG marker outputs, pulse generators</td></tr>
+<tr><td><b>Magnetic field</b></td><td>Splits spin up/down; sets the spin resonance frequency</td><td>0.1–2 T, very stable, changed rarely</td><td>Superconducting magnet + current supply</td></tr>
+</tbody></table></div>
+
+<p>A well-equipped spin-qubit lab traditionally fills a rack with separate instruments for these jobs: DC sources, AWGs, microwave sources with IQ mixers, lock-in amplifiers, fast digitisers, and a computer that tries to keep them all synchronised. Commercial integrated controllers from companies such as Quantum Machines, Zurich Instruments, Qblox and Keysight combine several of these functions into one system, at a price of tens to hundreds of thousands of dollars. Chapter 17 takes the rack apart box by box.</p>
+
+<h2 id="big-picture-where-the-rfsoc-4x2-fits"><span class="sn">1.5</span>Where the RFSoC 4x2 fits</h2>
+
+<p>The <dfn id="g-rfsoc" title="Radio-Frequency System-on-Chip: an AMD (Xilinx) chip combining multi-GHz ADCs and DACs, FPGA fabric and ARM processors on one die.">RFSoC</dfn> (Radio-Frequency System-on-Chip) is a single chip made by AMD (formerly Xilinx) that contains four things that used to be separate:</p>
+<ol>
+<li><b>Fast DACs</b> (digital-to-analog converters) that turn numbers into voltages billions of times per second. On the 4x2 they run at up to 9.85 billion samples per second (GSPS).</li>
+<li><b>Fast ADCs</b> (analog-to-digital converters) that turn voltages into numbers, up to 5 GSPS on this chip.</li>
+<li><b>FPGA fabric</b>: millions of programmable logic elements that can be wired into custom digital circuits, for example a circuit that generates a pulse with nanosecond timing, or one that demodulates a readout signal in real time.</li>
+<li><b>ARM processors</b> that run Linux, so the board is a small computer you can talk to over Ethernet.</li>
+</ol>
+
+<p>Originally designed for 5G base stations and radar, this combination turns out to be very close to what a qubit controller needs. The <dfn id="g-qick" title="Quantum Instrumentation Control Kit: open-source firmware and Python software that turns an AMD RFSoC board into a qubit controller.">QICK</dfn> project (Quantum Instrumentation Control Kit), started at Fermilab and Princeton, provides open-source firmware and Python software that turn an RFSoC board into a qubit controller <cite class="r">[<a href="#ref-stefanazzi2022" title="Stefanazzi et al., QICK, RSI 2022">9</a>, <a href="#ref-qickrepo" title="QICK GitHub repository">3</a>]</cite>. HRL Laboratories has published <dfn id="g-spinqick" title="HRL Laboratories' open-source extension of QICK with experiments for gate-defined spin qubits (charge stability, PSB readout, LD and exchange-only control).">spinQICK</dfn>, an extension of QICK made specifically for gate-defined spin qubits <cite class="r">[<a href="#ref-spinqick" title="spinQICK repository">10</a>]</cite>, and demonstrated full control of an exchange-only qubit with it in October 2026 <cite class="r">[<a href="#ref-wessels2026" title="Wessels et al., RFSoC EO qubit (2026)">11</a>]</cite>.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 900 570" width="900" role="img" aria-label="Signal chain of a spin qubit experiment">
+  <rect x="16" y="30" width="140" height="96" rx="4" class="box"/>
+  <text class="ttl" x="28" y="52">Control PC</text>
+  <text class="sm" x="28" y="72">Jupyter notebook</text>
+  <text class="sm" x="28" y="88">Python, QICK library</text>
+  <text class="sm" x="28" y="104">analysis, plotting</text>
+  <line class="ln" x1="156" y1="78" x2="214" y2="78"/>
+  <text class="sm" x="160" y="70">Ethernet</text>
+  <rect x="214" y="14" width="300" height="200" rx="4" class="boxb"/>
+  <text class="ttl" x="228" y="36">RFSoC 4x2 board</text>
+  <rect x="228" y="46" width="128" height="58" class="box"/>
+  <text class="sm" x="236" y="64">ARM CPU (PS)</text><text class="sm" x="236" y="80">Linux + PYNQ</text><text class="sm" x="236" y="96">talks to the PC</text>
+  <rect x="366" y="46" width="134" height="58" class="box"/>
+  <text class="sm" x="374" y="64">FPGA fabric (PL)</text><text class="sm" x="374" y="80">QICK tProcessor,</text><text class="sm" x="374" y="96">generators, readouts</text>
+  <rect x="228" y="116" width="128" height="40" class="boxa"/><text class="sm" x="292" y="140" text-anchor="middle">2 DACs, 9.8 GSPS</text>
+  <rect x="366" y="116" width="134" height="40" class="boxa"/><text class="sm" x="433" y="140" text-anchor="middle">4 ADCs, 5 GSPS</text>
+  <text class="sm" x="228" y="180">baluns: AC-coupled SMA ports</text>
+  <text class="sm" x="228" y="196">PMOD pins: digital triggers</text>
+  <rect x="560" y="14" width="324" height="200" rx="4" class="box"/>
+  <text class="ttl" x="574" y="36">Room-temperature electronics</text>
+  <text class="sm" x="574" y="58">• multi-channel DC voltage source (all gates)</text>
+  <text class="sm" x="574" y="76">• amplifiers, attenuators, filters</text>
+  <text class="sm" x="574" y="94">• bias tees or adders: DC + fast pulse on one gate</text>
+  <text class="sm" x="574" y="112">• optional IQ mixer + local oscillator for &gt;6 GHz</text>
+  <text class="sm" x="574" y="130">• readout amplifier, directional coupler</text>
+  <text class="sm" x="574" y="148">• magnet power supply</text>
+  <line class="ln" x1="514" y1="136" x2="560" y2="136"/>
+  <text class="sm" x="520" y="128">coax</text>
+  <rect x="220" y="250" width="664" height="306" rx="6" class="box"/>
+  <text class="ttl" x="234" y="272">Dilution refrigerator</text>
+  <line class="thin dash" x1="220" y1="300" x2="884" y2="300"/><text class="sm" x="232" y="296">300 K top plate</text>
+  <line class="thin dash" x1="220" y1="340" x2="884" y2="340"/><text class="sm" x="232" y="336">~50 K</text>
+  <line class="thin dash" x1="220" y1="380" x2="884" y2="380"/><text class="sm" x="232" y="376">~4 K</text>
+  <line class="thin dash" x1="220" y1="420" x2="884" y2="420"/><text class="sm" x="232" y="416">still ~1 K</text>
+  <line class="thin dash" x1="220" y1="456" x2="884" y2="456"/><text class="sm" x="232" y="452">cold plate ~100 mK</text>
+  <line class="thin dash" x1="220" y1="490" x2="884" y2="490"/><text class="sm" x="232" y="486">mixing chamber ~10 mK</text>
+  <text class="sm" x="232" y="540">small squares: attenuators and filters; triangle: amplifier</text>
+  <line class="t3" x1="590" y1="214" x2="590" y2="505"/><text class="sm t3t" x="596" y="232">DC lines</text>
+  <rect x="583" y="430" width="14" height="14" class="boxl"/>
+  <line class="t1" x1="650" y1="214" x2="650" y2="505"/><text class="sm t1t" x="656" y="232">fast</text><text class="sm t1t" x="656" y="246">pulses</text>
+  <rect x="643" y="372" width="14" height="14" class="boxa"/><rect x="643" y="448" width="14" height="14" class="boxa"/>
+  <line class="t4" x1="710" y1="214" x2="710" y2="505"/><text class="sm t4t" x="716" y="232">micro-</text><text class="sm t4t" x="716" y="246">wave</text>
+  <rect x="703" y="372" width="14" height="14" class="boxa"/><rect x="703" y="448" width="14" height="14" class="boxa"/>
+  <line class="t2" x1="770" y1="214" x2="770" y2="505"/><text class="sm t2t" x="776" y="232">readout</text><text class="sm t2t" x="776" y="246">in</text>
+  <rect x="763" y="372" width="14" height="14" class="boxa"/>
+  <line class="t2" x1="840" y1="505" x2="840" y2="214"/><text class="sm t2t" x="846" y="232">readout</text><text class="sm t2t" x="846" y="246">out</text>
+  <polygon points="832,392 848,392 840,374" class="f2"/>
+  <text class="sm" x="790" y="414">HEMT</text>
+  <rect x="560" y="505" width="310" height="30" rx="3" class="boxw"/>
+  <text class="sm" x="715" y="524" text-anchor="middle">quantum-dot device on a sample PCB</text>
+</svg>
+</div>
+<figcaption><b>Figure 1.2.</b> The whole experiment on one page. The PC sends a program to the RFSoC. The RFSoC's FPGA plays pulses through its DACs and records the returning signal with its ADCs. Room-temperature electronics shape these signals and add the many DC gate voltages. Inside the dilution refrigerator, lines going down are attenuated and filtered to block heat and noise; the readout signal coming up is amplified by a cryogenic amplifier before it leaves the fridge. Chapters 16–17 explain each part.</figcaption>
+</figure>
+
+<p>Here is how one "shot" of a typical spin-qubit experiment flows through Figure 1.1:</p>
+<ol>
+<li>You write a short Python program in a Jupyter notebook. With QICK it might say: "pulse gate P1 to −5 mV for 1 µs (initialise), apply a 20 ns microwave burst at 5.2 GHz (rotate the spin), pulse P1 to the readout point and record the sensor signal for 2 µs; repeat 10 000 times."</li>
+<li>The QICK library compiles this into a program for the <dfn id="g-tprocessor" title="QICK's timed processor: a small custom CPU in the FPGA that schedules pulses and readouts with clock-cycle precision.">tProcessor</dfn>, a small processor built in the FPGA fabric that executes commands at precise clock ticks, and sends it to the board over Ethernet.</li>
+<li>The tProcessor tells the signal generators exactly when to start. The generators compute waveform samples and feed them to the DACs at 9.8 GSPS.</li>
+<li>Analog signals leave the SMA connectors, pass through room-temperature electronics and down the fridge lines to the device.</li>
+<li>The electron responds. Its spin state is converted into a charge state (Chapter 11), which changes the conductance of a nearby charge sensor, which changes the readout signal reflected back up the fridge.</li>
+<li>The ADC samples the returning signal. FPGA logic multiplies it by a reference sine wave, filters and adds up the result, so that each shot gives just two numbers, I and Q (Chapter 23).</li>
+<li>After all repetitions the averaged or single-shot I/Q values are sent back to the PC, where you plot them, fit them and decide what to change.</li>
+</ol>
+
+<h2 id="big-picture-what-the-4x2-can-and-cannot-do-at-a-glance"><span class="sn">1.6</span>What the 4x2 can and cannot do, at a glance</h2>
+
+<p>The details fill Chapters 28–30 and 45, but you should know the headline facts now so that nothing surprises you later. They come from the board's documentation <cite class="r">[<a href="#ref-rfsocpynq4x2" title="RFSoC-PYNQ 4x2 overview page">1</a>, <a href="#ref-rd4x2manual" title="Real Digital RFSoC 4x2 Reference Manual">2</a>]</cite> and the QICK firmware for this board <cite class="r">[<a href="#ref-qickrepo" title="QICK GitHub repository">3</a>]</cite>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Feature</th><th>RFSoC 4x2</th><th>What it means for spin qubits</th></tr></thead>
+<tbody>
+<tr><td>Analog outputs</td><td>2 DACs on SMA connectors, 14-bit, up to 9.85 GSPS (QICK uses 9.8304 GSPS)</td><td>Two independent fast output channels. Enough for readout plus one drive or gate, not for a full multi-gate device.</td></tr>
+<tr><td>Analog inputs</td><td>4 ADCs on SMA, 14-bit, up to 5 GSPS (QICK uses 4.42368 GSPS); QICK standard firmware reads 2 of them</td><td>Plenty for reading charge sensors.</td></tr>
+<tr><td>Coupling</td><td>Every SMA port passes through capacitors and a balun rated 10 MHz–10 GHz</td><td>No DC and no slow signals. Long flat gate pulses droop. Baseband gate pulsing needs either hardware modification or a different board.</td></tr>
+<tr><td>Frequency range</td><td>Direct synthesis up to about 6 GHz analog bandwidth</td><td>Reflectometry (100 MHz–1 GHz) is easy. EDSR at low fields (a few GHz) is direct; higher frequencies need an external mixer.</td></tr>
+<tr><td>Real-time logic</td><td>FPGA + QICK tProcessor with conditional branching</td><td>Feedback, active reset, real-time averaging, fast 2D scans.</td></tr>
+<tr><td>Digital I/O</td><td>2 PMOD headers (QICK uses 8 outputs as triggers)</td><td>Trigger DC sources, scopes, other instruments.</td></tr>
+<tr><td>Price</td><td>$2,499 academic (2026), universities and research institutes only</td><td>Far cheaper than commercial qubit controllers.</td></tr>
+</tbody></table></div>
+
+<div class="box board"><span class="tag">On the 4x2</span>
+<p>The most important single fact for your work is the third row. Spin qubits in gate-defined dots are controlled mostly by <i>baseband</i> gate voltages, meaning pulses that start and end at a DC level, last anything from nanoseconds to milliseconds, and have no carrier frequency. The 4x2's outputs are transformer-coupled and AC-coupled, so they cannot hold a DC level. The experiments that used RFSoCs on spin qubits so far all used the larger ZCU216 board with DC-coupled amplifiers <cite class="r">[<a href="#ref-wessels2026" title="Wessels et al., RFSoC EO qubit (2026)">11</a>, <a href="#ref-spinqick" title="spinQICK repository">10</a>]</cite>. With the 4x2 you can still do a great deal: RF reflectometry readout, microwave EDSR drive, fast charge-stability maps using AC-coupled tricks, single-shot readout analysis and real-time feedback. Baseband pulsing needs extra hardware, discussed honestly in Chapters 29 and 38.</p>
+</div>
+
+<h2 id="big-picture-the-software-stack-from-top-to-bottom"><span class="sn">1.7</span>The software stack, from top to bottom</h2>
+
+<p>Several layers of software and firmware sit between your notebook and the DAC pins. You will meet each in its own chapter, so here is the list:</p>
+<ol>
+<li><b>Jupyter notebook</b>: an interactive Python document in your browser (Chapter 31).</li>
+<li><b>Your experiment code</b>: Python classes describing pulse sequences, sweeps and analysis. With spinQICK, many standard spin-qubit experiments are already written.</li>
+<li><b>QICK Python library</b>: translates your pulse sequence into tProcessor machine code, configures generators and readouts, and collects data (Chapters 33–35).</li>
+<li><b>PYNQ</b>: AMD's Python framework that loads FPGA designs ("overlays") and gives Python access to their registers and memories (Chapters 31–32).</li>
+<li><b>Linux</b> on the ARM cores.</li>
+<li><b>The bitstream</b>: the file that configures the FPGA fabric into QICK's circuits (Chapter 27).</li>
+<li><b>The RF data converters</b>: hard-wired DAC and ADC blocks on the chip, configured by the bitstream and by Python (Chapter 26).</li>
+</ol>
+
+<div class="box analogy"><span class="tag">Analogy</span>
+<p>Think of the RFSoC as an orchestra. The ARM CPU is the manager who talks to the outside world (you) and hands out the sheet music. The tProcessor in the FPGA is the conductor who keeps perfect time. The signal generators are the musicians who play the notes, and the DACs are their instruments. The ADCs and readout blocks are the recording engineers. QICK is the arrangement that tells everyone their part. PYNQ is the stage crew who set up the hall.</p>
+</div>
+
+<h2 id="big-picture-how-the-rest-of-the-book-is-organised"><span class="sn">1.8</span>How the rest of the book is organised</h2>
+
+<p>The book climbs from physics to hardware to experiments:</p>
+<ul>
+<li><b>Part I (Chapters 2–5)</b> builds the quantum mechanics of a two-level system: states, rotations, decoherence and measurement. This is the language every qubit paper uses.</li>
+<li><b>Parts II and III (Chapters 6–15)</b> are the heart of the physics: how quantum dots form, how we see single electrons, how spin qubits of every kind (single-spin, singlet–triplet, exchange-only and others) are made, controlled and read out, and how a real device is tuned.</li>
+<li><b>Part IV (Chapters 16–17)</b> tours the lab: refrigerator, wiring and instruments.</li>
+<li><b>Parts V and VI (Chapters 18–27)</b> teach signals, sampling, I/Q, digital signal processing, FPGAs and the RFSoC chip, following and extending AMD's SDR book <cite class="r">[<a href="#ref-sdrbook" title="Crockett, Northcote, Stewart, SDR with RFSoC (2023)">5</a>]</cite>.</li>
+<li><b>Parts VII–IX (Chapters 28–37)</b> cover the 4x2 board, PYNQ, QICK and spinQICK in depth.</li>
+<li><b>Part X (Chapters 38–44)</b> describes each real experiment: what it measures, the pulse sequence, how to run it on the 4x2, what extra hardware is needed, and what good data looks like.</li>
+<li><b>Part XI (Chapters 45–46)</b> gives an honest capability map and a step-by-step plan for your own work with the board.</li>
+</ul>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why can't spin-qubit experiments be done at room temperature?</p>
+<details><summary>Show answer</summary><div>Thermal energy \(k_BT\) at 300 K (about 26 meV) is much larger than the charging energy (a few meV) and the spin splitting (about 0.1 meV at 1 T), so thermal excitations would randomise both the electron number and the spin. Cooling to about 10–100 mK makes \(k_BT\) of order 1–10 µeV, well below these energies.</div></details>
+<p>2. Name the four kinds of electrical signal most spin-qubit experiments need, and say which one the 4x2 cannot produce without modification.</p>
+<details><summary>Show answer</summary><div>DC gate voltages, fast baseband gate pulses, microwave drive, and readout stimulus/response (plus triggers). The 4x2 cannot produce DC voltages or long baseband pulses because its outputs are AC-coupled through capacitors and baluns.</div></details>
+<p>3. In one sentence each, what do the DAC, ADC, FPGA fabric and ARM CPU of an RFSoC do in a qubit experiment?</p>
+<details><summary>Show answer</summary><div>The DAC turns computed waveform samples into the analog pulses sent to the device; the ADC digitises the returning readout signal; the FPGA fabric runs the timing processor, waveform generators and real-time demodulation; the ARM CPU runs Linux and Python, receives programs from the PC and returns data.</div></details>
+</div>
+
+<div class="box key"><span class="tag">Summary</span>
+<ul>
+<li>A spin qubit is the spin of a single electron (or hole) trapped in a gate-defined quantum dot, cooled to millikelvin temperatures in a dilution refrigerator.</li>
+<li>Experiments need DC gate voltages, fast baseband pulses, microwave drive, readout signals and triggers.</li>
+<li>An RFSoC combines fast DACs, fast ADCs, FPGA logic and ARM CPUs; QICK and spinQICK turn it into a qubit controller.</li>
+<li>The 4x2 has 2 outputs and 4 inputs, all AC-coupled (10 MHz–10 GHz baluns). It is excellent for readout and microwave work and needs extra hardware for baseband gate pulsing.</li>
+</ul>
+</div>
+
+<nav class="pager"><a class="prev" href="#cover"><small>Previous</small>Contents</a><a class="next" href="#bloch"><small>Next</small>Chapter 2 · Two-level systems, states and the Bloch sphere</a></nav>
+</article>
+<article class="chapter" id="bloch" data-label="Chapter 2 · Two-level systems, states and the Bloch sphere" hidden>
+<p class="kicker">Part I · Quantum mechanics you need · Chapter 2</p>
+<h1>Two-level systems, states and the Bloch sphere</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#big-picture"><small>Previous</small>Chapter 1 · The big picture: from one electron to a Python notebook</a><a class="next" href="#rabi"><small>Next</small>Chapter 3 · Driving a qubit: resonance, Rabi oscillations and the rotating frame</a></nav>
+</article>
+<article class="chapter" id="rabi" data-label="Chapter 3 · Driving a qubit: resonance, Rabi oscillations and the rotating frame" hidden>
+<p class="kicker">Part I · Quantum mechanics you need · Chapter 3</p>
+<h1>Driving a qubit: resonance, Rabi oscillations and the rotating frame</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#bloch"><small>Previous</small>Chapter 2 · Two-level systems, states and the Bloch sphere</a><a class="next" href="#decoherence"><small>Next</small>Chapter 4 · Decoherence and noise: T1, T2*, T2 and noise spectra</a></nav>
+</article>
+<article class="chapter" id="decoherence" data-label="Chapter 4 · Decoherence and noise: T1, T2*, T2 and noise spectra" hidden>
+<p class="kicker">Part I · Quantum mechanics you need · Chapter 4</p>
+<h1>Decoherence and noise: T1, T2*, T2 and noise spectra</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#rabi"><small>Previous</small>Chapter 3 · Driving a qubit: resonance, Rabi oscillations and the rotating frame</a><a class="next" href="#gates-fidelity"><small>Next</small>Chapter 5 · Gates, measurement and fidelity</a></nav>
+</article>
+<article class="chapter" id="gates-fidelity" data-label="Chapter 5 · Gates, measurement and fidelity" hidden>
+<p class="kicker">Part I · Quantum mechanics you need · Chapter 5</p>
+<h1>Gates, measurement and fidelity</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#decoherence"><small>Previous</small>Chapter 4 · Decoherence and noise: T1, T2*, T2 and noise spectra</a><a class="next" href="#semiconductors"><small>Next</small>Chapter 6 · Electrons in semiconductors: bands, heterostructures and 2DEGs</a></nav>
+</article>
+<article class="chapter" id="semiconductors" data-label="Chapter 6 · Electrons in semiconductors: bands, heterostructures and 2DEGs" hidden>
+<p class="kicker">Part II · Semiconductor quantum dots · Chapter 6</p>
+<h1>Electrons in semiconductors: bands, heterostructures and 2DEGs</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#gates-fidelity"><small>Previous</small>Chapter 5 · Gates, measurement and fidelity</a><a class="next" href="#coulomb"><small>Next</small>Chapter 7 · Making a quantum dot: Coulomb blockade and the constant-interaction model</a></nav>
+</article>
+<article class="chapter" id="coulomb" data-label="Chapter 7 · Making a quantum dot: Coulomb blockade and the constant-interaction model" hidden>
+<p class="kicker">Part II · Semiconductor quantum dots · Chapter 7</p>
+<h1>Making a quantum dot: Coulomb blockade and the constant-interaction model</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#semiconductors"><small>Previous</small>Chapter 6 · Electrons in semiconductors: bands, heterostructures and 2DEGs</a><a class="next" href="#double-dots"><small>Next</small>Chapter 8 · Double and multiple dots: charge stability diagrams and virtual gates</a></nav>
+</article>
+<article class="chapter" id="double-dots" data-label="Chapter 8 · Double and multiple dots: charge stability diagrams and virtual gates" hidden>
+<p class="kicker">Part II · Semiconductor quantum dots · Chapter 8</p>
+<h1>Double and multiple dots: charge stability diagrams and virtual gates</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#coulomb"><small>Previous</small>Chapter 7 · Making a quantum dot: Coulomb blockade and the constant-interaction model</a><a class="next" href="#sensing"><small>Next</small>Chapter 9 · Charge sensing and RF reflectometry</a></nav>
+</article>
+<article class="chapter" id="sensing" data-label="Chapter 9 · Charge sensing and RF reflectometry" hidden>
+<p class="kicker">Part II · Semiconductor quantum dots · Chapter 9</p>
+<h1>Charge sensing and RF reflectometry</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#double-dots"><small>Previous</small>Chapter 8 · Double and multiple dots: charge stability diagrams and virtual gates</a><a class="next" href="#spin-physics"><small>Next</small>Chapter 10 · An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys</a></nav>
+</article>
+<article class="chapter" id="spin-physics" data-label="Chapter 10 · An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 10</p>
+<h1>An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#sensing"><small>Previous</small>Chapter 9 · Charge sensing and RF reflectometry</a><a class="next" href="#spin-readout"><small>Next</small>Chapter 11 · Spin readout: Elzerman, Pauli spin blockade and latching</a></nav>
+</article>
+<article class="chapter" id="spin-readout" data-label="Chapter 11 · Spin readout: Elzerman, Pauli spin blockade and latching" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 11</p>
+<h1>Spin readout: Elzerman, Pauli spin blockade and latching</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#spin-physics"><small>Previous</small>Chapter 10 · An electron spin in a dot: Zeeman, spin-orbit, hyperfine and valleys</a><a class="next" href="#ld-qubits"><small>Next</small>Chapter 12 · Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets</a></nav>
+</article>
+<article class="chapter" id="ld-qubits" data-label="Chapter 12 · Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 12</p>
+<h1>Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#spin-readout"><small>Previous</small>Chapter 11 · Spin readout: Elzerman, Pauli spin blockade and latching</a><a class="next" href="#st-eo"><small>Next</small>Chapter 13 · Singlet–triplet, exchange-only and other encoded qubits</a></nav>
+</article>
+<article class="chapter" id="st-eo" data-label="Chapter 13 · Singlet–triplet, exchange-only and other encoded qubits" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 13</p>
+<h1>Singlet–triplet, exchange-only and other encoded qubits</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#ld-qubits"><small>Previous</small>Chapter 12 · Single-spin (Loss–DiVincenzo) qubits: ESR, EDSR and micromagnets</a><a class="next" href="#two-qubit"><small>Next</small>Chapter 14 · Two-qubit gates and multi-qubit devices</a></nav>
+</article>
+<article class="chapter" id="two-qubit" data-label="Chapter 14 · Two-qubit gates and multi-qubit devices" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 14</p>
+<h1>Two-qubit gates and multi-qubit devices</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#st-eo"><small>Previous</small>Chapter 13 · Singlet–triplet, exchange-only and other encoded qubits</a><a class="next" href="#tuning"><small>Next</small>Chapter 15 · Tuning a device: from first cooldown to a working qubit</a></nav>
+</article>
+<article class="chapter" id="tuning" data-label="Chapter 15 · Tuning a device: from first cooldown to a working qubit" hidden>
+<p class="kicker">Part III · Spin qubits · Chapter 15</p>
+<h1>Tuning a device: from first cooldown to a working qubit</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#two-qubit"><small>Previous</small>Chapter 14 · Two-qubit gates and multi-qubit devices</a><a class="next" href="#fridge"><small>Next</small>Chapter 16 · The dilution refrigerator and its wiring</a></nav>
+</article>
+<article class="chapter" id="fridge" data-label="Chapter 16 · The dilution refrigerator and its wiring" hidden>
+<p class="kicker">Part IV · The lab · Chapter 16</p>
+<h1>The dilution refrigerator and its wiring</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#tuning"><small>Previous</small>Chapter 15 · Tuning a device: from first cooldown to a working qubit</a><a class="next" href="#rack"><small>Next</small>Chapter 17 · The traditional instrument rack, box by box</a></nav>
+</article>
+<article class="chapter" id="rack" data-label="Chapter 17 · The traditional instrument rack, box by box" hidden>
+<p class="kicker">Part IV · The lab · Chapter 17</p>
+<h1>The traditional instrument rack, box by box</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#fridge"><small>Previous</small>Chapter 16 · The dilution refrigerator and its wiring</a><a class="next" href="#signals"><small>Next</small>Chapter 18 · Signals, power, decibels and impedance</a></nav>
+</article>
+<article class="chapter" id="signals" data-label="Chapter 18 · Signals, power, decibels and impedance" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 18</p>
+<h1>Signals, power, decibels and impedance</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#rack"><small>Previous</small>Chapter 17 · The traditional instrument rack, box by box</a><a class="next" href="#sampling"><small>Next</small>Chapter 19 · Sampling, quantisation and Nyquist zones</a></nav>
+</article>
+<article class="chapter" id="sampling" data-label="Chapter 19 · Sampling, quantisation and Nyquist zones" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 19</p>
+<h1>Sampling, quantisation and Nyquist zones</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#signals"><small>Previous</small>Chapter 18 · Signals, power, decibels and impedance</a><a class="next" href="#iq"><small>Next</small>Chapter 20 · I/Q signals, mixing, NCOs and digital up/down-conversion</a></nav>
+</article>
+<article class="chapter" id="iq" data-label="Chapter 20 · I/Q signals, mixing, NCOs and digital up/down-conversion" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 20</p>
+<h1>I/Q signals, mixing, NCOs and digital up/down-conversion</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#sampling"><small>Previous</small>Chapter 19 · Sampling, quantisation and Nyquist zones</a><a class="next" href="#filters"><small>Next</small>Chapter 21 · Spectra, filters, decimation and interpolation</a></nav>
+</article>
+<article class="chapter" id="filters" data-label="Chapter 21 · Spectra, filters, decimation and interpolation" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 21</p>
+<h1>Spectra, filters, decimation and interpolation</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#iq"><small>Previous</small>Chapter 20 · I/Q signals, mixing, NCOs and digital up/down-conversion</a><a class="next" href="#noise-fom"><small>Next</small>Chapter 22 · Noise, converter figures of merit and frequency planning</a></nav>
+</article>
+<article class="chapter" id="noise-fom" data-label="Chapter 22 · Noise, converter figures of merit and frequency planning" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 22</p>
+<h1>Noise, converter figures of merit and frequency planning</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#filters"><small>Previous</small>Chapter 21 · Spectra, filters, decimation and interpolation</a><a class="next" href="#demod"><small>Next</small>Chapter 23 · From waveform to qubit result: demodulation, integration and thresholds</a></nav>
+</article>
+<article class="chapter" id="demod" data-label="Chapter 23 · From waveform to qubit result: demodulation, integration and thresholds" hidden>
+<p class="kicker">Part V · Signals and software-defined radio · Chapter 23</p>
+<h1>From waveform to qubit result: demodulation, integration and thresholds</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#noise-fom"><small>Previous</small>Chapter 22 · Noise, converter figures of merit and frequency planning</a><a class="next" href="#fpga"><small>Next</small>Chapter 24 · Digital logic and FPGA fabric</a></nav>
+</article>
+<article class="chapter" id="fpga" data-label="Chapter 24 · Digital logic and FPGA fabric" hidden>
+<p class="kicker">Part VI · FPGAs and the RFSoC chip · Chapter 24</p>
+<h1>Digital logic and FPGA fabric</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#demod"><small>Previous</small>Chapter 23 · From waveform to qubit result: demodulation, integration and thresholds</a><a class="next" href="#zynq"><small>Next</small>Chapter 25 · Zynq UltraScale+: processing system, programmable logic, AXI and DMA</a></nav>
+</article>
+<article class="chapter" id="zynq" data-label="Chapter 25 · Zynq UltraScale+: processing system, programmable logic, AXI and DMA" hidden>
+<p class="kicker">Part VI · FPGAs and the RFSoC chip · Chapter 25</p>
+<h1>Zynq UltraScale+: processing system, programmable logic, AXI and DMA</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#fpga"><small>Previous</small>Chapter 24 · Digital logic and FPGA fabric</a><a class="next" href="#rfdc"><small>Next</small>Chapter 26 · Inside the RFSoC data converters</a></nav>
+</article>
+<article class="chapter" id="rfdc" data-label="Chapter 26 · Inside the RFSoC data converters" hidden>
+<p class="kicker">Part VI · FPGAs and the RFSoC chip · Chapter 26</p>
+<h1>Inside the RFSoC data converters</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#zynq"><small>Previous</small>Chapter 25 · Zynq UltraScale+: processing system, programmable logic, AXI and DMA</a><a class="next" href="#flow"><small>Next</small>Chapter 27 · The design flow: Vivado, bitstreams and overlays</a></nav>
+</article>
+<article class="chapter" id="flow" data-label="Chapter 27 · The design flow: Vivado, bitstreams and overlays" hidden>
+<p class="kicker">Part VI · FPGAs and the RFSoC chip · Chapter 27</p>
+<h1>The design flow: Vivado, bitstreams and overlays</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#rfdc"><small>Previous</small>Chapter 26 · Inside the RFSoC data converters</a><a class="next" href="#board-tour"><small>Next</small>Chapter 28 · A tour of the RFSoC 4x2 board</a></nav>
+</article>
+<article class="chapter" id="board-tour" data-label="Chapter 28 · A tour of the RFSoC 4x2 board" hidden>
+<p class="kicker">Part VII · The RFSoC 4x2 board · Chapter 28</p>
+<h1>A tour of the RFSoC 4x2 board</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#flow"><small>Previous</small>Chapter 27 · The design flow: Vivado, bitstreams and overlays</a><a class="next" href="#frontend"><small>Next</small>Chapter 29 · The analog front end: baluns, limits, protection and modifications</a></nav>
+</article>
+<article class="chapter" id="frontend" data-label="Chapter 29 · The analog front end: baluns, limits, protection and modifications" hidden>
+<p class="kicker">Part VII · The RFSoC 4x2 board · Chapter 29</p>
+<h1>The analog front end: baluns, limits, protection and modifications</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#board-tour"><small>Previous</small>Chapter 28 · A tour of the RFSoC 4x2 board</a><a class="next" href="#clocks"><small>Next</small>Chapter 30 · Clocks, references, synchronisation and triggers</a></nav>
+</article>
+<article class="chapter" id="clocks" data-label="Chapter 30 · Clocks, references, synchronisation and triggers" hidden>
+<p class="kicker">Part VII · The RFSoC 4x2 board · Chapter 30</p>
+<h1>Clocks, references, synchronisation and triggers</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#frontend"><small>Previous</small>Chapter 29 · The analog front end: baluns, limits, protection and modifications</a><a class="next" href="#pynq"><small>Next</small>Chapter 31 · PYNQ: Linux, Jupyter, overlays and first boot</a></nav>
+</article>
+<article class="chapter" id="pynq" data-label="Chapter 31 · PYNQ: Linux, Jupyter, overlays and first boot" hidden>
+<p class="kicker">Part VIII · PYNQ · Chapter 31</p>
+<h1>PYNQ: Linux, Jupyter, overlays and first boot</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#clocks"><small>Previous</small>Chapter 30 · Clocks, references, synchronisation and triggers</a><a class="next" href="#pynq-hw"><small>Next</small>Chapter 32 · Talking to hardware from Python, and the SDR book labs</a></nav>
+</article>
+<article class="chapter" id="pynq-hw" data-label="Chapter 32 · Talking to hardware from Python, and the SDR book labs" hidden>
+<p class="kicker">Part VIII · PYNQ · Chapter 32</p>
+<h1>Talking to hardware from Python, and the SDR book labs</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#pynq"><small>Previous</small>Chapter 31 · PYNQ: Linux, Jupyter, overlays and first boot</a><a class="next" href="#qick-arch"><small>Next</small>Chapter 33 · QICK architecture</a></nav>
+</article>
+<article class="chapter" id="qick-arch" data-label="Chapter 33 · QICK architecture" hidden>
+<p class="kicker">Part IX · QICK and spinQICK · Chapter 33</p>
+<h1>QICK architecture</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#pynq-hw"><small>Previous</small>Chapter 32 · Talking to hardware from Python, and the SDR book labs</a><a class="next" href="#qick-4x2"><small>Next</small>Chapter 34 · QICK on the 4x2: firmware, channels and numbers</a></nav>
+</article>
+<article class="chapter" id="qick-4x2" data-label="Chapter 34 · QICK on the 4x2: firmware, channels and numbers" hidden>
+<p class="kicker">Part IX · QICK and spinQICK · Chapter 34</p>
+<h1>QICK on the 4x2: firmware, channels and numbers</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#qick-arch"><small>Previous</small>Chapter 33 · QICK architecture</a><a class="next" href="#qick-prog"><small>Next</small>Chapter 35 · Programming QICK with tProcessor v2</a></nav>
+</article>
+<article class="chapter" id="qick-prog" data-label="Chapter 35 · Programming QICK with tProcessor v2" hidden>
+<p class="kicker">Part IX · QICK and spinQICK · Chapter 35</p>
+<h1>Programming QICK with tProcessor v2</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#qick-4x2"><small>Previous</small>Chapter 34 · QICK on the 4x2: firmware, channels and numbers</a><a class="next" href="#qick-cal"><small>Next</small>Chapter 36 · Calibrations: loopback, time of flight, frequency and phase</a></nav>
+</article>
+<article class="chapter" id="qick-cal" data-label="Chapter 36 · Calibrations: loopback, time of flight, frequency and phase" hidden>
+<p class="kicker">Part IX · QICK and spinQICK · Chapter 36</p>
+<h1>Calibrations: loopback, time of flight, frequency and phase</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#qick-prog"><small>Previous</small>Chapter 35 · Programming QICK with tProcessor v2</a><a class="next" href="#spinqick"><small>Next</small>Chapter 37 · spinQICK, remote control and lab software</a></nav>
+</article>
+<article class="chapter" id="spinqick" data-label="Chapter 37 · spinQICK, remote control and lab software" hidden>
+<p class="kicker">Part IX · QICK and spinQICK · Chapter 37</p>
+<h1>spinQICK, remote control and lab software</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#qick-cal"><small>Previous</small>Chapter 36 · Calibrations: loopback, time of flight, frequency and phase</a><a class="next" href="#setup"><small>Next</small>Chapter 38 · Planning a spin-qubit setup around a 4x2</a></nav>
+</article>
+<article class="chapter" id="setup" data-label="Chapter 38 · Planning a spin-qubit setup around a 4x2" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 38</p>
+<h1>Planning a spin-qubit setup around a 4x2</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#spinqick"><small>Previous</small>Chapter 37 · spinQICK, remote control and lab software</a><a class="next" href="#exp-reflecto"><small>Next</small>Chapter 39 · Experiment: RF reflectometry readout</a></nav>
+</article>
+<article class="chapter" id="exp-reflecto" data-label="Chapter 39 · Experiment: RF reflectometry readout" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 39</p>
+<h1>Experiment: RF reflectometry readout</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#setup"><small>Previous</small>Chapter 38 · Planning a spin-qubit setup around a 4x2</a><a class="next" href="#exp-csd"><small>Next</small>Chapter 40 · Experiment: fast charge-stability maps and pulsed-gate spectroscopy</a></nav>
+</article>
+<article class="chapter" id="exp-csd" data-label="Chapter 40 · Experiment: fast charge-stability maps and pulsed-gate spectroscopy" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 40</p>
+<h1>Experiment: fast charge-stability maps and pulsed-gate spectroscopy</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-reflecto"><small>Previous</small>Chapter 39 · Experiment: RF reflectometry readout</a><a class="next" href="#exp-spinro"><small>Next</small>Chapter 41 · Experiment: spin readout, single shots and T1</a></nav>
+</article>
+<article class="chapter" id="exp-spinro" data-label="Chapter 41 · Experiment: spin readout, single shots and T1" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 41</p>
+<h1>Experiment: spin readout, single shots and T1</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-csd"><small>Previous</small>Chapter 40 · Experiment: fast charge-stability maps and pulsed-gate spectroscopy</a><a class="next" href="#exp-ld"><small>Next</small>Chapter 42 · Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking</a></nav>
+</article>
+<article class="chapter" id="exp-ld" data-label="Chapter 42 · Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 42</p>
+<h1>Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-spinro"><small>Previous</small>Chapter 41 · Experiment: spin readout, single shots and T1</a><a class="next" href="#exp-st-eo"><small>Next</small>Chapter 43 · Experiment: singlet–triplet and exchange-only qubits</a></nav>
+</article>
+<article class="chapter" id="exp-st-eo" data-label="Chapter 43 · Experiment: singlet–triplet and exchange-only qubits" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 43</p>
+<h1>Experiment: singlet–triplet and exchange-only qubits</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-ld"><small>Previous</small>Chapter 42 · Experiment: a micromagnet EDSR qubit, from spectroscopy to benchmarking</a><a class="next" href="#exp-2q"><small>Next</small>Chapter 44 · Experiment: two-qubit gates, feedback and stabilisation</a></nav>
+</article>
+<article class="chapter" id="exp-2q" data-label="Chapter 44 · Experiment: two-qubit gates, feedback and stabilisation" hidden>
+<p class="kicker">Part X · Experiments with the 4x2 · Chapter 44</p>
+<h1>Experiment: two-qubit gates, feedback and stabilisation</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-st-eo"><small>Previous</small>Chapter 43 · Experiment: singlet–triplet and exchange-only qubits</a><a class="next" href="#capability"><small>Next</small>Chapter 45 · What the 4x2 can and cannot do</a></nav>
+</article>
+<article class="chapter" id="capability" data-label="Chapter 45 · What the 4x2 can and cannot do" hidden>
+<p class="kicker">Part XI · Capability map and roadmap · Chapter 45</p>
+<h1>What the 4x2 can and cannot do</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#exp-2q"><small>Previous</small>Chapter 44 · Experiment: two-qubit gates, feedback and stabilisation</a><a class="next" href="#roadmap"><small>Next</small>Chapter 46 · Your roadmap with the board</a></nav>
+</article>
+<article class="chapter" id="roadmap" data-label="Chapter 46 · Your roadmap with the board" hidden>
+<p class="kicker">Part XI · Capability map and roadmap · Chapter 46</p>
+<h1>Your roadmap with the board</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#capability"><small>Previous</small>Chapter 45 · What the 4x2 can and cannot do</a><a class="next" href="#appx-math"><small>Next</small>Appendix A: Mathematics refresher</a></nav>
+</article>
+<article class="chapter" id="appx-math" data-label="Appendix A: Mathematics refresher" hidden>
+<p class="kicker">Back matter</p>
+<h1>Appendix A: Mathematics refresher</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#roadmap"><small>Previous</small>Chapter 46 · Your roadmap with the board</a><a class="next" href="#appx-safety"><small>Next</small>Appendix B: Handling, safety and protecting the board</a></nav>
+</article>
+<article class="chapter" id="appx-safety" data-label="Appendix B: Handling, safety and protecting the board" hidden>
+<p class="kicker">Back matter</p>
+<h1>Appendix B: Handling, safety and protecting the board</h1>
+
+<p class="status">This chapter is being written.</p>
+
+<nav class="pager"><a class="prev" href="#appx-math"><small>Previous</small>Appendix A: Mathematics refresher</a><a class="next" href="#glossary"><small>Next</small>Glossary</a></nav>
+</article>
+<article class="chapter" id="glossary" data-label="Glossary" hidden>
+<p class="kicker">Back matter</p>
+<h1>Glossary</h1>
+
+<p>Every term defined in the book, in alphabetical order. Click a term to jump to where it is first explained.</p>
+<dl class="gloss"><dt><a href="#g-dilution-refrigerator">dilution refrigerator</a></dt><dd>A refrigerator that reaches about 10 mK by mixing helium-3 into helium-4; the standard cryostat for qubit experiments. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-qick">QICK</a></dt><dd>Quantum Instrumentation Control Kit: open-source firmware and Python software that turns an AMD RFSoC board into a qubit controller. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-qubit">qubit</a></dt><dd>A quantum two-level system used to store and process quantum information; the quantum version of a bit. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-rfsoc">RFSoC</a></dt><dd>Radio-Frequency System-on-Chip: an AMD (Xilinx) chip combining multi-GHz ADCs and DACs, FPGA fabric and ARM processors on one die. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-spinqick">spinQICK</a></dt><dd>HRL Laboratories&#x27; open-source extension of QICK with experiments for gate-defined spin qubits (charge stability, PSB readout, LD and exchange-only control). <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-superposition">superposition</a></dt><dd>A quantum state that is a weighted combination of basis states, such as a|0⟩ + b|1⟩. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-tprocessor">tProcessor</a></dt><dd>QICK&#x27;s timed processor: a small custom CPU in the FPGA that schedules pulses and readouts with clock-cycle precision. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd><dt><a href="#g-two-dimensional-electron-gas-2deg">two-dimensional electron gas (2DEG)</a></dt><dd>Electrons that can move freely in a plane but are confined in the perpendicular direction, typically in a quantum well or at an interface. <span class="status">(Chapter 1 · The big picture: from one electron to a Python notebook)</span></dd></dl>
+
+<nav class="pager"><a class="prev" href="#appx-safety"><small>Previous</small>Appendix B: Handling, safety and protecting the board</a><a class="next" href="#references"><small>Next</small>References</a></nav>
+</article>
+<article class="chapter" id="references" data-label="References" hidden>
+<p class="kicker">Back matter</p>
+<h1>References</h1>
+
+<p>Sources are numbered in the order they are first cited. Sources listed after the last cited one are useful background reading that the text does not cite directly.</p>
+<ol class="refs"><li id="ref-rfsocpynq4x2">RFSoC-PYNQ team, <i>RFSoC 4x2 Overview</i> (board page, accessed Oct 2026). <a href="https://www.rfsoc-pynq.io/rfsoc_4x2_overview.html">link</a></li>
+<li id="ref-rd4x2manual">Real Digital, <i>RFSoC 4x2 Reference Manual</i>, revision A6, and board schematic (Gen3 V1). <a href="https://www.realdigital.org/hardware/rfsoc-4x2">link</a></li>
+<li id="ref-qickrepo">QICK collaboration, <i>openquantumhardware/qick</i> (firmware, software, demos; software version 0.2.436 used here). <a href="https://github.com/openquantumhardware/qick">link</a></li>
+<li id="ref-qickdocs">QICK collaboration, <i>QICK documentation</i> (docs.qick.dev), including the tProc v2 reference and tutorials 00–15. <a href="https://docs.qick.dev">link</a></li>
+<li id="ref-sdrbook">L. H. Crockett, D. Northcote, R. W. Stewart (eds.), <i>Software Defined Radio with Zynq UltraScale+ RFSoC</i>, 1st ed., Strathclyde Academic Media (2023). Free PDF from the book website. <a href="https://www.rfsocbook.com">link</a></li>
+<li id="ref-lossdiv1998">D. Loss and D. P. DiVincenzo, “Quantum computation with quantum dots,” <i>Phys. Rev. A</i> <b>57</b>, 120 (1998); arXiv:cond-mat/9701055. <a href="https://arxiv.org/abs/cond-mat/9701055">link</a></li>
+<li id="ref-burkard2023">G. Burkard, T. D. Ladd, A. Pan, J. M. Nichol, J. R. Petta, “Semiconductor spin qubits,” <i>Rev. Mod. Phys.</i> <b>95</b>, 025003 (2023); arXiv:2112.08863. <a href="https://arxiv.org/abs/2112.08863">link</a></li>
+<li id="ref-zwanenburg2013">F. A. Zwanenburg <i>et al.</i>, “Silicon quantum electronics,” <i>Rev. Mod. Phys.</i> <b>85</b>, 961 (2013); arXiv:1206.5202. <a href="https://arxiv.org/abs/1206.5202">link</a></li>
+<li id="ref-stefanazzi2022">L. Stefanazzi <i>et al.</i>, “The QICK (Quantum Instrumentation Control Kit): Readout and control for qubits and detectors,” <i>Rev. Sci. Instrum.</i> <b>93</b>, 044709 (2022); arXiv:2110.00557. <a href="https://arxiv.org/abs/2110.00557">link</a></li>
+<li id="ref-spinqick">HRL Laboratories, <i>spinQICK</i>: open-source extension of QICK for electrostatically confined spin qubits (v3.0.0). <a href="https://github.com/HRL-Laboratories/spinqick">link</a></li>
+<li id="ref-wessels2026">A. L. Wessels, M. G. Bimstefer, J. D. Broz, A. Senanian, A. E. Oriani, “Demonstrating RFSoC-based Control of a Fully Connected Exchange-Only Qubit,” arXiv:2610.31998 (2026). <a href="https://arxiv.org/abs/2610.31998">link</a></li>
+<li id="ref-arnaldi2026">L. Arnaldi <i>et al.</i>, “The QICK Box: A Modular RF Front-End System for Quantum Control and Readout,” arXiv:2610.03609 (2026). <a href="https://arxiv.org/abs/2610.03609">link</a></li>
+<li id="ref-barthel2009">C. Barthel, D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Rapid single-shot measurement of a singlet-triplet qubit,” <i>Phys. Rev. Lett.</i> <b>103</b>, 160503 (2009); arXiv:0902.0227. <a href="https://arxiv.org/abs/0902.0227">link</a></li>
+<li id="ref-bryan2026">J. Bryan, T. J. Wilson, H.-W. Jiang, “Real-Time FPGA-Based Multi-Parameter Feedback Stabilization of a Silicon Double Quantum Dot,” arXiv:2608.10325 (2026). <a href="https://arxiv.org/abs/2608.10325">link</a></li>
+<li id="ref-chatterjee2021">A. Chatterjee <i>et al.</i>, “Semiconductor qubits in practice,” <i>Nat. Rev. Phys.</i> <b>3</b>, 157 (2021); arXiv:2005.06564. <a href="https://arxiv.org/abs/2005.06564">link</a></li>
+<li id="ref-connors2020">E. J. Connors, J. Nelson, J. M. Nichol, “Rapid high-fidelity spin-state readout in Si/SiGe quantum dots via rf reflectometry,” <i>Phys. Rev. Applied</i> <b>13</b>, 024019 (2020); arXiv:1910.08755. <a href="https://arxiv.org/abs/1910.08755">link</a></li>
+<li id="ref-ding2024">C. Ding <i>et al.</i>, “Experimental advances with the QICK (Quantum Instrumentation Control Kit) for superconducting quantum hardware,” <i>Phys. Rev. Research</i> <b>6</b>, 013305 (2024); arXiv:2311.17171. <a href="https://arxiv.org/abs/2311.17171">link</a></li>
+<li id="ref-divincenzo2000">D. P. DiVincenzo, D. Bacon, J. Kempe, G. Burkard, K. B. Whaley, “Universal quantum computation with the exchange interaction,” <i>Nature</i> <b>408</b>, 339 (2000); arXiv:quant-ph/0005116. <a href="https://arxiv.org/abs/quant-ph/0005116">link</a></li>
+<li id="ref-ds926">AMD, <i>Zynq UltraScale+ RFSoC Data Sheet: DC and AC Switching Characteristics</i> (DS926). <a href="https://docs.amd.com/r/en-US/ds926-zynq-ultrascale-plus-rfsoc">link</a></li>
+<li id="ref-elzerman2004">J. M. Elzerman <i>et al.</i>, “Single-shot read-out of an individual electron spin in a quantum dot,” <i>Nature</i> <b>430</b>, 431 (2004); arXiv:cond-mat/0411232. <a href="https://arxiv.org/abs/cond-mat/0411232">link</a></li>
+<li id="ref-hanson2007">R. Hanson, L. P. Kouwenhoven, J. R. Petta, S. Tarucha, L. M. K. Vandersypen, “Spins in few-electron quantum dots,” <i>Rev. Mod. Phys.</i> <b>79</b>, 1217 (2007); arXiv:cond-mat/0610433. <a href="https://arxiv.org/abs/cond-mat/0610433">link</a></li>
+<li id="ref-harveycollard2018">P. Harvey-Collard <i>et al.</i>, “High-fidelity single-shot readout for a spin qubit via an enhanced latching mechanism,” <i>Phys. Rev. X</i> <b>8</b>, 021046 (2018); arXiv:1703.02651. <a href="https://arxiv.org/abs/1703.02651">link</a></li>
+<li id="ref-hensgens2017">T. Hensgens <i>et al.</i>, “Quantum simulation of a Fermi–Hubbard model using a semiconductor quantum dot array,” <i>Nature</i> <b>548</b>, 70 (2017); arXiv:1702.07511. <a href="https://arxiv.org/abs/1702.07511">link</a></li>
+<li id="ref-ihn">T. Ihn, <i>Semiconductor Nanostructures: Quantum States and Electronic Transport</i>, Oxford University Press (2010).</li>
+<li id="ref-kawakami2014">E. Kawakami <i>et al.</i>, “Electrical control of a long-lived spin qubit in a Si/SiGe quantum dot,” <i>Nat. Nanotechnol.</i> <b>9</b>, 666 (2014); arXiv:1404.5402. <a href="https://arxiv.org/abs/1404.5402">link</a></li>
+<li id="ref-koppens2006">F. H. L. Koppens <i>et al.</i>, “Driven coherent oscillations of a single electron spin in a quantum dot,” <i>Nature</i> <b>442</b>, 766 (2006); arXiv:cond-mat/0608459. <a href="https://arxiv.org/abs/cond-mat/0608459">link</a></li>
+<li id="ref-kouwenhoven1997">L. P. Kouwenhoven <i>et al.</i>, “Electron transport in quantum dots,” in <i>Mesoscopic Electron Transport</i>, NATO ASI Series E 345, Kluwer (1997).</li>
+<li id="ref-krantz2019">P. Krantz <i>et al.</i>, “A quantum engineer's guide to superconducting qubits,” <i>Appl. Phys. Rev.</i> <b>6</b>, 021318 (2019). (Used here only for general control-electronics concepts.) <a href="https://arxiv.org/abs/1904.06560">link</a></li>
+<li id="ref-krinner2019">S. Krinner <i>et al.</i>, “Engineering cryogenic setups for 100-qubit scale superconducting circuit systems,” <i>EPJ Quantum Technol.</i> <b>6</b>, 2 (2019). <a href="https://doi.org/10.1140/epjqt/s40507-019-0072-0">link</a></li>
+<li id="ref-levitt">M. H. Levitt, <i>Spin Dynamics: Basics of Nuclear Magnetic Resonance</i>, 2nd ed., Wiley (2008).</li>
+<li id="ref-martin2026">D. Martin <i>et al.</i>, “XCOM: Full Mesh Network Synchronization and Low-Latency Communication for QICK,” arXiv:2603.18977 (2026). <a href="https://arxiv.org/abs/2603.18977">link</a></li>
+<li id="ref-mills2022">A. R. Mills <i>et al.</i>, “Two-qubit silicon quantum processor with operation fidelity exceeding 99%,” <i>Sci. Adv.</i> <b>8</b>, eabn5130 (2022); arXiv:2111.11937. <a href="https://arxiv.org/abs/2111.11937">link</a></li>
+<li id="ref-nielsenchuang">M. A. Nielsen and I. L. Chuang, <i>Quantum Computation and Quantum Information</i>, 10th anniversary ed., Cambridge University Press (2010).</li>
+<li id="ref-noiri2022">A. Noiri <i>et al.</i>, “Fast universal quantum gate above the fault-tolerance threshold in silicon,” <i>Nature</i> <b>601</b>, 338 (2022). <a href="https://doi.org/10.1038/s41586-021-04182-y">link</a></li>
+<li id="ref-petta2005">J. R. Petta <i>et al.</i>, “Coherent manipulation of coupled electron spins in semiconductor quantum dots,” <i>Science</i> <b>309</b>, 2180 (2005). <a href="https://doi.org/10.1126/science.1116955">link</a></li>
+<li id="ref-pg269">AMD, <i>Zynq UltraScale+ RFSoC RF Data Converter LogiCORE IP Product Guide</i> (PG269). <a href="https://docs.amd.com/r/en-US/pg269-rf-data-converter">link</a></li>
+<li id="ref-philips2022">S. G. J. Philips <i>et al.</i>, “Universal control of a six-qubit quantum processor in silicon,” <i>Nature</i> <b>609</b>, 919 (2022); arXiv:2202.09252. <a href="https://arxiv.org/abs/2202.09252">link</a></li>
+<li id="ref-pioro2008">M. Pioro-Ladrière <i>et al.</i>, “Electrically driven single-electron spin resonance in a slanting Zeeman field,” <i>Nat. Phys.</i> <b>4</b>, 776 (2008); arXiv:0805.1083. <a href="https://arxiv.org/abs/0805.1083">link</a></li>
+<li id="ref-pobell">F. Pobell, <i>Matter and Methods at Low Temperatures</i>, 3rd ed., Springer (2007).</li>
+<li id="ref-pozar">D. M. Pozar, <i>Microwave Engineering</i>, 4th ed., Wiley (2012).</li>
+<li id="ref-pynq">AMD/Xilinx, <i>PYNQ: Python productivity for Zynq</i> (framework documentation and RFSoC-PYNQ notebooks). <a href="https://www.pynq.io">link</a></li>
+<li id="ref-qickdawg">E. G. Riendeau <i>et al.</i>, “QICK-DAWG: A Quantum Sensing Control Framework for Quantum Defects,” arXiv:2311.18253 (2023), and the QICK-DAWG RFSoC 4x2 installation guide. <a href="https://qick-dawg.readthedocs.io/en/latest/installation/Readme.html">link</a></li>
+<li id="ref-reilly2007">D. J. Reilly, C. M. Marcus, M. P. Hanson, A. C. Gossard, “Fast single-charge sensing with an rf quantum point contact,” <i>Appl. Phys. Lett.</i> <b>91</b>, 162101 (2007); arXiv:0707.2946. <a href="https://arxiv.org/abs/0707.2946">link</a></li>
+<li id="ref-scappucci2021">G. Scappucci <i>et al.</i>, “The germanium quantum information route,” <i>Nat. Rev. Mater.</i> <b>6</b>, 926 (2021); arXiv:2004.08133. <a href="https://arxiv.org/abs/2004.08133">link</a></li>
+<li id="ref-seedhouse2021">A. E. Seedhouse <i>et al.</i>, “Pauli blockade in silicon quantum dots with spin-orbit control,” <i>PRX Quantum</i> <b>2</b>, 010303 (2021); arXiv:2004.07078. <a href="https://arxiv.org/abs/2004.07078">link</a></li>
+<li id="ref-shinozaki2025">M. Shinozaki <i>et al.</i>, “RFSoC-based radio-frequency reflectometry in gate-defined bilayer graphene quantum devices,” arXiv:2502.15239 (2025). <a href="https://arxiv.org/abs/2502.15239">link</a></li>
+<li id="ref-shinozaki2025b">M. Shinozaki <i>et al.</i>, “Perfect impedance matching unlocks sensitive radio-frequency reflectometry in 2D material quantum dots,” arXiv:2512.02225 (2025). <a href="https://arxiv.org/abs/2512.02225">link</a></li>
+<li id="ref-tokura2006">Y. Tokura, W. G. van der Wiel, T. Obata, S. Tarucha, “Coherent single electron spin control in a slanting Zeeman field,” <i>Phys. Rev. Lett.</i> <b>96</b>, 047202 (2006); arXiv:cond-mat/0510411. <a href="https://arxiv.org/abs/cond-mat/0510411">link</a></li>
+<li id="ref-ug1085">AMD, <i>Zynq UltraScale+ Device Technical Reference Manual</i> (UG1085). <a href="https://docs.amd.com/r/en-US/ug1085-zynq-ultrascale-trm">link</a></li>
+<li id="ref-vandersypen2005">L. M. K. Vandersypen and I. L. Chuang, “NMR techniques for quantum control and computation,” <i>Rev. Mod. Phys.</i> <b>76</b>, 1037 (2005). <a href="https://doi.org/10.1103/RevModPhys.76.1037">link</a></li>
+<li id="ref-vanderwiel2002">W. G. van der Wiel <i>et al.</i>, “Electron transport through double quantum dots,” <i>Rev. Mod. Phys.</i> <b>75</b>, 1 (2002). <a href="https://doi.org/10.1103/RevModPhys.75.1">link</a></li>
+<li id="ref-vigneau2023">F. Vigneau <i>et al.</i>, “Probing quantum devices with radio-frequency reflectometry,” <i>Appl. Phys. Rev.</i> <b>10</b>, 021305 (2023); arXiv:2202.10516. <a href="https://arxiv.org/abs/2202.10516">link</a></li>
+<li id="ref-volk2019">C. Volk <i>et al.</i>, “Loading a quantum-dot based ‘Qubyte’ register,” <i>npj Quantum Inf.</i> <b>5</b>, 29 (2019); arXiv:1901.00426. <a href="https://arxiv.org/abs/1901.00426">link</a></li>
+<li id="ref-weinstein2023">A. J. Weinstein <i>et al.</i>, “Universal logic with encoded spin qubits in silicon,” <i>Nature</i> <b>615</b>, 817 (2023); arXiv:2202.03605. <a href="https://arxiv.org/abs/2202.03605">link</a></li>
+<li id="ref-xue2022">X. Xue <i>et al.</i>, “Quantum logic with spin qubits crossing the surface code threshold,” <i>Nature</i> <b>601</b>, 343 (2022); arXiv:2107.00628. <a href="https://arxiv.org/abs/2107.00628">link</a></li>
+<li id="ref-yoneda2018">J. Yoneda <i>et al.</i>, “A quantum-dot spin qubit with coherence limited by charge noise and fidelity higher than 99.9%,” <i>Nat. Nanotechnol.</i> <b>13</b>, 102 (2018); arXiv:1708.01454. <a href="https://arxiv.org/abs/1708.01454">link</a></li>
+<li id="ref-zwolak2023">J. P. Zwolak and J. M. Taylor, “Colloquium: Advances in automation of quantum dot devices control,” <i>Rev. Mod. Phys.</i> <b>95</b>, 011006 (2023); arXiv:2112.09362. <a href="https://arxiv.org/abs/2112.09362">link</a></li></ol>
+
+<nav class="pager"><a class="prev" href="#glossary"><small>Previous</small>Glossary</a></nav>
+</article>
+  </main>
+</div>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    macros: {
+      ket: ['\\left|#1\\right\\rangle', 1],
+      bra: ['\\left\\langle#1\\right|', 1],
+      braket: ['\\left\\langle#1\\middle|#2\\right\\rangle', 2],
+      ev: ['\\left\\langle#1\\right\\rangle', 1],
+      dd: '\\mathrm{d}',
+      ee: '\\mathrm{e}',
+      ii: '\\mathrm{i}',
+      Re: '\\operatorname{Re}',
+      Im: '\\operatorname{Im}',
+      Tr: '\\operatorname{Tr}'
+    }
+  },
+  svg: { fontCache: 'global' },
+  startup: {
+    typeset: false,
+    ready: function () {
+      MathJax.startup.defaultReady();
+      window.dispatchEvent(new Event('mathjax-ready'));
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" async></script>
+<script>
+(function () {
+  var chapters = Array.prototype.slice.call(document.querySelectorAll('.chapter'));
+  var byId = {};
+  chapters.forEach(function (c) { byId[c.id] = c; });
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.rail a.toc'));
+  var where = document.getElementById('where');
+  var typeset = {};
+
+  function chapterFor(hash) {
+    if (!hash) return chapters[0];
+    if (byId[hash]) return byId[hash];
+    var el = document.getElementById(hash);
+    if (el) { var c = el.closest('.chapter'); if (c) return c; }
+    return chapters[0];
+  }
+
+  function mathFor(ch) {
+    if (typeset[ch.id]) return;
+    if (window.MathJax && MathJax.typesetPromise) {
+      typeset[ch.id] = true;
+      MathJax.typesetPromise([ch]).catch(function (e) { typeset[ch.id] = false; console.warn(e); });
+    }
+  }
+
+  function show() {
+    var hash = decodeURIComponent((location.hash || '').slice(1));
+    var ch = chapterFor(hash);
+    chapters.forEach(function (c) { c.hidden = c !== ch; });
+    tocLinks.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + ch.id); });
+    if (where) where.textContent = ch.getAttribute('data-label') || '';
+    document.body.classList.remove('menu-open');
+    mathFor(ch);
+    var target = hash && hash !== ch.id ? document.getElementById(hash) : null;
+    if (target) { setTimeout(function () { target.scrollIntoView(); }, 30); }
+    else { window.scrollTo(0, 0); }
+    var on = document.querySelector('.rail a.toc.on');
+    if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
+    try { localStorage.setItem('rfsoc-book-last', ch.id); } catch (e) {}
+  }
+
+  window.addEventListener('hashchange', show);
+  window.addEventListener('mathjax-ready', function () {
+    chapters.forEach(function (c) { if (!c.hidden) mathFor(c); });
+  });
+
+  var menuBtn = document.getElementById('menuBtn');
+  if (menuBtn) menuBtn.addEventListener('click', function () { document.body.classList.toggle('menu-open'); });
+
+  var themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) themeBtn.addEventListener('click', function () {
+    var root = document.documentElement;
+    var cur = root.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  });
+
+  // Search over section headings and glossary terms
+  var q = document.getElementById('q');
+  var hits = document.getElementById('hits');
+  var index = [];
+  chapters.forEach(function (c) {
+    var label = c.getAttribute('data-label') || '';
+    c.querySelectorAll('h2[id], h3[id], dfn[id]').forEach(function (h) {
+      index.push({ id: h.id, text: h.textContent.replace(/\s+/g, ' ').trim(), where: label });
+    });
+  });
+  if (q) q.addEventListener('input', function () {
+    var s = q.value.trim().toLowerCase();
+    hits.innerHTML = '';
+    if (s.length < 2) return;
+    var n = 0;
+    for (var i = 0; i < index.length && n < 30; i++) {
+      if (index[i].text.toLowerCase().indexOf(s) >= 0) {
+        var a = document.createElement('a');
+        a.href = '#' + index[i].id;
+        a.innerHTML = '';
+        a.appendChild(document.createTextNode(index[i].text));
+        var sm = document.createElement('small');
+        sm.textContent = '  ' + index[i].where;
+        a.appendChild(document.createElement('br'));
+        a.appendChild(sm);
+        hits.appendChild(a);
+        n++;
+      }
+    }
+    if (!n) hits.textContent = 'No matching headings or terms.';
+  });
+
+  show();
+})();
+
+</script>

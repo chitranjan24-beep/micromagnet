@@ -1,0 +1,57 @@
+<title>RFSoC 4x2 Spin-Qubit Guidebook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A from-zero guidebook to semiconductor spin-qubit experiments with the RFSoC 4x2 board, PYNQ and QICK.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap">
+<style>
+/*STYLE*/
+</style>
+<header class="topbar">
+  <button id="menuBtn" type="button" aria-label="Open contents">Contents</button>
+  <a class="brand" href="#cover">RFSoC 4x2 <span>Spin-Qubit Guidebook</span></a>
+  <div class="where" id="where"></div>
+  <button id="themeBtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+</header>
+<div class="frame">
+  <nav class="rail" aria-label="Contents">
+    <input type="search" id="q" placeholder="Search headings and terms" aria-label="Search headings and terms">
+    <div class="hits" id="hits"></div>
+<!--RAIL-->
+  </nav>
+  <main id="main">
+<!--CHAPTERS-->
+  </main>
+</div>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    macros: {
+      ket: ['\\left|#1\\right\\rangle', 1],
+      bra: ['\\left\\langle#1\\right|', 1],
+      braket: ['\\left\\langle#1\\middle|#2\\right\\rangle', 2],
+      ev: ['\\left\\langle#1\\right\\rangle', 1],
+      dd: '\\mathrm{d}',
+      ee: '\\mathrm{e}',
+      ii: '\\mathrm{i}',
+      Re: '\\operatorname{Re}',
+      Im: '\\operatorname{Im}',
+      Tr: '\\operatorname{Tr}'
+    }
+  },
+  svg: { fontCache: 'global' },
+  startup: {
+    typeset: false,
+    ready: function () {
+      MathJax.startup.defaultReady();
+      window.dispatchEvent(new Event('mathjax-ready'));
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" async></script>
+<script>
+/*APP*/
+</script>
