@@ -1,0 +1,230 @@
+<!--meta {"id": "journey", "part": "Part A · The whole picture", "title": "The whole experiment on one page"}-->
+
+<p class="lede">When a group says "we have a working spin qubit", it means they have a list of numbers: how well they can prepare the spin, how fast and how accurately they can rotate it, how long it remembers its state, and how reliably they can read it out. Every number on that list was measured, and every measurement needed numbers measured before it. This chapter lays out that chain once, from beginning to end, so the rest of the book never feels like a list of disconnected procedures.</p>
+
+<h2>Start from the end</h2>
+<p>Imagine the last experiment in a long campaign: <dfn data-def="A protocol that applies long random sequences of gates and measures how fast the survival probability decays, giving an average error per gate that is insensitive to preparation and measurement errors.">randomized benchmarking</dfn> of a single spin qubit. You prepare the electron's spin pointing down, apply a random sequence of a few hundred rotations that should, ideally, bring it back to where it started, then measure it. You repeat this for many random sequences and many lengths, and the rate at which the result decays tells you the average error of one gate. The output is a single number, perhaps 99.85%.</p>
+<p>Now ask what you needed in order to run that experiment. Three things, at least:</p>
+<ol>
+<li><b>You had to prepare a known spin state.</b> That means you already knew how to load one electron into the dot with a known spin, either by letting it relax in a magnetic field or by an energy-selective trick that only lets one spin direction in.</li>
+<li><b>You had to rotate the spin by exactly the right angles.</b> That means you knew the spin's resonance frequency to within a few kilohertz, the microwave amplitude that gives a 90° rotation, and the phase that defines the rotation axis.</li>
+<li><b>You had to measure the spin in one shot.</b> That means you had a way to turn "up" or "down" into a charge signal, and a charge sensor fast and quiet enough to see a single electron move in microseconds.</li>
+</ol>
+<p>Each of those, in turn, rests on something earlier. You cannot find the resonance frequency without a spin readout to tell you when you have hit it. You cannot read out a spin before you have a single electron trapped in a dot, with tunnelling rates to its neighbours set to the right values. You cannot trap a single electron without a charge sensor to count electrons. You cannot form a sensor without first making the device conduct at all. And none of it happens until the device is cold, wired and quiet. Followed backwards, the chain reaches all the way to the moment the chip is mounted on its circuit board.</p>
+<p class="pullq">Every measurement in a spin-qubit experiment exists to produce a number that a later measurement needs.</p>
+<p>This is the single most useful idea for making sense of what an experimental group does all day. When you see someone spend a week measuring tunnelling rates, it is not because tunnelling rates are interesting in themselves (sometimes they are), but because the spin readout cannot be set up without them.</p>
+
+<h2>The chain, forwards</h2>
+<p>Turned around, the chain becomes the order in which a new device is brought up. Figure 1.1 shows the stages, and the table after it lists the question each stage answers and the numbers it hands on.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 300" width="860" role="img" aria-label="Eight stages of a spin-qubit experiment in two rows">
+  <defs><marker id="j-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <g>
+    <rect x="10" y="20" width="190" height="104" rx="6" class="box"/>
+    <text class="ttl" x="22" y="44">1 · Ready and cold</text>
+    <text class="sm" x="22" y="64">bond, mount, wire, filter,</text>
+    <text class="sm" x="22" y="80">cool to ~10 mK</text>
+    <text class="sm tacc" x="22" y="108">→ a quiet, cold device</text>
+    <rect x="225" y="20" width="190" height="104" rx="6" class="box"/>
+    <text class="ttl" x="237" y="44">2 · Signs of life</text>
+    <text class="sm" x="237" y="64">leakage, turn-on, pinch-off,</text>
+    <text class="sm" x="237" y="80">first Coulomb peaks</text>
+    <text class="sm tacc" x="237" y="108">→ working gates, lever arms</text>
+    <rect x="440" y="20" width="190" height="104" rx="6" class="box"/>
+    <text class="ttl" x="452" y="44">3 · A charge sensor</text>
+    <text class="sm" x="452" y="64">sensor dot on a steep flank,</text>
+    <text class="sm" x="452" y="80">then RF reflectometry</text>
+    <text class="sm tacc" x="452" y="108">→ single-electron SNR in µs</text>
+    <rect x="655" y="20" width="190" height="104" rx="6" class="box"/>
+    <text class="ttl" x="667" y="44">4 · One electron each</text>
+    <text class="sm" x="667" y="64">double dot, virtual gates,</text>
+    <text class="sm" x="667" y="80">tunnel couplings and rates</text>
+    <text class="sm tacc" x="667" y="108">→ (1,1) with known rates</text>
+    <rect x="655" y="176" width="190" height="104" rx="6" class="boxa"/>
+    <text class="ttl" x="667" y="200">5 · Spin to charge</text>
+    <text class="sm" x="667" y="220">field on, Elzerman or</text>
+    <text class="sm" x="667" y="236">Pauli-blockade readout</text>
+    <text class="sm tacc" x="667" y="264">→ readout fidelity, T1</text>
+    <rect x="440" y="176" width="190" height="104" rx="6" class="boxa"/>
+    <text class="ttl" x="452" y="200">6 · One qubit</text>
+    <text class="sm" x="452" y="220">find resonance, Rabi,</text>
+    <text class="sm" x="452" y="236">Ramsey, echo, calibration</text>
+    <text class="sm tacc" x="452" y="264">→ f₁, π time, T2*, T2</text>
+    <rect x="225" y="176" width="190" height="104" rx="6" class="boxa"/>
+    <text class="ttl" x="237" y="200">7 · Benchmarked gates</text>
+    <text class="sm" x="237" y="220">AllXY, RB, gate set</text>
+    <text class="sm" x="237" y="236">tomography</text>
+    <text class="sm tacc" x="237" y="264">→ 1-qubit gate fidelity</text>
+    <rect x="10" y="176" width="190" height="104" rx="6" class="boxa"/>
+    <text class="ttl" x="22" y="200">8 · Two qubits</text>
+    <text class="sm" x="22" y="220">exchange J(V), CZ or CNOT,</text>
+    <text class="sm" x="22" y="236">Bell states, 2-qubit RB</text>
+    <text class="sm tacc" x="22" y="264">→ 2-qubit gate fidelity</text>
+    <line x1="200" y1="72" x2="223" y2="72" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="415" y1="72" x2="438" y2="72" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="630" y1="72" x2="653" y2="72" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="750" y1="124" x2="750" y2="174" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="655" y1="228" x2="632" y2="228" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="440" y1="228" x2="417" y2="228" class="ln2" marker-end="url(#j-ar)"/>
+    <line x1="225" y1="228" x2="202" y2="228" class="ln2" marker-end="url(#j-ar)"/>
+    <text class="sm" x="430" y="150" text-anchor="middle">charge physics (top row) → spin physics (bottom row)</text>
+  </g>
+</svg>
+</div>
+<figcaption>The eight stages of bringing up a spin-qubit device. The top row is entirely about charge: making electrons appear, counting them and moving them. Spin enters only at stage 5, once a magnetic field is applied and spin can be converted into charge. Each stage hands specific numbers to the next (shown after the arrows).</figcaption>
+</figure>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Stage</th><th>The question it answers</th><th>Typical measurement</th><th>Numbers carried forward</th></tr></thead>
+<tbody>
+<tr><td>1 Ready and cold</td><td>Is the device intact, wired, and at a low electron temperature?</td><td>Room-temperature resistance checks, cooldown logs, line checks</td><td>Which gates and ohmics work; fridge base temperature</td></tr>
+<tr><td>2 Signs of life</td><td>Do the gates do what they were designed to do?</td><td>Leakage sweeps, accumulation (turn-on) and pinch-off curves, Coulomb diamonds</td><td>Turn-on and pinch-off voltages; lever arms; charging energy; electron temperature</td></tr>
+<tr><td>3 A charge sensor</td><td>Can we see one electron move, and how fast?</td><td>Sensor Coulomb peak, then reflectometry resonance and signal-to-noise</td><td>Sensor operating point; tank frequency; integration time for a given SNR</td></tr>
+<tr><td>4 One electron each</td><td>Do we have exactly one electron in each qubit dot, and control over how they tunnel?</td><td>Charge stability diagrams, virtual gates, interdot and dot–reservoir tunnel rates</td><td>Virtual gate matrix; (1,1) operating point; tunnel coupling; tunnel rates</td></tr>
+<tr><td>5 Spin to charge</td><td>Can we tell spin up from spin down in a single shot?</td><td>Elzerman or Pauli-blockade readout, readout histograms, T1</td><td>Readout point, threshold, readout fidelity; T1; valley splitting</td></tr>
+<tr><td>6 One qubit</td><td>Where is the resonance, and how coherent is the spin?</td><td>EDSR spectroscopy, Rabi, Ramsey, Hahn echo, dynamical decoupling</td><td>Qubit frequencies; π and π/2 pulse parameters; T2*, T2; noise spectrum</td></tr>
+<tr><td>7 Benchmarked gates</td><td>How good are the single-qubit gates, really?</td><td>AllXY, error amplification, randomized benchmarking, gate set tomography</td><td>Calibrated gate set; average gate fidelity; error budget</td></tr>
+<tr><td>8 Two qubits</td><td>Can the spins be entangled with high fidelity?</td><td>Exchange spectroscopy J(V), CZ or CNOT calibration, Bell states, 2-qubit benchmarking</td><td>J versus barrier voltage; CZ pulse; phase corrections; 2-qubit fidelity</td></tr>
+</tbody></table></div>
+
+<p>Notice the change halfway through. Stages 1 to 4 are all about <em>charge</em>: making electrons appear, counting them, choosing exactly how many sit in each dot and how easily they hop. The spin, which is the actual qubit, does not appear until stage 5. This surprises newcomers, but it is how every spin-qubit experiment works. A spin's magnetic moment is far too small to detect directly. All spin measurements are done by converting spin into charge, and that conversion only works once the charge configuration is under complete control. More than half the effort on a new device is spent before anyone measures a spin.</p>
+
+<h2>Why the order is fixed</h2>
+<p>Some steps can be swapped or repeated, but most of the order is forced by dependencies. Figure 1.2 shows the main ones. Read it as "you need this to do that".</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 380" width="860" role="img" aria-label="Dependency map of measured quantities">
+  <defs><marker id="j-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <text class="lbl" x="20" y="22">measured early</text>
+  <text class="lbl" x="330" y="22">combined into</text>
+  <text class="lbl" x="660" y="22">what you finally report</text>
+  <rect x="20" y="40" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="62">electron temperature Tₑ</text>
+  <rect x="20" y="88" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="110">lever arms α (V → energy)</text>
+  <rect x="20" y="136" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="158">charge-sensor SNR in time t</text>
+  <rect x="20" y="184" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="206">dot–reservoir tunnel rates Γ</text>
+  <rect x="20" y="232" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="254">valley splitting E_v</text>
+  <rect x="20" y="280" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="302">Zeeman energy E_Z (field)</text>
+  <rect x="20" y="328" width="200" height="34" rx="5" class="boxl"/><text class="sm" x="32" y="350">barrier voltage → exchange J</text>
+  <rect x="330" y="88" width="220" height="34" rx="5" class="box"/><text class="sm" x="342" y="110">readout point and threshold</text>
+  <rect x="330" y="160" width="220" height="34" rx="5" class="box"/><text class="sm" x="342" y="182">T1 and shot repetition time</text>
+  <rect x="330" y="232" width="220" height="34" rx="5" class="box"/><text class="sm" x="342" y="254">qubit frequency, Rabi frequency</text>
+  <rect x="330" y="304" width="220" height="34" rx="5" class="box"/><text class="sm" x="342" y="326">T2*, T2 and the noise spectrum</text>
+  <rect x="660" y="70" width="180" height="34" rx="5" class="boxa"/><text class="sm" x="672" y="92">readout fidelity</text>
+  <rect x="660" y="176" width="180" height="34" rx="5" class="boxa"/><text class="sm" x="672" y="198">single-qubit gate fidelity</text>
+  <rect x="660" y="300" width="180" height="34" rx="5" class="boxa"/><text class="sm" x="672" y="322">two-qubit gate fidelity</text>
+  <g class="thin">
+    <line x1="220" y1="57" x2="328" y2="100" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="105" x2="328" y2="105" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="153" x2="328" y2="110" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="201" x2="328" y2="115" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="249" x2="328" y2="177" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="297" x2="328" y2="182" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="297" x2="328" y2="249" marker-end="url(#j-ar2)"/>
+    <line x1="220" y1="345" x2="658" y2="320" marker-end="url(#j-ar2)"/>
+    <line x1="550" y1="105" x2="658" y2="90" marker-end="url(#j-ar2)"/>
+    <line x1="550" y1="177" x2="658" y2="95" marker-end="url(#j-ar2)"/>
+    <line x1="550" y1="249" x2="658" y2="195" marker-end="url(#j-ar2)"/>
+    <line x1="550" y1="321" x2="658" y2="200" marker-end="url(#j-ar2)"/>
+    <line x1="550" y1="321" x2="658" y2="314" marker-end="url(#j-ar2)"/>
+    <line x1="750" y1="104" x2="750" y2="174" marker-end="url(#j-ar2)"/>
+    <line x1="750" y1="210" x2="750" y2="298" marker-end="url(#j-ar2)"/>
+  </g>
+</svg>
+</div>
+<figcaption>The main dependencies between measured quantities. Quantities on the left are measured early, in the charge-physics stages. They combine into the settings in the middle, which determine the figures of merit on the right. Readout fidelity sits at the top of the right column because every later number is measured through the readout. A poor readout makes every Rabi oscillation look faded, so it limits how precisely everything else can be calibrated.</figcaption>
+</figure>
+
+<p>Three dependencies are worth spelling out, because they explain choices that otherwise look arbitrary:</p>
+<ul>
+<li><b>The lever arm turns voltages into energies.</b> Gate voltages are what you set, but physics happens in energy. A <dfn data-def="The ratio between a change in a gate voltage and the resulting change in a dot's electrochemical potential, usually quoted in eV/V or µeV/mV.">lever arm</dfn> α of 0.1 eV/V means 1 mV on the plunger moves the dot level by 100 µeV. Without it you cannot know whether a 0.5 mV step moves the level by more or less than the Zeeman energy, and spin readout depends on exactly that comparison. So the lever arm is measured early (Chapter 8), and almost every later chapter uses it.</li>
+<li><b>Electron temperature limits readout.</b> Spin readout distinguishes two energies separated by the Zeeman energy. If the electrons in the reservoir are thermally smeared over a comparable energy, the wrong spin occasionally tunnels and the readout makes mistakes. The ratio of Zeeman energy to thermal energy is therefore one of the first things a readout depends on (Chapter 15).</li>
+<li><b>Readout limits everything after it.</b> Once the readout works, every later experiment is "do something, then read out". If the readout misidentifies the state 10% of the time, every Rabi oscillation, every Ramsey fringe and every benchmarking curve has its contrast reduced, and you need more repetitions to see the same thing. Groups therefore invest heavily in readout before doing anything ambitious with the qubit.</li>
+</ul>
+
+<h2>Energy scales decide what is possible</h2>
+<p>Almost every design decision and every tuning step in this field comes down to comparing energies. A qubit works only if certain energies are well separated from each other. Figure 1.3 places the important ones for our device on one logarithmic axis.</p>
+<figure>
+<div class="figbody"><!--plot:energy-ladder--></div>
+<figcaption>The energy scales of a silicon spin qubit, on a logarithmic axis. The useful conversions are 1 µeV ↔ 0.242 GHz ↔ 11.6 mK, so the 15.4 GHz Zeeman splitting corresponds to about 64 µeV, or 0.74 K. The control energies (Rabi frequency and exchange) are tiny compared with everything else. That is deliberate: it lets them act on the spin without disturbing anything else.</figcaption>
+</figure>
+<p>Read the ladder from the bottom up, and each rung has a job:</p>
+<ul>
+<li>The <b>charging energy</b> (millielectronvolts) is the cost of adding one more electron to a dot. Because it is so large, the number of electrons on a dot is a sharp integer that stays put unless you deliberately change it.</li>
+<li>The <b>orbital spacing</b> (about 3 meV) keeps the electron in its lowest orbital, so the dot behaves like a simple two-level spin system and not a little atom with many states.</li>
+<li>The <b>valley splitting</b> (100 to 300 µeV in good silicon devices) is specific to silicon. Silicon's conduction band has two nearly degenerate minima, or valleys, along the growth direction. The interface lifts this degeneracy, but only by a small and device-dependent amount. If the valley splitting is not comfortably larger than the Zeeman energy and the thermal energy, a second set of states joins the party and spoils both readout and coherence (Chapter 14).</li>
+<li>The <b>Zeeman energy</b> (64 µeV at 0.55 T) is the qubit itself: the energy between spin down and spin up. It must be large compared with the thermal energy so that the spin can be initialized and read out, and small compared with the valley and orbital energies so that the qubit stays a clean two-level system.</li>
+<li>The <b>thermal energy</b> k<sub>B</sub>T at an electron temperature of 50 mK is about 4.3 µeV. Every readout scheme needs it to be well below the energies it relies on.</li>
+<li>The <b>control energies</b>, the Rabi frequency and the exchange coupling, are a million times smaller than the charging energy. Small control energies mean gentle, precise rotations. The price is that the rotations take tens to hundreds of nanoseconds, which must be short compared with the coherence times.</li>
+</ul>
+<p>Keep this ladder in mind. Whenever a tuning step looks mysterious, the reason is almost always one of these comparisons.</p>
+
+<h2>Time scales decide how fast you can work</h2>
+<p>The second ladder is in time (Figure 1.4). It tells you two things: which operations fit inside which coherence time, and how long an experiment takes to acquire.</p>
+<figure>
+<div class="figbody"><!--plot:time-ladder--></div>
+<figcaption>The time scales of a silicon spin-qubit experiment, from nanosecond gates to multi-day cooldowns. The gap between the gate time (about 100 ns) and the coherence times (microseconds to milliseconds) sets how many operations can be done before the qubit forgets. The readout time and the drift time scales set how fast data can be taken and how often the device must be recalibrated.</figcaption>
+</figure>
+<p>The bottom of the ladder is physics: a gate takes about 100 ns, the spin dephases in microseconds when left alone, and an echo extends that to tens or hundreds of microseconds. The top of the ladder is life in the lab: the device drifts over minutes to hours, so calibrations must be repeated, and a cooldown takes days, so you do not warm up casually.</p>
+<p>The middle of the ladder, the readout, decides how fast you learn. Each data point in a qubit experiment is a probability, estimated by repeating the same sequence many times. How long one repetition takes is set mostly by the readout and by how long you wait for the spin to reset.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how long does a Rabi chevron take?</span>
+<p>A standard early experiment, the Rabi chevron (Chapter 19), scans the microwave frequency over 100 values and the burst duration over 100 values. That is 10,000 points, each repeated 200 times to estimate a probability: 2 million shots.</p>
+<p>With <b>Elzerman readout</b> (Chapter 15) a shot takes about 1 ms: a few hundred microseconds to load and initialize, the pulse itself, and a readout window of a few hundred microseconds. Two million shots × 1 ms = 2000 s, about 33 minutes.</p>
+<p>With <b>Pauli-blockade readout</b> and fast reflectometry (Chapter 16), a shot can take 20 µs. Two million shots × 20 µs = 40 s.</p>
+<p>The same measurement is 50 times faster. Over a week of calibrations, that difference decides whether you can afford to recalibrate every hour. This is why so much effort goes into faster readout.</p>
+</div>
+
+<h2>What a single data point really is</h2>
+<p>A qubit measurement gives one bit: up or down. A probability such as "the spin-up probability after this pulse" is estimated by repeating the experiment N times and counting. The estimate has a statistical uncertainty set by the binomial distribution,</p>
+\[ \sigma_P = \sqrt{\frac{P(1-P)}{N}}, \]
+<p>which is largest at P = 0.5. With N = 200 shots, σ is about 3.5% at P = 0.5, and halving it needs four times as many shots. This is why experiments are planned around the shot count, and why a fast readout is worth so much: precision costs time, and the cost grows as the square of the precision you want.</p>
+<p>The measured probability is also not the true one. If the readout misidentifies spin down as spin up with probability α and spin up as spin down with probability β, the probability you record is</p>
+\[ P_{\text{meas}} = \alpha + (1 - \alpha - \beta)\,P_{\text{true}}. \]
+<p>The factor 1 − α − β is the <dfn data-def="The contrast of a measured oscillation, equal to 1 − α − β for readout error probabilities α and β; also F↑ + F↓ − 1.">visibility</dfn>. A Rabi oscillation that should swing from 0 to 1 instead swings from α to 1 − β. A visibility of 0.7, common in older experiments, means every oscillation is squeezed into 70% of its full range. Chapter 17 shows how to measure α and β honestly, and Chapter 23 how benchmarking protocols are designed to be insensitive to them.</p>
+
+<h2>How long it really takes</h2>
+<p>It helps to know roughly how a campaign unfolds in calendar time. The durations below are typical for a group with an established fabrication process and a working setup. A first device of a new design, or a new lab, can spend months at the early stages; a mature group with reproducible devices can go from cooldown to a calibrated qubit in a week or two.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Stage</th><th>Typical duration</th><th>What usually takes the time</th></tr></thead>
+<tbody>
+<tr><td>Mounting, bonding, cooldown</td><td>2 to 4 days</td><td>Careful bonding; 1 to 2 days of cooling; checking every line once cold</td></tr>
+<tr><td>Signs of life</td><td>1 to 3 days</td><td>Finding which gates work, mapping turn-on and pinch-off, first Coulomb peaks</td></tr>
+<tr><td>Sensor and reflectometry</td><td>2 days to 2 weeks</td><td>Tuning a sensitive sensor dot; matching the tank circuit</td></tr>
+<tr><td>Few-electron double dot</td><td>1 to 3 weeks</td><td>Reaching the last electron in both dots; stable virtual gates; tunnel rates in range</td></tr>
+<tr><td>Spin readout</td><td>days to 2 weeks</td><td>Finding the readout point, optimizing tunnel rates and thresholds</td></tr>
+<tr><td>First qubit and coherence</td><td>days</td><td>Searching for the resonance in frequency; then routine Rabi, Ramsey, echo</td></tr>
+<tr><td>Calibrated, benchmarked gates</td><td>1 to 4 weeks</td><td>Pulse calibration, drift, heating effects, crosstalk</td></tr>
+<tr><td>Two-qubit gates</td><td>weeks to months</td><td>Exchange control, symmetric operation, phase corrections, benchmarking</td></tr>
+</tbody></table></div>
+<p>Something always goes wrong, so these durations include a realistic amount of debugging. One of the purposes of the "When it goes wrong" boxes in this book is to shorten that part.</p>
+
+<h2>The device passport</h2>
+<p>Throughout the book we collect what we learn about our device in a single table, which we call its passport. Labs keep the same thing under various names: a parameter file, a "variable manager", a calibration database. The QuTech six-qubit processor, for example, kept 108 calibrated parameters in such a record and refreshed parts of it every morning <cite data-r="philips2022"></cite>. Here is the passport before anything has been measured, with only the design values we expect:</p>
+<div class="box passport"><span class="tag">Device passport · design values</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Expected</th><th>Measured in</th></tr></thead>
+<tbody>
+<tr><td>Gates working / ohmics working</td><td>all</td><td>Chapters 3, 6</td></tr>
+<tr><td>Plunger lever arm α</td><td>≈ 0.1 eV/V</td><td>Chapter 8</td></tr>
+<tr><td>Charging energy, orbital spacing</td><td>≈ 6 meV, ≈ 3 meV</td><td>Chapter 8</td></tr>
+<tr><td>Electron temperature</td><td>&lt; 100 mK</td><td>Chapter 8</td></tr>
+<tr><td>Sensor SNR, integration time</td><td>SNR &gt; 5 in a few µs</td><td>Chapters 9, 10</td></tr>
+<tr><td>Tunnel rates, tunnel coupling</td><td>tunable over decades</td><td>Chapter 12</td></tr>
+<tr><td>Valley splitting</td><td>&gt; 100 µeV</td><td>Chapter 14</td></tr>
+<tr><td>Readout fidelity, T1</td><td>&gt; 95%, &gt; 1 ms</td><td>Chapters 15 to 17</td></tr>
+<tr><td>Qubit frequencies, Rabi frequency</td><td>≈ 15 GHz, 1 to 10 MHz</td><td>Chapters 18, 19</td></tr>
+<tr><td>T2*, T2</td><td>µs, tens of µs</td><td>Chapters 20, 21</td></tr>
+<tr><td>Single- and two-qubit fidelities</td><td>&gt; 99.5%, &gt; 99%</td><td>Chapters 23, 26</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A colleague proposes searching for the spin resonance before the charge sensor is tuned, "to save time". Why will this not work?</p>
+<details><summary>Show answer</summary><div>Finding the resonance means applying microwaves and checking whether the spin flipped. The only way to see a spin flip is through spin-to-charge conversion, which needs a working charge sensor and a dot with one electron and known tunnel rates. Without the readout there is no signal, so the search cannot tell when it hits the resonance.</div></details>
+<p>2. Using 1 µeV ↔ 11.6 mK, what electron temperature would make the thermal energy equal to one tenth of a 64 µeV Zeeman splitting? Is that easy to reach?</p>
+<details><summary>Show answer</summary><div>One tenth of 64 µeV is 6.4 µeV, which corresponds to 6.4 × 11.6 ≈ 74 mK. Electron temperatures of 40 to 100 mK are common in well-filtered dilution refrigerators, so this is achievable but not automatic. It depends on filtering and thermalization (Chapter 4).</div></details>
+<p>3. A Ramsey scan has 80 delay values and you want ±2.5% uncertainty at P = 0.5. How many shots per point, and how long does the scan take with 1 ms shots?</p>
+<details><summary>Show answer</summary><div>σ = √(0.25/N) = 0.025 gives N = 0.25/0.000625 = 400 shots. 80 × 400 = 32,000 shots, which is 32 s at 1 ms per shot.</div></details>
+</div>

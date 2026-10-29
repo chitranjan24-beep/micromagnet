@@ -1,0 +1,897 @@
+{
+ "andrews2019": {
+  "text": "R. W. Andrews, C. Jones, M. D. Reed et al., “Quantifying error and leakage in an encoded Si/SiGe triple-dot qubit,” Nature Nanotechnology 14, 747-750 (2019), arXiv:1812.02693.",
+  "url": "https://doi.org/10.1038/s41565-019-0500-4",
+  "linktext": "link"
+ },
+ "barthel2009": {
+  "text": "C. Barthel, D. J. Reilly, C. M. Marcus et al., “Rapid Single-Shot Measurement of a Singlet-Triplet Qubit,” Phys. Rev. Lett. 103 160503 (2009), arXiv:0902.0227.",
+  "url": "https://doi.org/10.1103/PhysRevLett.103.160503",
+  "linktext": "link"
+ },
+ "beenakker1991": {
+  "text": "C. Beenakker, “Theory of Coulomb-blockade oscillations in the conductance of a quantum dot,” Physical Review B 44, 1646-1656 (1991).",
+  "url": "https://doi.org/10.1103/physrevb.44.1646",
+  "linktext": "link"
+ },
+ "benito2019": {
+  "text": "M. Benito, X. Croot, C. Adelsberger et al., “Electric-field control and noise protection of the flopping-mode spin qubit,” Phys. Rev. B 100, 125430 (2019), arXiv:1904.13117.",
+  "url": "https://doi.org/10.1103/PhysRevB.100.125430",
+  "linktext": "link"
+ },
+ "bluhm2011": {
+  "text": "H. Bluhm, S. Foletti, I. Neder et al., “Dephasing time of GaAs electron-spin qubits coupled to a nuclear bath exceeding 200 μs,” Nature Physics 7, 109-113 (2010).",
+  "url": "https://doi.org/10.1038/nphys1856",
+  "linktext": "link"
+ },
+ "blumoff2022": {
+  "text": "J. Z. Blumoff, A. S. Pan, T. E. Keating et al., “Fast and high-fidelity state preparation and measurement in triple-quantum-dot spin qubits,” PRX Quantum 3, 010352 (2022), arXiv:2112.09801.",
+  "url": "https://doi.org/10.1103/PRXQuantum.3.010352",
+  "linktext": "link"
+ },
+ "borjans2020": {
+  "text": "F. Borjans, X. G. Croot, X. Mi et al., “Long-Range Microwave Mediated Interactions Between Electron Spins,” Nature 577, 195 (2020), arXiv:1905.00776.",
+  "url": "https://doi.org/10.1038/s41586-019-1867-y",
+  "linktext": "link"
+ },
+ "borselli2011": {
+  "text": "M. G. Borselli, K. Eng, E. T. Croke et al., “Pauli spin blockade in undoped Si/SiGe two-electron double quantum dots,” Appl. Phys. Lett. 99, 063109 (2011), arXiv:1106.6285.",
+  "url": "https://doi.org/10.1063/1.3623479",
+  "linktext": "link"
+ },
+ "borsoi2024": {
+  "text": "F. Borsoi, N. W. Hendrickx, V. John et al., “Shared control of a 16 semiconductor quantum dot crossbar array,” Nature Nanotechnology 19, 21-27 (2023), arXiv:2209.06609.",
+  "url": "https://doi.org/10.1038/s41565-023-01491-3",
+  "linktext": "link"
+ },
+ "botzem2016": {
+  "text": "T. Botzem, R. P. G. McNeil, D. Schuh et al., “Quadrupolar and anisotropy effects on dephasing in two-electron spin qubits in GaAs,” arXiv:1508.05136 (2015).",
+  "url": "https://doi.org/10.1038/ncomms11170",
+  "linktext": "link"
+ },
+ "burkard2023": {
+  "text": "G. Burkard, T. D. Ladd, J. M. Nichol et al., “Semiconductor Spin Qubits,” Rev. Mod. Phys. 95, 025003 (2023), arXiv:2112.08863.",
+  "url": "https://doi.org/10.1103/RevModPhys.95.025003",
+  "linktext": "link"
+ },
+ "bylander2011": {
+  "text": "J. Bylander, S. Gustavsson, F. Yan et al., “Noise spectroscopy through dynamical decoupling with a superconducting flux qubit,” Nature Physics 7, 565-570 (2011).",
+  "url": "https://doi.org/10.1038/nphys1994",
+  "linktext": "link"
+ },
+ "cerfontaine2020": {
+  "text": "P. Cerfontaine, T. Botzem, J. Ritzmann et al., “Closed-loop control of a GaAs-based singlet-triplet spin qubit with 99.5% gate fidelity and low leakage,” Nature Communications 11, 4144 (2020), arXiv:1906.06169.",
+  "url": "https://doi.org/10.1038/s41467-020-17865-3",
+  "linktext": "link"
+ },
+ "connors2019": {
+  "text": "E. J. Connors, J. Nelson, H. Qiao et al., “Low-frequency charge noise in Si/SiGe quantum dots,” Phys. Rev. B 100, 165305 (2019), arXiv:1907.07549.",
+  "url": "https://doi.org/10.1103/PhysRevB.100.165305",
+  "linktext": "link"
+ },
+ "connors2022": {
+  "text": "E. J. Connors, J. Nelson, L. F. Edge et al., “Charge-noise spectroscopy of Si/SiGe quantum dots via dynamically-decoupled exchange oscillations,” Nature Communications 13, 940 (2022), arXiv:2103.02448.",
+  "url": "https://doi.org/10.1038/s41467-022-28519-x",
+  "linktext": "link"
+ },
+ "croot2020": {
+  "text": "X. Croot, X. Mi, S. Putz et al., “Flopping-mode electric dipole spin resonance,” Phys. Rev. Research 2, 012006 (2020), arXiv:1905.00346.",
+  "url": "https://doi.org/10.1103/PhysRevResearch.2.012006",
+  "linktext": "link"
+ },
+ "cywinski2008": {
+  "text": "L. Cywinski, R. M. Lutchyn, C. P. Nave et al., “How to Enhance Dephasing Time in Superconducting Qubits,” Phys. Rev. B 77, 174509 (2008), arXiv:0712.2225.",
+  "url": "https://doi.org/10.1103/PhysRevB.77.174509",
+  "linktext": "link"
+ },
+ "dial2013": {
+  "text": "O. Dial, M. Shulman, S. Harvey et al., “Charge Noise Spectroscopy Using Coherent Exchange Oscillations in a Singlet-Triplet Qubit,” Physical Review Letters 110, 146804 (2013).",
+  "url": "https://doi.org/10.1103/physrevlett.110.146804",
+  "linktext": "link"
+ },
+ "dicarlo2004": {
+  "text": "L. DiCarlo, H. Lynch, A. Johnson et al., “Differential Charge Sensing and Charge Delocalization in a Tunable Double Quantum Dot,” Physical Review Letters 92, 226801 (2004).",
+  "url": "https://doi.org/10.1103/physrevlett.92.226801",
+  "linktext": "link"
+ },
+ "dumoulin2021": {
+  "text": "N. I. Dumoulin Stuyck, F. A. Mohiyaddin, R. Li et al., “Low dephasing and robust micromagnet designs for silicon spin qubits,” Applied Physics Letters 119, 094001 (2021), arXiv:2108.10769.",
+  "url": "https://doi.org/10.1063/5.0059939",
+  "linktext": "link"
+ },
+ "eng2015": {
+  "text": "K. Eng, T. Ladd, A. Smith et al., “Isotopically enhanced triple-quantum-dot qubit,” Science Advances 1, e1500214 (2015).",
+  "url": "https://doi.org/10.1126/sciadv.1500214",
+  "linktext": "link"
+ },
+ "ezzouch2021": {
+  "text": "R. Ezzouch, S. Zihlmann, V. P. Michal et al., “Dispersively probed microwave spectroscopy of a silicon hole double quantum dot,” Phys. Rev. Applied 16, 034031 (2021), arXiv:2012.15588.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.16.034031",
+  "linktext": "link"
+ },
+ "field1993": {
+  "text": "M. Field, C. Smith, M. Pepper et al., “Measurements of Coulomb blockade with a noninvasive voltage probe,” Physical Review Letters 70, 1311-1314 (1993).",
+  "url": "https://doi.org/10.1103/physrevlett.70.1311",
+  "linktext": "link"
+ },
+ "foletti2009": {
+  "text": "S. Foletti, H. Bluhm, D. Mahalu et al., “Universal quantum control of two-electron spin quantum bits using dynamic nuclear polarization,” Nature Physics 5, 903-908 (2009), arXiv:1009.5343.",
+  "url": "https://doi.org/10.1038/nphys1424",
+  "linktext": "link"
+ },
+ "froning2021": {
+  "text": "F. N. M. Froning, L. C. Camenzind, O. A. H. van der Molen et al., “Ultrafast Hole Spin Qubit with Gate-Tunable Spin-Orbit Switch,” Nature Nanotechnology (2021), arXiv:2006.11175.",
+  "url": "https://doi.org/10.1038/s41565-020-00828-6",
+  "linktext": "link"
+ },
+ "hanson2007": {
+  "text": "R. Hanson, L. P. Kouwenhoven, J. R. Petta et al., “Spins in few-electron quantum dots,” Rev. Mod. Phys. 79, 1217 (2007), arXiv:cond-mat/0610433.",
+  "url": "https://doi.org/10.1103/RevModPhys.79.1217",
+  "linktext": "link"
+ },
+ "harveycollard2018": {
+  "text": "P. Harvey-Collard, B. D'Anjou, M. Rudolph et al., “High-fidelity single-shot readout for a spin qubit via an enhanced latching mechanism,” Phys. Rev. X 8, 021046 (2018), arXiv:1703.02651.",
+  "url": "https://doi.org/10.1103/PhysRevX.8.021046",
+  "linktext": "link"
+ },
+ "heinz2021": {
+  "text": "I. Heinz, G. Burkard, “Crosstalk analysis for single-qubit and two-qubit gates in spin qubit arrays,” Phys. Rev. B 104, 045420 (2021), arXiv:2105.10221.",
+  "url": "https://doi.org/10.1103/PhysRevB.104.045420",
+  "linktext": "link"
+ },
+ "hendrickx2020": {
+  "text": "N. W. Hendrickx, D. P. Franke, A. Sammak et al., “Fast two-qubit logic with holes in germanium,” Nature 577, 487-491 (2020), arXiv:1904.11443.",
+  "url": "https://doi.org/10.1038/s41586-019-1919-3",
+  "linktext": "link"
+ },
+ "hendrickx2024": {
+  "text": "N. W. Hendrickx, L. Massai, M. Mergenthaler et al., “Sweet-spot operation of a germanium hole spin qubit with highly anisotropic noise sensitivity,” Nature Materials (2024), arXiv:2305.13150.",
+  "url": "https://doi.org/10.1038/s41563-024-01857-5",
+  "linktext": "link"
+ },
+ "hollmann2020": {
+  "text": "A. Hollmann, T. Struck, V. Langrock et al., “Large, tunable valley splitting and single-spin relaxation mechanisms in a Si/Si_xGe_{1-x} quantum dot,” Phys. Rev. Applied 13, 034068 (2020), arXiv:1907.04146.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.13.034068",
+  "linktext": "link"
+ },
+ "huang2019": {
+  "text": "W. Huang, C. H. Yang, K. W. Chan et al., “Fidelity benchmarks for two-qubit gates in silicon,” Nature 569, 532-536 (2019), arXiv:1805.05027.",
+  "url": "https://doi.org/10.1038/s41586-019-1197-0",
+  "linktext": "link"
+ },
+ "jirovec2021": {
+  "text": "D. Jirovec, A. Hofmann, A. Ballabio et al., “A singlet triplet hole spin qubit in planar Ge,” Nature Materials 20, 1106-1112 (2021), arXiv:2011.13755.",
+  "url": "https://doi.org/10.1038/s41563-021-01022-2",
+  "linktext": "link"
+ },
+ "john2025": {
+  "text": "V. John, C. X. Yu, B. van Straaten et al., “A two-dimensional 10-qubit array in germanium with robust and localised qubit control,” Nat Commun 16, 10560 (2025), arXiv:2412.16044.",
+  "url": "https://doi.org/10.1038/s41467-025-65577-3",
+  "linktext": "link"
+ },
+ "johnson2005": {
+  "text": "A. C. Johnson, J. R. Petta, J. M. Taylor et al., “Triplet-Singlet Spin Relaxation via Nuclei in a Double Quantum Dot,” Nature 435, 925 (2005), arXiv:cond-mat/0503687.",
+  "url": "https://doi.org/10.1038/nature03815",
+  "linktext": "link"
+ },
+ "kawakami2014": {
+  "text": "E. Kawakami, P. Scarlino, D. R. Ward et al., “Electrical control of a long-lived spin qubit in a Si/SiGe quantum dot,” Nat. Nano. 9, 666 (2014), arXiv:1404.5402.",
+  "url": "https://doi.org/10.1038/nnano.2014.153",
+  "linktext": "link"
+ },
+ "keith2019": {
+  "text": "D. Keith, M. House, M. Donnelly et al., “Single-Shot Spin Readout in Semiconductors Near the Shot-Noise Sensitivity Limit,” Physical Review X 9, 041003 (2019).",
+  "url": "https://doi.org/10.1103/physrevx.9.041003",
+  "linktext": "link"
+ },
+ "kha2015": {
+  "text": "A. Kha, R. Joynt, D. Culcer, “Do micromagnets expose spin qubits to charge and Johnson noise?,” Appl. Phys. Lett. 107, 172101 (2015), arXiv:1511.05247.",
+  "url": "https://doi.org/10.1063/1.4934693",
+  "linktext": "link"
+ },
+ "koppens2006": {
+  "text": "F. H. L. Koppens, C. Buizert, K. J. Tielrooij et al., “Driven coherent oscillations of a single electron spin in a quantum dot,” Nature 442, 766-771 (2006), arXiv:cond-mat/0608459.",
+  "url": "https://doi.org/10.1038/nature05065",
+  "linktext": "link"
+ },
+ "laird2010": {
+  "text": "E. A. Laird, J. M. Taylor, D. P. DiVincenzo et al., “Coherent spin manipulation in an exchange-only qubit,” Phys. Rev. B 82 075403 (2010), arXiv:1005.0273.",
+  "url": "https://doi.org/10.1103/PhysRevB.82.075403",
+  "linktext": "link"
+ },
+ "lawrie2020": {
+  "text": "W. I. L. Lawrie, H. G. J. Eenink, N. W. Hendrickx et al., “Quantum Dot Arrays in Silicon and Germanium,” Appl. Phys. Lett. 116, 080501 (2020), arXiv:1909.06575.",
+  "url": "https://doi.org/10.1063/5.0002013",
+  "linktext": "link"
+ },
+ "lawrie2023": {
+  "text": "W. I. L. Lawrie, M. Rimbach-Russ, F. van Riggelen et al., “Simultaneous single-qubit driving of semiconductor spin qubits at the fault-tolerant threshold,” Nature Communications 14, 3617 (2023), arXiv:2109.07837.",
+  "url": "https://doi.org/10.1038/s41467-023-39334-3",
+  "linktext": "link"
+ },
+ "lossdiv": {
+  "text": "D. Loss, D. P. DiVincenzo, “Quantum Computation with Quantum Dots,” Phys. Rev. A 57, 120 (1998), arXiv:cond-mat/9701055.",
+  "url": "https://doi.org/10.1103/PhysRevA.57.120",
+  "linktext": "link"
+ },
+ "madzik2021": {
+  "text": "M. T. Mądzik, A. Laucht, F. E. Hudson et al., “Conditional quantum operation of two exchange-coupled single-donor spin qubits in a MOS-compatible silicon device,” Nature Communications 12, 181 (2021).",
+  "url": "https://doi.org/10.1038/s41467-020-20424-5",
+  "linktext": "link"
+ },
+ "madzik2022": {
+  "text": "M. T. Mądzik, S. Asaad, A. Youssry et al., “Precision tomography of a three-qubit donor quantum processor in silicon,” Nature 601, 348 (2022), arXiv:2106.03082.",
+  "url": "https://doi.org/10.1038/s41586-021-04292-7",
+  "linktext": "link"
+ },
+ "malinowski2017": {
+  "text": "F. K. Malinowski, F. Martins, P. D. Nissen et al., “Notch filtering the nuclear environment of a spin qubit,” Nat. Nanotechnol. 12, 16-20 (2017), arXiv:1601.06677.",
+  "url": "https://doi.org/10.1038/nnano.2016.170",
+  "linktext": "link"
+ },
+ "martins2016": {
+  "text": "F. Martins, F. K. Malinowski, P. D. Nissen et al., “Noise suppression using symmetric exchange gates in spin qubits,” Phys. Rev. Lett. 116, 116801 (2016), arXiv:1511.07336.",
+  "url": "https://doi.org/10.1103/PhysRevLett.116.116801",
+  "linktext": "link"
+ },
+ "maune2012": {
+  "text": "B. Maune, M. Borselli, B. Huang et al., “Coherent singlet-triplet oscillations in a silicon-based double quantum dot,” Nature 481, 344-347 (2012).",
+  "url": "https://doi.org/10.1038/nature10707",
+  "linktext": "link"
+ },
+ "maurand2016": {
+  "text": "R. Maurand, X. Jehl, D. K. Patil et al., “A CMOS silicon spin qubit,” Nature Communications 7, 13575 (2016), arXiv:1605.07599.",
+  "url": "https://doi.org/10.1038/ncomms13575",
+  "linktext": "link"
+ },
+ "mcjunkin2022": {
+  "text": "T. McJunkin, B. Harpt, Y. Feng et al., “SiGe quantum wells with oscillating Ge concentrations for quantum dot qubits,” Nature Communications 13, 7777 (2022), arXiv:2112.09765.",
+  "url": "https://doi.org/10.1038/s41467-022-35510-z",
+  "linktext": "link"
+ },
+ "medford2013": {
+  "text": "J. Medford, J. Beil, J. M. Taylor et al., “Self-Consistent Measurement and State Tomography of an Exchange-Only Spin Qubit,” Nature Nanotechnology 8, 654 (2013), arXiv:1302.1933.",
+  "url": "https://doi.org/10.1038/nnano.2013.168",
+  "linktext": "link"
+ },
+ "medford2013rx": {
+  "text": "J. Medford, J. Beil, J. M. Taylor et al., “The Resonant Exchange Qubit,” Phys. Rev. Lett. 111, 050501 (2013), arXiv:1304.3413.",
+  "url": "https://doi.org/10.1103/PhysRevLett.111.050501",
+  "linktext": "link"
+ },
+ "mi2017": {
+  "text": "X. Mi, C. Péterfalvi, G. Burkard et al., “High-Resolution Valley Spectroscopy of Si Quantum Dots,” Physical Review Letters 119, 176803 (2017).",
+  "url": "https://doi.org/10.1103/physrevlett.119.176803",
+  "linktext": "link"
+ },
+ "mi2018": {
+  "text": "X. Mi, M. Benito, S. Putz et al., “A Coherent Spin-Photon Interface in Silicon,” Nature 555, 599 (2018), arXiv:1710.03265.",
+  "url": "https://doi.org/10.1038/nature25769",
+  "linktext": "link"
+ },
+ "mills2019": {
+  "text": "A. R. Mills, M. M. Feldman, C. Monical et al., “Computer-automated tuning procedures for semiconductor quantum dot arrays,” Appl. Phys. Lett. 115, 113501 (2019), arXiv:1907.10775.",
+  "url": "https://doi.org/10.1063/1.5121444",
+  "linktext": "link"
+ },
+ "mills2022": {
+  "text": "A. R. Mills, C. R. Guinn, M. J. Gullans et al., “Two-qubit silicon quantum processor with operation fidelity exceeding 99%,” Science Advances 8, eabn5130 (2022), arXiv:2111.11937.",
+  "url": "https://doi.org/10.1126/sciadv.abn5130",
+  "linktext": "link"
+ },
+ "morello2010": {
+  "text": "A. Morello, J. J. Pla, F. A. Zwanenburg et al., “Single-shot readout of an electron spin in silicon,” Nature 467, 687 (2010), arXiv:1003.2679.",
+  "url": "https://doi.org/10.1038/nature09392",
+  "linktext": "link"
+ },
+ "neyens2024": {
+  "text": "S. Neyens, O. K. Zietz, T. F. Watson et al., “Probing single electrons across 300 mm spin qubit wafers,” Nature 629, 80-85 (2024), arXiv:2307.04812.",
+  "url": "https://doi.org/10.1038/s41586-024-07275-6",
+  "linktext": "link"
+ },
+ "nichol2017": {
+  "text": "J. Nichol, L. Orona, S. Harvey et al., “High-fidelity entangling gate for double-quantum-dot spin qubits,” npj Quantum Information 3, 3 (2017).",
+  "url": "https://doi.org/10.1038/s41534-016-0003-1",
+  "linktext": "link"
+ },
+ "noiri2020": {
+  "text": "A. Noiri, K. Takeda, J. Yoneda et al., “Radio-frequency detected fast charge sensing in undoped silicon quantum dots,” Nano Letters 20, 947-952 (2020), arXiv:1910.03282.",
+  "url": "https://doi.org/10.1021/acs.nanolett.9b03847",
+  "linktext": "link"
+ },
+ "noiri2022": {
+  "text": "A. Noiri, K. Takeda, T. Nakajima et al., “Fast universal quantum control above the fault-tolerance threshold in silicon,” Nature 601, 338-342 (2022), arXiv:2108.02626.",
+  "url": "https://doi.org/10.1038/s41586-021-04182-y",
+  "linktext": "link"
+ },
+ "noiri2022shuttle": {
+  "text": "A. Noiri, K. Takeda, T. Nakajima et al., “A shuttling-based two-qubit logic gate for linking distant silicon quantum processors,” Nature Communications 13, 5740 (2022), arXiv:2202.01357.",
+  "url": "https://doi.org/10.1038/s41467-022-33453-z",
+  "linktext": "link"
+ },
+ "nowack2007": {
+  "text": "K. C. Nowack, F. H. L. Koppens, Y. V. Nazarov et al., “Coherent control of a single electron spin with electric fields,” Science 318, pp. 1430-1433 (2007), arXiv:0707.3080.",
+  "url": "https://doi.org/10.1126/science.1148092",
+  "linktext": "link"
+ },
+ "oosterkamp1998": {
+  "text": "T. Oosterkamp, T. Fujisawa, W. van der Wiel et al., “Microwave spectroscopy of a quantum-dot molecule,” Nature 395, 873-876 (1998).",
+  "url": "https://doi.org/10.1038/27617",
+  "linktext": "link"
+ },
+ "pakkiam2018": {
+  "text": "P. Pakkiam, A. V. Timofeev, M. G. House et al., “Single-shot single-gate RF spin readout in silicon,” Phys. Rev. X 8, 041032 (2018), arXiv:1809.01802.",
+  "url": "https://doi.org/10.1103/PhysRevX.8.041032",
+  "linktext": "link"
+ },
+ "penthorn2020": {
+  "text": "N. E. Penthorn, J. S. Schoenfield, L. F. Edge et al., “Direct measurement of electron intervalley relaxation in a Si/SiGe quantum dot,” Phys. Rev. Applied 14, 054015 (2020), arXiv:2007.08680.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.14.054015",
+  "linktext": "link"
+ },
+ "petit2020": {
+  "text": "L. Petit, H. G. J. Eenink, M. Russ et al., “Universal quantum logic in hot silicon qubits,” Nature 580, 355-359 (2020), arXiv:1910.05289.",
+  "url": "https://doi.org/10.1038/s41586-020-2170-7",
+  "linktext": "link"
+ },
+ "petta2005": {
+  "text": "J. Petta, A. Johnson, J. Taylor et al., “Coherent Manipulation of Coupled Electron Spins in Semiconductor Quantum Dots,” Science 309, 2180-2184 (2005).",
+  "url": "https://doi.org/10.1126/science.1116955",
+  "linktext": "link"
+ },
+ "philips2022": {
+  "text": "S. G. J. Philips, M. T. Mądzik, S. V. Amitonov et al., “Universal control of a six-qubit quantum processor in silicon,” Nature 609, 919-924 (2022), arXiv:2202.09252.",
+  "url": "https://doi.org/10.1038/s41586-022-05117-x",
+  "linktext": "link"
+ },
+ "pla2012": {
+  "text": "J. Pla, K. Tan, J. Dehollain et al., “A single-atom electron spin qubit in silicon,” Nature 489, 541-545 (2012).",
+  "url": "https://doi.org/10.1038/nature11449",
+  "linktext": "link"
+ },
+ "jang2020": {
+  "text": "W. Jang, M. Cho, J. Kim et al., “Three individual two-axis control of singlet-triplet qubits in a micromagnet integrated quantum dot array,” Appl. Phys. Lett. 117, 234001 (2020), arXiv:2009.13182.",
+  "url": "https://doi.org/10.1063/5.0041232",
+  "linktext": "link"
+ },
+ "jock2022": {
+  "text": "R. M. Jock, N. T. Jacobson, M. Rudolph et al., “A silicon singlet-triplet qubit driven by spin-valley coupling,” Nature Communications 13, 641 (2022), arXiv:2102.12068.",
+  "url": "https://doi.org/10.1038/s41467-022-28302-y",
+  "linktext": "link"
+ },
+ "fedele2021": {
+  "text": "F. Fedele, A. Chatterjee, S. Fallahi et al., “Simultaneous Operations in a Two-Dimensional Array of Singlet-Triplet Qubits,” PRX Quantum 2, 040306 (2021), arXiv:2105.01392.",
+  "url": "https://doi.org/10.1103/PRXQuantum.2.040306",
+  "linktext": "link"
+ },
+ "mills2022ro": {
+  "text": "A. R. Mills, C. R. Guinn, M. M. Feldman et al., “High fidelity state preparation, quantum control, and readout of an isotopically enriched silicon spin qubit,” Phys. Rev. Applied 18, 064028 (2022), arXiv:2204.09551.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.18.064028",
+  "linktext": "link"
+ },
+ "berritta2024": {
+  "text": "F. Berritta, T. Rasmussen, J. A. Krzywda et al., “Real-time two-axis control of a spin qubit,” Nature Communications 15, 1676 (2024), arXiv:2308.02012.",
+  "url": "https://doi.org/10.1038/s41467-024-45857-0",
+  "linktext": "link"
+ },
+ "benestad2024": {
+  "text": "J. Benestad, J. A. Krzywda, E. van Nieuwenburg et al., “Efficient adaptive Bayesian estimation of a slowly fluctuating Overhauser field gradient,” SciPost Phys. 17, 014 (2024), arXiv:2309.15014.",
+  "url": "https://doi.org/10.21468/SciPostPhys.17.1.014",
+  "linktext": "link"
+ },
+ "berritta2024b": {
+  "text": "F. Berritta, J. A. Krzywda, J. Benestad et al., “Physics-informed tracking of qubit fluctuations,” Phys. Rev. Applied 22, 014033 (2024), arXiv:2404.09212.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.22.014033",
+  "linktext": "link"
+ },
+ "chittock2026": {
+  "text": "J. F. Chittock-Wood, R. C. C. Leon, M. A. Fogarty et al., “Radiofrequency cascade readout of coupled spin qubits,” Nat Electron 9, 314-323 (2026), arXiv:2408.01241.",
+  "url": "https://doi.org/10.1038/s41928-026-01582-8",
+  "linktext": "link"
+ },
+ "rojasarias2026": {
+  "text": "J. S. Rojas-Arias, Y. Kojima, K. Takeda et al., “The origins of noise in the Zeeman splitting of spin qubits in natural-silicon devices,” npj Quantum Inf 12, 9 (2026), arXiv:2408.13707.",
+  "url": "https://doi.org/10.1038/s41534-025-01150-6",
+  "linktext": "link"
+ },
+ "koch2024": {
+  "text": "T. Koch, C. Godfrin, V. Adam et al., “Industrial 300 mm wafer processed spin qubits in natural silicon/silicon-germanium,” arXiv:2409.12731 (2024).",
+  "url": "https://arxiv.org/abs/2409.12731",
+  "linktext": "link"
+ },
+ "che2024": {
+  "text": "S. Che, S. W. Oh, H. Qin et al., “Fast Virtual Gate Extraction For Silicon Quantum Dot Devices,” arXiv:2409.15181 (2024).",
+  "url": "https://arxiv.org/abs/2409.15181",
+  "linktext": "link"
+ },
+ "lim2024": {
+  "text": "W. H. Lim, T. Tanttu, T. Youn et al., “A 2x2 quantum dot array in silicon with fully tuneable pairwise interdot coupling,” arXiv:2411.13882 (2024).",
+  "url": "https://doi.org/10.1021/acs.nanolett.4c06264",
+  "linktext": "link"
+ },
+ "kobayashi2025": {
+  "text": "T. Kobayashi, A. Noiri, T. Nakajima et al., “Charge-induced energy shift of a single-spin qubit under a magnetic-field gradient,” Phys. Rev. Applied 23, 054078 (2025), arXiv:2411.16224.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.23.054078",
+  "linktext": "link"
+ },
+ "peng2024": {
+  "text": "J. Peng, C. Qiu, W. Ma et al., “Diverse methods and practical aspects in controlling single semiconductor qubits: a review,” arXiv:2412.03286 (2024).",
+  "url": "https://arxiv.org/abs/2412.03286",
+  "linktext": "link"
+ },
+ "unseld2024": {
+  "text": "F. K. Unseld, B. Undseth, E. Raymenants et al., “Baseband control of single-electron silicon spin qubits in two dimensions,” arXiv:2412.05171 (2024).",
+  "url": "https://arxiv.org/abs/2412.05171",
+  "linktext": "link"
+ },
+ "tsoukalas2026": {
+  "text": "K. Tsoukalas, U. von Lüpke, A. Orekhov et al., “A dressed singlet-triplet qubit in germanium,” Nat Commun 17, 699 (2026), arXiv:2501.14627.",
+  "url": "https://doi.org/10.1038/s41467-025-65569-3",
+  "linktext": "link"
+ },
+ "vanosch2025": {
+  "text": "B. van Osch, A. Paurevic, A. Sakr et al., “Automated tuning and characterization of single-electron and single-hole transistor charge sensors,” arXiv:2502.02521 (2025).",
+  "url": "https://arxiv.org/abs/2502.02521",
+  "linktext": "link"
+ },
+ "kelly2026": {
+  "text": "E. G. Kelly, L. Massai, B. Hetényi et al., “Identification and mitigation of errors in hole spin qubit readout,” Nature Electronics volume 9, pages 1089-1097 (2026), arXiv:2504.06898.",
+  "url": "https://doi.org/10.1038/s41928-026-01705-1",
+  "linktext": "link"
+ },
+ "fernandez2025": {
+  "text": "I. Fernández de Fuentes, E. Raymenants, B. Undseth et al., “Running a six-qubit quantum circuit on a silicon spin qubit array,” arXiv:2505.19200 (2025).",
+  "url": "https://arxiv.org/abs/2505.19200",
+  "linktext": "link"
+ },
+ "gutierrez2026": {
+  "text": "M. Gutiérrez, J. S. Rojas-Arias, D. Obando et al., “Comparison of spin-qubit architectures for quantum error-correcting codes,” Phys. Rev. A 113, 062464 (2026), arXiv:2506.17190.",
+  "url": "https://doi.org/10.1103/qlw3-xk2f",
+  "linktext": "link"
+ },
+ "wu2025": {
+  "text": "Y. Wu, L. C. Camenzind, P. Bütler et al., “Simultaneous High-Fidelity Single-Qubit Gates in a Spin Qubit Array,” arXiv:2507.11918 (2025).",
+  "url": "https://arxiv.org/abs/2507.11918",
+  "linktext": "link"
+ },
+ "broz2025aeon": {
+  "text": "J. D. Broz, J. C. Hoke, E. Acuna et al., “Demonstration of an always-on exchange-only spin qubit,” arXiv:2508.01033 (2025).",
+  "url": "https://arxiv.org/abs/2508.01033",
+  "linktext": "link"
+ },
+ "zhang2025qed": {
+  "text": "C. Zhang, C. Li, Z. Tian et al., “Demonstration of quantum error detection in a silicon quantum processor,” arXiv:2509.24766 (2025).",
+  "url": "https://arxiv.org/abs/2509.24766",
+  "linktext": "link"
+ },
+ "willmes2026": {
+  "text": "A. Willmes, P. Bethke, M. M. E. K. Shehata et al., “Exchange interaction in gate-defined quantum dots beyond the Hubbard model,” Phys. Rev. B 114, 185414 (2026), arXiv:2511.23277.",
+  "url": "https://doi.org/10.1103/fb37-f7ky",
+  "linktext": "link"
+ },
+ "rivard2025": {
+  "text": "J. Rivard, A. Morel, O. Romain et al., “Multimode RF Reflectometry for Spin Qubit Readout and Device Characterization,” arXiv:2512.05087 (2025).",
+  "url": "https://arxiv.org/abs/2512.05087",
+  "linktext": "link"
+ },
+ "nickl2025": {
+  "text": "A. Nickl, N. Dumoulin Stuyck, P. Steinacker et al., “Eight-Qubit Operation of a 300 mm SiMOS Foundry-Fabricated Device,” arXiv:2512.10174 (2025).",
+  "url": "https://arxiv.org/abs/2512.10174",
+  "linktext": "link"
+ },
+ "park2026": {
+  "text": "J. Park, H. Jang, H. Sohn et al., “Highly Tunable Two-Qubit Interactions in Si/SiGe Quantum Dots by Interchanging the Roles of Qubit-Defining Gates,” Nano Lett. 26, 23, 7493-7500 (2026), arXiv:2512.20142.",
+  "url": "https://doi.org/10.1021/acs.nanolett.6c00044",
+  "linktext": "link"
+ },
+ "tomic2025": {
+  "text": "P. Tomić, P. Bütler, Y. Wu et al., “Long coherence silicon spin qubit fabricated in a 300 mm industrial foundry,” arXiv:2512.20758 (2025).",
+  "url": "https://arxiv.org/abs/2512.20758",
+  "linktext": "link"
+ },
+ "undseth2026": {
+  "text": "B. Undseth, N. Meggiato, Y. Wu et al., “Weight-four parity checks with silicon spin qubits,” arXiv:2601.23267 (2026).",
+  "url": "https://arxiv.org/abs/2601.23267",
+  "linktext": "link"
+ },
+ "duan2026": {
+  "text": "J. Duan, F. Torres-Leal, J. M. Nichol, “Measuring and correcting nanosecond pulse distortions in quantum-dot spin qubits,” Physical Review Letters 137.11 (2026): 113601, arXiv:2602.17899.",
+  "url": "https://doi.org/10.1103/l5k6-csy3",
+  "linktext": "link"
+ },
+ "broz2026lpi": {
+  "text": "J. D. Broz, J. C. Hoke, E. Acuna et al., “Leakage-protected idle operation of a triangular exchange-only spin qubit,” arXiv:2603.06320 (2026).",
+  "url": "https://arxiv.org/abs/2603.06320",
+  "linktext": "link"
+ },
+ "sen2026": {
+  "text": "A. Sen, A. Pályi, “Four-state discrimination for a pair of spin qubits via gate reflectometry,” Phys. Rev. B 113, 235435 (2026), arXiv:2603.07806.",
+  "url": "https://doi.org/10.1103/737j-gmns",
+  "linktext": "link"
+ },
+ "tariq2026": {
+  "text": "B. Tariq, X. Hu, “Two-electron spectrum of a silicon quantum dot,” arXiv:2603.23952 (2026).",
+  "url": "https://arxiv.org/abs/2603.23952",
+  "linktext": "link"
+ },
+ "dijkema2026": {
+  "text": "J. J. Dijkema, X. Zhang, A. Bardakas et al., “Simultaneous operation of an 18-qubit modular array in germanium,” arXiv:2604.01063 (2026).",
+  "url": "https://arxiv.org/abs/2604.01063",
+  "linktext": "link"
+ },
+ "hrl2026qpu": {
+  "text": "HRL Quantum Team and collaborators, “A digitally controlled silicon quantum processing unit,” Nature 655, 1154 2026, arXiv:2604.16216.",
+  "url": "https://doi.org/10.1038/s41586-026-10754-7",
+  "linktext": "link"
+ },
+ "steinacker2026": {
+  "text": "P. Steinacker, A. E. Seedhouse, N. Dumoulin Stuyck et al., “Optimal operating temperature for industry-compatible silicon spin quantum computing: colder is not necessarily better,” arXiv:2607.11846 (2026).",
+  "url": "https://arxiv.org/abs/2607.11846",
+  "linktext": "link"
+ },
+ "bryan2026": {
+  "text": "J. Bryan, T. J. Wilson, H. Jiang, “Real-Time FPGA-Based Multi-Parameter Feedback Stabilization of a Silicon Double Quantum Dot,” arXiv:2608.10325 (2026).",
+  "url": "https://arxiv.org/abs/2608.10325",
+  "linktext": "link"
+ },
+ "takeda2026": {
+  "text": "K. Takeda, A. Noiri, T. Nakajima et al., “Assessing fidelity-limiting factors and achieving single-qubit gate fidelity beyond 99.999% in driven silicon spin qubits,” arXiv:2608.11072 (2026).",
+  "url": "https://arxiv.org/abs/2608.11072",
+  "linktext": "link"
+ },
+ "stemp2026": {
+  "text": "H. G. Stemp, H. H. Kang, C. H. Yang et al., “Device characterization of Si/SiGe double quantum dots using exchange oscillations in Earth's magnetic field,” arXiv:2608.31093 (2026).",
+  "url": "https://arxiv.org/abs/2608.31093",
+  "linktext": "link"
+ },
+ "camenzind2026": {
+  "text": "L. C. Camenzind, I. K. Jin, A. Noiri et al., “Reservoir- and Measurement-free Microwave Initialization of Semiconductor Spin Qubits,” arXiv:2609.39415 (2026).",
+  "url": "https://arxiv.org/abs/2609.39415",
+  "linktext": "link"
+ },
+ "hrl2026spins48": {
+  "text": "HRL Quantum Team and Microsoft collaborators, “Benchmarking exchange-only control of a 48-spin singlet manifold,” arXiv:2610.07393 (2026).",
+  "url": "https://arxiv.org/abs/2610.07393",
+  "linktext": "link"
+ },
+ "wessels2026": {
+  "text": "A. L. Wessels, M. G. Bimstefer, J. D. Broz et al., “Demonstrating RFSoC-based Control of a Fully Connected Exchange-Only Qubit,” arXiv:2610.31998 (2026).",
+  "url": "https://arxiv.org/abs/2610.31998",
+  "linktext": "link"
+ },
+ "reed2016": {
+  "text": "M. D. Reed, B. M. Maune, R. W. Andrews et al., “Reduced sensitivity to charge noise in semiconductor spin qubits via symmetric operation,” Phys. Rev. Lett. 116, 110402 (2016), arXiv:1508.01223.",
+  "url": "https://doi.org/10.1103/PhysRevLett.116.110402",
+  "linktext": "link"
+ },
+ "reilly2007": {
+  "text": "D. J. Reilly, C. M. Marcus, M. P. Hanson et al., “Fast Single-Charge Sensing with an rf Quantum Point Contact,” Appl. Phys. Lett. 91, 162101 (2007), arXiv:0707.2946.",
+  "url": "https://doi.org/10.1063/1.2794995",
+  "linktext": "link"
+ },
+ "rimbach2023": {
+  "text": "M. Rimbach-Russ, S. G. J. Philips, X. Xue et al., “Simple framework for systematic high-fidelity gate operations,” arXiv:2211.16241 (2022).",
+  "url": "https://arxiv.org/abs/2211.16241",
+  "linktext": "link"
+ },
+ "russ2018": {
+  "text": "M. Russ, D. M. Zajac, A. J. Sigillito et al., “High-fidelity quantum gates in Si/SiGe double quantum dots,” Phys. Rev. B 97, 085421 (2018), arXiv:1711.00754.",
+  "url": "https://doi.org/10.1103/PhysRevB.97.085421",
+  "linktext": "link"
+ },
+ "samkharadze2018": {
+  "text": "N. Samkharadze, G. Zheng, N. Kalhor et al., “Strong spin-photon coupling in silicon,” Science 359, 1123-1127 (2018), arXiv:1711.02040.",
+  "url": "https://doi.org/10.1126/science.aar4054",
+  "linktext": "link"
+ },
+ "scappucci2021": {
+  "text": "G. Scappucci, C. Kloeffel, F. A. Zwanenburg et al., “The germanium quantum information route,” Nat Rev Mater (2020), arXiv:2004.08133.",
+  "url": "https://doi.org/10.1038/s41578-020-00262-z",
+  "linktext": "link"
+ },
+ "schoelkopf1998": {
+  "text": "R. Schoelkopf, P. Wahlgren, A. Kozhevnikov et al., “The Radio-Frequency Single-Electron Transistor (RF-SET): A Fast and Ultrasensitive Electrometer,” Science 280, 1238-1242 (1998).",
+  "url": "https://doi.org/10.1126/science.280.5367.1238",
+  "linktext": "link"
+ },
+ "seedhouse2021": {
+  "text": "A. Seedhouse, T. Tanttu, R. C. C. Leon et al., “Pauli Blockade in Silicon Quantum Dots with Spin-Orbit Control,” PRX Quantum 2, 010303 (2021), arXiv:2004.07078.",
+  "url": "https://doi.org/10.1103/PRXQuantum.2.010303",
+  "linktext": "link"
+ },
+ "seidler2022": {
+  "text": "I. Seidler, T. Struck, R. Xue et al., “Conveyor-mode single-electron shuttling in Si/SiGe for a scalable quantum computing architecture,” npj Quantum Information 8, 100 (2022), arXiv:2108.00879.",
+  "url": "https://doi.org/10.1038/s41534-022-00615-2",
+  "linktext": "link"
+ },
+ "shafiei2013": {
+  "text": "M. Shafiei, K. C. Nowack, C. Reichl et al., “Resolving Spin-Orbit and Hyperfine Mediated Electric Dipole Spin Resonance in a Quantum Dot,” Physical Review Letters 110, 107601 (2013), arXiv:1207.3331.",
+  "url": "https://doi.org/10.1103/PhysRevLett.110.107601",
+  "linktext": "link"
+ },
+ "shulman2012": {
+  "text": "M. D. Shulman, O. E. Dial, S. P. Harvey et al., “Demonstration of Entanglement of Electrostatically Coupled Singlet-Triplet Qubits,” Science 336, 202 (2012), arXiv:1202.1828.",
+  "url": "https://doi.org/10.1126/science.1217692",
+  "linktext": "link"
+ },
+ "simmons2011": {
+  "text": "C. Simmons, J. Prance, B. Van Bael et al., “Tunable Spin Loading and T 1 of a Silicon Spin Qubit Measured by Single-Shot Readout,” Physical Review Letters 106, 156804 (2011).",
+  "url": "https://doi.org/10.1103/physrevlett.106.156804",
+  "linktext": "link"
+ },
+ "stano2022": {
+  "text": "P. Stano, D. Loss, “Review of performance metrics of spin qubits in gated semiconducting nanostructures,” Nat. Rev. Phys. 4, 672 (2022), arXiv:2107.06485.",
+  "url": "https://doi.org/10.1038/s42254-022-00484-w",
+  "linktext": "link"
+ },
+ "stehlik2015": {
+  "text": "J. Stehlik, Y. Liu, C. Quintana et al., “Fast Charge Sensing of a Cavity-Coupled Double Quantum Dot Using a Josephson Parametric Amplifier,” Physical Review Applied 4, 014018 (2015).",
+  "url": "https://doi.org/10.1103/physrevapplied.4.014018",
+  "linktext": "link"
+ },
+ "struck2020": {
+  "text": "T. Struck, A. Hollmann, F. Schauer et al., “Low-frequency spin qubit energy splitting noise in highly purified 28Si/SiGe,” npj Quantum Information 6, 40 (2020).",
+  "url": "https://doi.org/10.1038/s41534-020-0276-2",
+  "linktext": "link"
+ },
+ "takeda2016": {
+  "text": "K. Takeda, J. Kamioka, T. Otsuka et al., “A fault-tolerant addressable spin qubit in a natural silicon quantum dot,” Science Advances 2, e1600694 (2016), arXiv:1602.07833.",
+  "url": "https://doi.org/10.1126/sciadv.1600694",
+  "linktext": "link"
+ },
+ "takeda2020st": {
+  "text": "K. Takeda, A. Noiri, J. Yoneda et al., “Resonantly driven singlet-triplet spin qubit in silicon,” Phys. Rev. Lett. 124, 117701 (2020), arXiv:1910.00771.",
+  "url": "https://doi.org/10.1103/PhysRevLett.124.117701",
+  "linktext": "link"
+ },
+ "takeda2021": {
+  "text": "K. Takeda, A. Noiri, T. Nakajima et al., “Quantum tomography of an entangled three-spin state in silicon,” Nature Nanotechnology (2021), arXiv:2010.10316.",
+  "url": "https://doi.org/10.1038/s41565-021-00925-0",
+  "linktext": "link"
+ },
+ "undseth2023": {
+  "text": "B. Undseth, O. Pietx-Casas, E. Raymenants et al., “Hotter is easier: unexpected temperature dependence of spin qubit frequencies,” Phys. Rev. X 13, 041015 (2023), arXiv:2304.12984.",
+  "url": "https://doi.org/10.1103/PhysRevX.13.041015",
+  "linktext": "link"
+ },
+ "urdampilleta2019": {
+  "text": "M. Urdampilleta, D. Niegemann, E. Chanrion et al., “Gate-based high fidelity spin readout in a CMOS device,” Nature Nanotechnology 14, 737-741 (2019).",
+  "url": "https://doi.org/10.1038/s41565-019-0443-9",
+  "linktext": "link"
+ },
+ "vanriggelen2024": {
+  "text": "F. van Riggelen-Doelman, C.-A. Wang, S. L. de Snoo et al., “Coherent spin qubit shuttling through germanium quantum dots,” Nat. Commun. 15, 5716 (2024), arXiv:2308.02406.",
+  "url": "https://doi.org/10.1038/s41467-024-49358-y",
+  "linktext": "link"
+ },
+ "vigneau2023": {
+  "text": "F. Vigneau, F. Fedele, A. Chatterjee et al., “Probing quantum devices with radio-frequency reflectometry,” Applied Physics Reviews 10, 021305 (2023), arXiv:2202.10516.",
+  "url": "https://doi.org/10.1063/5.0088229",
+  "linktext": "link"
+ },
+ "volk2019": {
+  "text": "C. Volk, A. M. J. Zwerver, U. Mukhopadhyay et al., “Loading a quantum-dot based \"Qubyte\" register,” npj Quantum Information 5, Article number: 29 (2019), arXiv:1901.00426.",
+  "url": "https://doi.org/10.1038/s41534-019-0146-y",
+  "linktext": "link"
+ },
+ "wang2024hop": {
+  "text": "C.-A. Wang, V. John, H. Tidjani et al., “Operating semiconductor quantum processors with hopping spins,” Science 385, 447-452 (2024), arXiv:2402.18382.",
+  "url": "https://doi.org/10.1126/science.ado5915",
+  "linktext": "link"
+ },
+ "watson2018": {
+  "text": "T. F. Watson, S. G. J. Philips, E. Kawakami et al., “A programmable two-qubit quantum processor in silicon,” Nature 555, 633-637 (2018), arXiv:1708.04214.",
+  "url": "https://doi.org/10.1038/nature25766",
+  "linktext": "link"
+ },
+ "watzinger2018": {
+  "text": "H. Watzinger, J. Kukučka, L. Vukušić et al., “A germanium hole spin qubit,” Nature Communications 9, 3902 (2018).",
+  "url": "https://doi.org/10.1038/s41467-018-06418-4",
+  "linktext": "link"
+ },
+ "weinstein2023": {
+  "text": "A. J. Weinstein, M. D. Reed, A. M. Jones et al., “Universal logic with encoded spin qubits in silicon,” Nature 615, 817-822 (2023), arXiv:2202.03605.",
+  "url": "https://doi.org/10.1038/s41586-023-05777-3",
+  "linktext": "link"
+ },
+ "west2019": {
+  "text": "A. West, B. Hensen, A. Jouan et al., “Gate-based single-shot readout of spins in silicon,” Nature Nanotechnology 14, 437-441 (2019), arXiv:1809.01864.",
+  "url": "https://doi.org/10.1038/s41565-019-0400-7",
+  "linktext": "link"
+ },
+ "wu2014": {
+  "text": "X. Wu, D. R. Ward, J. R. Prance et al., “Two-axis control of a singlet-triplet qubit with an integrated micromagnet,” Proc. Natl. Acad. Sci. 111, 11938 (2014), arXiv:1403.0019.",
+  "url": "https://doi.org/10.1073/pnas.1412230111",
+  "linktext": "link"
+ },
+ "wuetz2022": {
+  "text": "B. P. Wuetz, M. P. Losert, S. Koelling et al., “Atomic fluctuations lifting the energy degeneracy in Si/SiGe quantum dots,” Nature Communications 13, 7730 (2022), arXiv:2112.09606.",
+  "url": "https://doi.org/10.1038/s41467-022-35458-0",
+  "linktext": "link"
+ },
+ "xue2020": {
+  "text": "X. Xue, B. D'Anjou, T. F. Watson et al., “Repetitive quantum non-demolition measurement and soft decoding of a silicon spin qubit,” Phys. Rev. X 10, 021006 (2020), arXiv:1911.08420.",
+  "url": "https://doi.org/10.1103/PhysRevX.10.021006",
+  "linktext": "link"
+ },
+ "xue2022": {
+  "text": "X. Xue, M. Russ, N. Samkharadze et al., “Computing with spin qubits at the surface code error threshold,” Nature 601, 343-347 (2022), arXiv:2107.00628.",
+  "url": "https://doi.org/10.1038/s41586-021-04273-w",
+  "linktext": "link"
+ },
+ "yang2013": {
+  "text": "C. H. Yang, A. Rossi, R. Ruskov et al., “Spin-valley lifetimes in a silicon quantum dot with tunable valley splitting,” Nature Communications 4:2069 (2013), arXiv:1302.0983.",
+  "url": "https://doi.org/10.1038/ncomms3069",
+  "linktext": "link"
+ },
+ "yang2020": {
+  "text": "C. H. Yang, R. C. C. Leon, J. C. C. Hwang et al., “Silicon quantum processor unit cell operation above one Kelvin,” Nature 580, 350-354 (2020), arXiv:1902.09126.",
+  "url": "https://doi.org/10.1038/s41586-020-2171-6",
+  "linktext": "link"
+ },
+ "yoneda2018": {
+  "text": "J. Yoneda, K. Takeda, T. Otsuka et al., “A >99.9%-fidelity quantum-dot spin qubit with coherence limited by charge noise,” Nature Nanotechnology 13, 102-106 (2018), arXiv:1708.01454.",
+  "url": "https://doi.org/10.1038/s41565-017-0014-x",
+  "linktext": "link"
+ },
+ "yoneda2020": {
+  "text": "J. Yoneda, K. Takeda, A. Noiri et al., “Quantum non-demolition readout of an electron spin in silicon,” Nature Communications 11, 1144 (2020).",
+  "url": "https://doi.org/10.1038/s41467-020-14818-8",
+  "linktext": "link"
+ },
+ "yoneda2023": {
+  "text": "J. Yoneda, J. S. Rojas-Arias, P. Stano et al., “Noise-correlation spectrum for a pair of spin qubits in silicon,” Nature Physics 19, 1793-1798 (2023), arXiv:2208.14150.",
+  "url": "https://doi.org/10.1038/s41567-023-02238-6",
+  "linktext": "link"
+ },
+ "zajac2016": {
+  "text": "D. M. Zajac, T. M. Hazard, X. Mi et al., “Scalable gate architecture for densely packed semiconductor spin qubits,” Phys. Rev. Applied 6, 054013 (2016), arXiv:1607.07025.",
+  "url": "https://doi.org/10.1103/PhysRevApplied.6.054013",
+  "linktext": "link"
+ },
+ "zajac2018": {
+  "text": "D. M. Zajac, A. J. Sigillito, M. Russ et al., “Quantum CNOT Gate for Spins in Silicon,” Science 359, 439 (2018), arXiv:1708.03530.",
+  "url": "https://doi.org/10.1126/science.aao5965",
+  "linktext": "link"
+ },
+ "zheng2019": {
+  "text": "G. Zheng, N. Samkharadze, M. L. Noordam et al., “Rapid high-fidelity gate-based spin read-out in silicon,” Nature Nanotechnology (2019), arXiv:1901.00687.",
+  "url": "https://doi.org/10.1038/s41565-019-0488-9",
+  "linktext": "link"
+ },
+ "zwanenburg2013": {
+  "text": "F. A. Zwanenburg, A. S. Dzurak, A. Morello et al., “Silicon Quantum Electronics,” Rev. Mod. Phys. 85, 961 (2013), arXiv:1206.5202.",
+  "url": "https://doi.org/10.1103/RevModPhys.85.961",
+  "linktext": "link"
+ },
+ "zwerver2023": {
+  "text": "A. M. J. Zwerver, S. V. Amitonov, S. L. de Snoo et al., “Shuttling an electron spin through a silicon quantum dot array,” PRX Quantum 4, 030303, (2023), arXiv:2209.00920.",
+  "url": "https://doi.org/10.1103/PRXQuantum.4.030303",
+  "linktext": "link"
+ },
+ "zwolak2023": {
+  "text": "J. P. Zwolak, J. M. Taylor, “Colloquium: Advances in automation of quantum dot devices control,” Rev. Mod. Phys. 95, 011006 (2023), arXiv:2112.09362.",
+  "url": "https://doi.org/10.1103/RevModPhys.95.011006",
+  "linktext": "link"
+ },
+ "borselli2015": {
+  "text": "M. G. Borselli, K. Eng, R. S. Ross et al., “Undoped accumulation-mode Si/SiGe quantum dots,” arXiv:1408.0600 (2014).",
+  "url": "https://arxiv.org/abs/1408.0600",
+  "linktext": "link"
+ },
+ "pioro2008": {
+  "text": "M. Pioro-Ladrière, T. Obata, Y. Tokura et al., “Electrically driven single-electron spin resonance in a slanting Zeeman field,” Nature Physics 4, 776 (2008).",
+  "url": "https://doi.org/10.1038/nphys1053",
+  "linktext": "link"
+ },
+ "tokura2006": {
+  "text": "Y. Tokura, W. G. van der Wiel, T. Obata, S. Tarucha, “Coherent single electron spin control in a slanting Zeeman field,” Phys. Rev. Lett. 96, 047202 (2006).",
+  "url": "https://doi.org/10.1103/PhysRevLett.96.047202",
+  "linktext": "link"
+ },
+ "levy2002": {
+  "text": "J. Levy, “Universal quantum computation with spin-1/2 pairs and Heisenberg exchange,” Phys. Rev. Lett. 89, 147902 (2002).",
+  "url": "https://doi.org/10.1103/PhysRevLett.89.147902",
+  "linktext": "link"
+ },
+ "yoneda2014": {
+  "text": "J. Yoneda, T. Otsuka, T. Nakajima et al., “Fast electrical control of single electron spins in quantum dots with vanishing influence from nuclear spins,” Phys. Rev. Lett. 113, 267601 (2014).",
+  "url": "https://doi.org/10.1103/PhysRevLett.113.267601",
+  "linktext": "link"
+ },
+ "veldhorst2015": {
+  "text": "M. Veldhorst, C. H. Yang, J. C. C. Hwang et al., “A two-qubit logic gate in silicon,” Nature 526, 410 (2015).",
+  "url": "https://doi.org/10.1038/nature15263",
+  "linktext": "link"
+ },
+ "keith2019b": {
+  "text": "D. Keith, S. K. Gorman, L. Kranz et al., “Benchmarking high fidelity single-shot readout of semiconductor qubits,” New J. Phys. 21, 063011 (2019).",
+  "url": "https://doi.org/10.1088/1367-2630/ab242c",
+  "linktext": "link"
+ },
+ "kouwenhoven2001": {
+  "text": "L. P. Kouwenhoven, D. G. Austing, S. Tarucha, “Few-electron quantum dots,” Rep. Prog. Phys. 64, 701 (2001).",
+  "url": "https://doi.org/10.1088/0034-4885/64/6/201",
+  "linktext": "link"
+ },
+ "ha2022": {
+  "text": "W. Ha, S. D. Ha, M. D. Choi et al., “A flexible design platform for Si/SiGe exchange-only qubits with low disorder,” Nano Letters 22, 1443 (2022).",
+  "url": "https://doi.org/10.1021/acs.nanolett.1c03026",
+  "linktext": "link"
+ },
+ "hendrickx2021": {
+  "text": "N. W. Hendrickx, W. I. L. Lawrie, M. Russ et al., “A four-qubit germanium quantum processor,” Nature 591, 580 (2021).",
+  "url": "https://doi.org/10.1038/s41586-021-03332-6",
+  "linktext": "link"
+ },
+ "zhang2024st": {
+  "text": "X. Zhang, E. Morozova, M. Rimbach-Russ et al., “Universal control of four singlet–triplet qubits,” Nature Nanotechnology (2024), arXiv:2312.16101.",
+  "url": "https://doi.org/10.1038/s41565-024-01817-9",
+  "linktext": "link"
+ },
+ "walelign2024": {
+  "text": "H. Y. Walelign, X. Cai, B. Li et al., “Dynamically corrected gates in silicon singlet-triplet spin qubits,” Phys. Rev. Applied 22, 064029 (2024).",
+  "url": "https://doi.org/10.1103/PhysRevApplied.22.064029",
+  "linktext": "link"
+ },
+ "acuna2024": {
+  "text": "E. Acuna, J. D. Broz, K. Shyamsundar et al., “Coherent control of a triangular exchange-only spin qubit,” Phys. Rev. Applied 22, 044057 (2024).",
+  "url": "https://doi.org/10.1103/PhysRevApplied.22.044057",
+  "linktext": "link"
+ },
+ "madzik2025eo": {
+  "text": "M. T. Mądzik, F. Luthi, G. G. Guerreschi et al., “Operating two exchange-only qubits in parallel,” Nature (2025), arXiv:2504.01191.",
+  "url": "https://doi.org/10.1038/s41586-025-09767-5",
+  "linktext": "link"
+ },
+ "volmer2023": {
+  "text": "M. Volmer, T. Struck, A. Sala et al., “Mapping of valley splitting by conveyor-mode spin-coherent electron shuttling,” npj Quantum Information 10 (2024), arXiv:2312.17694.",
+  "url": "https://doi.org/10.1038/s41534-024-00852-7",
+  "linktext": "link"
+ },
+ "wangn2024": {
+  "text": "N. Wang, S.-M. Wang, R.-Z. Zhang et al., “Pursuing high-fidelity control of spin qubits in natural Si/SiGe quantum dot,” arXiv:2409.09747 (2024).",
+  "url": "https://arxiv.org/abs/2409.09747",
+  "linktext": "link"
+ },
+ "vanderwiel2002": {
+  "text": "W. G. van der Wiel, S. De Franceschi, J. M. Elzerman et al., “Electron transport through double quantum dots,” Rev. Mod. Phys. 75, 1 (2002).",
+  "url": "https://doi.org/10.1103/RevModPhys.75.1",
+  "linktext": "link"
+ },
+ "elzerman2004": {
+  "text": "J. M. Elzerman, R. Hanson, L. H. Willems van Beveren et al., “Single-shot read-out of an individual electron spin in a quantum dot,” Nature 430, 431 (2004).",
+  "url": "https://doi.org/10.1038/nature02693",
+  "linktext": "link"
+ },
+ "divincenzo2000": {
+  "text": "D. P. DiVincenzo, D. Bacon, J. Kempe, G. Burkard, K. B. Whaley, “Universal quantum computation with the exchange interaction,” Nature 408, 339 (2000).",
+  "url": "https://doi.org/10.1038/35042541",
+  "linktext": "link"
+ },
+ "veldhorst2014": {
+  "text": "M. Veldhorst, J. C. C. Hwang, C. H. Yang et al., “An addressable quantum dot qubit with fault-tolerant control-fidelity,” Nature Nanotechnology 9, 981 (2014).",
+  "url": "https://doi.org/10.1038/nnano.2014.216",
+  "linktext": "link"
+ },
+ "fogarty2018": {
+  "text": "M. A. Fogarty, K. W. Chan, B. Hensen et al., “Integrated silicon qubit platform with single-spin addressability, exchange control and single-shot singlet-triplet readout,” Nature Communications 9, 4370 (2018).",
+  "url": "https://doi.org/10.1038/s41467-018-06039-x",
+  "linktext": "link"
+ },
+ "chesi2014": {
+  "text": "S. Chesi, Y. Wang, J. Yoneda et al., “Single-spin manipulation in a double quantum dot in the field of a micromagnet,” Phys. Rev. B 90, 235311 (2014), arXiv:1405.7618.",
+  "url": "https://doi.org/10.1103/PhysRevB.90.235311",
+  "linktext": "link"
+ },
+ "ono2002": {
+  "text": "K. Ono, D. G. Austing, Y. Tokura, S. Tarucha, “Current rectification by Pauli exclusion in a weakly coupled double quantum dot system,” Science 297, 1313 (2002).",
+  "url": "https://doi.org/10.1126/science.1070958",
+  "linktext": "link"
+ },
+ "yoneda2015": {
+  "text": "J. Yoneda, T. Otsuka, T. Takakura et al., “Robust micromagnet design for fast electrical manipulations of single spins in quantum dots,” Appl. Phys. Express 8, 084401 (2015).",
+  "url": "https://doi.org/10.7567/APEX.8.084401",
+  "linktext": "link"
+ }
+}

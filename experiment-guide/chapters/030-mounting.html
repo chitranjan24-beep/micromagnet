@@ -1,0 +1,153 @@
+<!--meta {"id": "mounting", "part": "Part B · Getting a chip ready and cold", "title": "From chip to sample holder"}-->
+
+<p class="lede">Between receiving a chip and closing the fridge lies a day or two of careful, unglamorous work: looking at the device, checking that its gates are intact, gluing and bonding it to a circuit board, and connecting that board to the fridge wiring. Mistakes at this stage are expensive, because you only discover them after a multi-day cooldown, and some of them destroy the device outright. This chapter explains what is done, and what each step protects against.</p>
+
+<h2>Look before you touch</h2>
+<p>A chip usually carries several devices, some nominally identical, some variations of the design. Before choosing which one to measure, every candidate is inspected under an optical microscope. With 50× to 100× objectives you can see the gate pattern clearly, though not the finest features. You are looking for anything that would make the device fail:</p>
+<ul>
+<li><b>Interrupted gate lines.</b> A gate in an upper layer must climb over the edges of the layers below. If the metal is too thin at such a step it can crack, leaving the tip of the gate disconnected from its bond pad. On an optical image this shows up as a thin dark line or a missing segment.</li>
+<li><b>Lift-off residue.</b> Gates are defined by depositing metal through a patterned resist and dissolving the resist ("lift-off"). Imperfect lift-off leaves flakes or "flags" of metal that can short neighbouring gates.</li>
+<li><b>Misalignment between layers.</b> The layers are written in separate lithography steps. If one layer is shifted by 20 nm, plungers and barriers no longer sit where the design assumes, and the device may still work but will tune differently.</li>
+<li><b>The micromagnet.</b> Is it present, complete, and still attached? Cobalt can peel if adhesion is poor.</li>
+</ul>
+<p>The finest features (gate tips 30 to 50 nm wide) are only visible in a scanning electron microscope. Groups usually image a sister device, not the one they will measure, because the electron beam deposits charge and contamination and can damage thin oxides. The SEM images in published papers are almost always captioned "a device nominally identical to the one measured" for exactly this reason <cite data-r="philips2022,zajac2016"></cite>.</p>
+
+<h2>Static electricity: the invisible way to destroy a device</h2>
+<p>The gates sit on a few nanometres of oxide, and different gate layers are separated by similar thicknesses. Aluminium oxide breaks down at fields of very roughly 0.5 to 1 V/nm, so a few volts across a thin layer is enough to punch a permanent conducting hole through it. A person walking across a floor can charge up to several thousand volts. Touching a gate pad, or a cable connected to one, discharges that through the oxide in nanoseconds. The device is usually ruined without any visible damage.</p>
+<p>Every lab therefore treats devices as if they were the most static-sensitive components in the building. The standard precautions:</p>
+<ul>
+<li>A grounded wrist strap and a grounded antistatic mat whenever you handle the chip, the sample board, or any cable that will connect to it.</li>
+<li>All lines of the device shorted together and to ground whenever it is not being measured. Sample boards and breakout boxes have switches or shorting plugs for this. The rule is simple: <b>ground before you disconnect, connect before you unground</b>.</li>
+<li>Ionizing air blowers near the bonder and microscope, especially in dry winter air.</li>
+<li>Instruments connected to the device turned on, set to 0 V, and grounded before the device lines are released from ground.</li>
+</ul>
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> at the first cold measurement, one gate draws current as soon as it is raised by a few hundred millivolts, or two gates behave as if they were one.</p>
+<p><b>Likely cause:</b> oxide breakdown, often from an electrostatic discharge during bonding or connection, or from a voltage step applied without a slow ramp.</p>
+<p><b>What to do:</b> map exactly which pairs are shorted (Chapter 6). A gate shorted to the semiconductor can sometimes be left floating or grounded while the rest of the device is used. A short between two gates can sometimes be lived with if they would be set to similar voltages. Then review the handling procedure, because it will happen again.</p>
+</div>
+
+<h2>Room-temperature electrical checks</h2>
+<p>Before bonding, some groups test the device on a probe station: fine needles placed on the bond pads, connected to a source-measure unit with a strict current limit. Others do the same test after bonding, through the sample board. Either way, the goal is to catch shorts before investing a cooldown.</p>
+<p>The useful tests at room temperature are about isolation. Each gate should be isolated from every other gate and from the ohmic contacts by much more than 1 GΩ: applying 0.5 V should produce no measurable current, below about 100 pA. Voltages stay small (well below 1 V), are ramped slowly, and every lead is grounded before and after. A gate that already leaks at room temperature will not get better when cold.</p>
+<p>Two other room-temperature measurements are much less informative than they look. At room temperature, an undoped Si/SiGe device has no two-dimensional electron gas, so the resistance between two ohmics tells you little about whether they will contact the well when cold. In GaAs, where the doped 2DEG exists at room temperature, a two-terminal ohmic-to-ohmic resistance of a few to tens of kilohms is a reasonable sign of life. Gate continuity also cannot easily be tested with a DC meter, because a gate is a single wire with one pad, ending in an open tip. A broken gate looks electrically identical to an intact one until it is cold and fails to pinch off (Chapter 7).</p>
+
+<h2>Gluing and bonding</h2>
+<p>The chip is fixed to the sample <b>printed circuit board</b> (PCB), or to a chip carrier that plugs into one. The glue must hold at millikelvin temperatures and conduct heat; silver epoxy, GE varnish and PMMA are all used. QuTech, for example, glues the chip with PMMA to the gold-plated copper ground plane of the board <cite data-r="undseth2023"></cite>. What matters is that the chip is well thermally anchored. An electron gas that is poorly coupled to the cold plate runs hotter, and the electron temperature limits spin readout (Chapter 15).</p>
+<p>Each bond pad on the chip is then connected to a pad on the board with a <b>wire bond</b>: a 25 µm aluminium wire welded at both ends by ultrasonic energy. A device like ours needs 20 to 40 bonds. Three details matter:</p>
+<ul>
+<li><b>Order.</b> Bond ground connections first, then the ohmics, then the gates, with all board lines grounded throughout. The bonder itself must be grounded, and the ultrasonic pulse should be gentle on gate pads, which sit on thin oxide.</li>
+<li><b>Length on fast lines.</b> A bond wire has an inductance of roughly 1 nH per millimetre. At 15 GHz, 1 nH has a reactance of 2π × 15 GHz × 1 nH ≈ 94 Ω, larger than the 50 Ω impedance of the line. A long bond on the microwave gate reflects and attenuates the drive; it also radiates. Microwave and fast-pulse lines get the shortest possible bonds, sometimes two or three in parallel.</li>
+<li><b>Record.</b> Draw or photograph the bond map: which chip pad goes to which board line. Months later, when a gate misbehaves, this map is the first thing you will want.</li>
+</ul>
+
+<h2>The sample board: where the experiment begins</h2>
+<p>The sample PCB is not just a passive adapter. It carries the last stage of filtering for the DC lines, the bias tees that let fast pulses and DC voltages share a gate, and the inductor that turns the sensor into a radio-frequency resonator. Figure 3.1 shows the four kinds of connection our device needs.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 430" width="860" role="img" aria-label="Sample board connections">
+  <defs><marker id="m-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <!-- column headers -->
+  <text class="lbl" x="20" y="22">from the fridge</text>
+  <text class="lbl" x="330" y="22">on the sample board</text>
+  <text class="lbl" x="700" y="22">on the chip</text>
+  <!-- DC gate line -->
+  <text class="ttl" x="20" y="60">a) DC gate (e.g. CS, LL)</text>
+  <text class="sm" x="20" y="78">twisted pair, filtered</text>
+  <line x1="190" y1="70" x2="330" y2="70" class="ln"/>
+  <rect x="330" y="60" width="60" height="20" class="box"/><text class="sm" x="360" y="74" text-anchor="middle">R</text>
+  <line x1="390" y1="70" x2="680" y2="70" class="ln"/>
+  <line x1="430" y1="70" x2="430" y2="86" class="ln"/><line x1="418" y1="86" x2="442" y2="86" class="ln"/><line x1="418" y1="92" x2="442" y2="92" class="ln"/><line x1="430" y1="92" x2="430" y2="104" class="ln"/><line x1="422" y1="104" x2="438" y2="104" class="ln"/>
+  <text class="sm" x="448" y="96">C to ground</text>
+  <rect x="680" y="58" width="80" height="24" class="boxb"/><text class="sm" x="720" y="74" text-anchor="middle">gate</text>
+  <text class="sm" x="330" y="122">RC low-pass: e.g. 10 kΩ, 10 nF (f_c ≈ 1.6 kHz)</text>
+  <!-- pulsed gate with bias tee -->
+  <text class="ttl" x="20" y="170">b) fast gate (P1, P2, B2)</text>
+  <text class="sm" x="20" y="188">DC wire + coax</text>
+  <line x1="190" y1="178" x2="330" y2="178" class="ln"/><text class="sm" x="200" y="172">DC</text>
+  <rect x="330" y="168" width="70" height="20" class="box"/><text class="sm" x="365" y="182" text-anchor="middle">R ≈ 2 MΩ</text>
+  <line x1="400" y1="178" x2="560" y2="178" class="ln"/>
+  <line x1="190" y1="218" x2="470" y2="218" class="ln"/><text class="sm" x="200" y="212">pulses (coax)</text>
+  <line x1="470" y1="206" x2="470" y2="230" class="ln"/><line x1="478" y1="206" x2="478" y2="230" class="ln"/>
+  <text class="sm" x="430" y="246">C ≈ 100 nF</text>
+  <line x1="478" y1="218" x2="560" y2="218" class="ln"/>
+  <line x1="560" y1="178" x2="560" y2="218" class="ln"/>
+  <line x1="560" y1="198" x2="680" y2="198" class="ln"/>
+  <rect x="680" y="186" width="80" height="24" class="boxb"/><text class="sm" x="720" y="202" text-anchor="middle">gate</text>
+  <text class="sm" x="590" y="246">bias tee: RC ≈ 0.2 s</text>
+  <!-- microwave gate -->
+  <text class="ttl" x="20" y="292">c) microwave gate</text>
+  <text class="sm" x="20" y="310">coax, 10–20 GHz</text>
+  <line x1="190" y1="300" x2="680" y2="300" class="ln" style="stroke-width:3"/>
+  <text class="sm" x="360" y="292">50 Ω coplanar line, short bonds</text>
+  <rect x="680" y="288" width="80" height="24" class="boxb"/><text class="sm" x="720" y="304" text-anchor="middle">P1 / MW</text>
+  <!-- sensor tank -->
+  <text class="ttl" x="20" y="362">d) sensor ohmic (reflectometry)</text>
+  <text class="sm" x="20" y="380">coax, ~200 MHz</text>
+  <line x1="190" y1="370" x2="330" y2="370" class="ln"/>
+  <path d="M330,370 c6,-14 12,-14 18,0 c6,-14 12,-14 18,0 c6,-14 12,-14 18,0 c6,-14 12,-14 18,0" class="ln"/>
+  <text class="sm" x="335" y="350">L = 1.2 µH</text>
+  <line x1="402" y1="370" x2="680" y2="370" class="ln"/>
+  <line x1="520" y1="370" x2="520" y2="386" class="ln"/><line x1="508" y1="386" x2="532" y2="386" class="ln"/><line x1="508" y1="392" x2="532" y2="392" class="ln"/><line x1="520" y1="392" x2="520" y2="404" class="ln"/><line x1="512" y1="404" x2="528" y2="404" class="ln"/>
+  <text class="sm" x="538" y="398">C_p ≈ 0.5 pF (parasitic)</text>
+  <rect x="680" y="358" width="80" height="24" class="boxw"/><text class="sm" x="720" y="374" text-anchor="middle">ohmic O3</text>
+  <text class="sm" x="770" y="374">→ sensor</text>
+  <text class="sm" x="190" y="420">a DC path to the ohmic (through a large resistor) is added so a source–drain bias can be applied</text>
+</svg>
+</div>
+<figcaption>The four kinds of connection on our sample board. (a) Quasi-static gates get an RC low-pass filter as the last stage of a long filter chain. (b) Gates that need fast pulses get a bias tee: DC through a large resistor, pulses through a capacitor, so the gate sees their sum. (c) The microwave drive needs a matched 50 Ω path and the shortest possible bonds. (d) The sensor's ohmic contact is connected through an inductor; with the parasitic capacitance of the board and bonds, this forms the resonant tank circuit used for reflectometry (Chapter 10). Component values are typical, not universal.</figcaption>
+</figure>
+
+<h3>DC lines and their last filter</h3>
+<p>Most gates only ever need slowly varying voltages. Their lines arrive as filtered twisted pairs from the fridge (Chapter 4), and the board adds one more RC low-pass stage right next to the chip. The point of filtering so close to the device is that anything picked up between the last filter and the gate, such as radiation inside the sample enclosure, is not filtered at all. A cutoff of a kilohertz or so is typical for gates that are only swept slowly. It is low enough to remove almost everything, and high enough that slow sweeps are not distorted.</p>
+
+<h3>Bias tees on fast gates</h3>
+<p>The plungers and the interdot barrier need two things at once: a stable DC voltage that sets their operating point, and fast pulses (nanoseconds to milliseconds) that move the dots between initialization, manipulation and readout. A <dfn data-def="A circuit that adds a slowly varying (DC) voltage, delivered through a resistor or inductor, to a fast signal delivered through a capacitor, so both reach the same gate.">bias tee</dfn> combines them. The DC voltage arrives through a large resistor R, the pulses through a capacitor C, and the gate sees their sum.</p>
+<p>The price is that the pulse path is high-pass filtered, with time constant RC. A square pulse that lasts longer than a small fraction of RC visibly sags, because the capacitor slowly charges and the pulse amplitude decays towards zero. This is why on-board bias tees use very long time constants.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how much does a pulse droop?</span>
+<p>With R = 2 MΩ and C = 100 nF, the time constant is RC = 0.2 s and the high-pass corner is f<sub>c</sub> = 1/(2πRC) ≈ 0.8 Hz.</p>
+<p>A rectangular pulse of duration τ held through the bias tee decays as e<sup>−τ/RC</sup>. For a 1 ms readout-level pulse the amplitude drops by τ/RC = 1 ms / 0.2 s = 0.5%. On a 10 mV pulse that is 50 µV, which corresponds to a 5 µeV shift of a dot level at a lever arm of 0.1 eV/V. That is about one thermal energy, which is enough to matter for spin readout. Long sequences therefore keep the average voltage of each pulse cycle close to zero (they are "compensated"), and the readout point is calibrated with the pulse sequence running, not in DC.</p>
+</div>
+<p>Bias tees also shape fast edges. The capacitor, the bond wires and the on-chip gate lines all filter and reflect high frequencies, so a pulse that leaves the generator with a 1 ns edge may arrive at the dot rounded and with ripples. Chapter 13 shows how these distortions are measured on the device itself and pre-compensated <cite data-r="duan2026"></cite>.</p>
+
+<h3>The microwave line</h3>
+<p>For EDSR, a 10 to 20 GHz signal must reach one gate with as little loss and reflection as possible. On the board it travels on a 50 Ω coplanar waveguide right to the chip edge, and the final bond is kept short. In our device the microwaves are applied to plunger P1, so P1's line must carry both microwaves and fast pulses. This is done with a broadband bias tee or a dedicated combining network. Some designs instead have a separate microwave gate or an on-chip antenna.</p>
+
+<h3>The tank circuit</h3>
+<p>The sensor dot will be read out with radio-frequency reflectometry, which needs the sensor's resistance to be part of a resonant circuit (Chapter 10). On our board the sensor's source ohmic O3 is connected through a surface-mount inductor of 1.2 µH. The other element of the resonator is the parasitic capacitance of the board trace, the bond pad and the bond wire to ground, about 0.5 pF. Together they resonate near</p>
+\[ f_0 = \frac{1}{2\pi\sqrt{LC_p}} = \frac{1}{2\pi\sqrt{1.2\ \mu\text{H} \times 0.5\ \text{pF}}} \approx 205\ \text{MHz}. \]
+<p>Because the parasitic capacitance is set by the layout and the bonds, it can only be estimated before cooldown. The real resonance frequency is measured cold, and it typically differs from the estimate by 10 to 20%.</p>
+
+<h2>Into the fridge</h2>
+<p>The board, with the chip bonded and all lines grounded, is mounted on the cold finger of the dilution refrigerator: a gold-plated copper rod or plate bolted to the mixing-chamber stage. A copper or brass enclosure usually surrounds the board to block thermal radiation and stray microwaves. Before the enclosure is closed, a few things deserve care:</p>
+<ul>
+<li><b>Orientation in the magnet.</b> Our qubits need an in-plane field along the micromagnet's intended magnetization direction. The board is mounted so that the device axes line up with the magnet's axes, and the angle is written down. In silicon, the field direction relative to the crystal axes also changes the g-factor slightly through spin–orbit effects <cite data-r="seedhouse2021"></cite>, so a well-documented orientation saves confusion later.</li>
+<li><b>Line checks through the fridge wiring.</b> With the device still grounded at the board, measure each line from the room-temperature breakout box. Every DC line should show the expected series resistance of its wiring and filters (often a few hundred ohms to a few kilohms), and no line should be shorted to another. Each coax should be checked for continuity.</li>
+<li><b>Photos and notes.</b> A photograph of the mounted board, the bond map and the line assignment go into the lab notebook before the radiation shields go on.</li>
+</ul>
+<div class="box notebook"><span class="tag">Lab notebook · mounting day</span>
+<p>Device A (chip 7, die 3, device "DQD-mm-v2"). Optical: gates continuous, P2 lead has small residue near pad (not touching B3), magnet intact.</p>
+<p>RT isolation through board: all 15 gates &gt; 10 GΩ to each other and to O1–O4 at 0.5 V (meter limit ~50 pA). Bonded with PMMA glue, 32 bonds, map photographed (img_0412). MW bond to P1: two wires in parallel, ~0.4 mm.</p>
+<p>Mounted on cold finger, device axis x along magnet axis X (in-plane field will be along Y = magnetization axis of the Co). Lines checked from breakout: DC lines 1.9–2.2 kΩ each (wiring + filters), coax 1–6 continuous. Device left grounded at breakout. Closing shields 17:40.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 3</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Gate isolation at room temperature</td><td>all &gt; 10 GΩ</td><td>Chapter 6</td></tr>
+<tr><td>Fast gates (bias tees, RC ≈ 0.2 s)</td><td>P1, P2, B2 (P1 also carries microwaves)</td><td>Chapters 13, 15, 18, 24</td></tr>
+<tr><td>Tank circuit (estimated)</td><td>L = 1.2 µH, C<sub>p</sub> ≈ 0.5 pF → f₀ ≈ 205 MHz</td><td>Chapter 10</td></tr>
+<tr><td>Field orientation</td><td>in plane, along the micromagnet's magnetization axis</td><td>Chapter 14</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why is the last RC filter placed on the sample board rather than at room temperature, where it would be easier to change?</p>
+<details><summary>Show answer</summary><div>Any noise or radiation coupled into the line after the last filter reaches the gate unfiltered. Filtering right next to the chip removes what is picked up along the way, including inside the fridge and the sample enclosure. Filters at room temperature also cannot remove the thermal noise of the warmer parts of the wiring.</div></details>
+<p>2. A readout pulse of 3 mV is held for 5 ms through a bias tee with RC = 50 ms. How far does it sag by the end, and what does that mean in energy for a lever arm of 0.1 eV/V?</p>
+<details><summary>Show answer</summary><div>The fractional sag is about τ/RC = 5/50 = 10%, i.e. 0.3 mV. Times 0.1 eV/V that is 30 µeV, about half the Zeeman energy of our qubit. That is far too much for spin readout, which needs the level placement to be stable to a few µeV. This bias tee is not suitable for such long pulses.</div></details>
+<p>3. Why do published papers so often show an SEM image of a device "nominally identical" to the one measured?</p>
+<details><summary>Show answer</summary><div>Imaging with an electron beam deposits charge and carbon contamination and can damage thin oxides. Labs therefore avoid imaging the device they will measure, and image a sister device fabricated in the same run instead.</div></details>
+</div>

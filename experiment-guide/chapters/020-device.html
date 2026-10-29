@@ -1,0 +1,206 @@
+<!--meta {"id": "device", "part": "Part A · The whole picture", "title": "The device we will follow"}-->
+
+<p class="lede">Every tuning step later in this book makes sense once you can picture what is underneath the gates: where the electrons live, what each gate pulls on, and what the micromagnet adds. This chapter builds that picture for our device, a silicon double quantum dot with a charge sensor and a micromagnet, and then contrasts it with the GaAs devices the field started with.</p>
+
+<h2>The idea in one paragraph</h2>
+<p>A quantum dot is a puddle of electrons small enough that adding one more costs a large, well-defined energy. To make one, you need three things: a place where electrons can live in two dimensions, a way to confine them laterally to a region tens of nanometres across, and a way to control how many electrons are inside and how easily they tunnel in and out. In our device the first is a thin silicon layer buried in silicon–germanium. The second and third are provided by metal gates on the surface, whose voltages shape the electrostatic potential underneath. A larger dot next to the qubits acts as a sensitive electrometer that can see a single electron arrive or leave. A strip of cobalt on top makes a magnetic field that varies in space, which is what lets an oscillating electric field rotate the spin.</p>
+
+<h2>The heterostructure: a quiet place for electrons</h2>
+<p>Figure 2.1 shows the layers. Read it from the bottom up, because that is the order in which they are grown.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 400" width="860" role="img" aria-label="Cross-section of the Si/SiGe device">
+  <rect x="60" y="340" width="560" height="44" class="fillbg" style="stroke: var(--ink-3)"/>
+  <text class="sm" x="70" y="366">silicon wafer</text>
+  <rect x="60" y="292" width="560" height="48" class="box"/>
+  <text class="sm" x="70" y="320">graded SiGe buffer (Ge fraction rises 0 → 30%; dislocations stay down here)</text>
+  <rect x="60" y="232" width="560" height="60" class="box"/>
+  <text class="sm" x="70" y="266">relaxed Si₀.₇Ge₀.₃ (sets the lattice constant)</text>
+  <rect x="60" y="214" width="560" height="18" class="boxl"/>
+    <rect x="60" y="160" width="560" height="54" class="box"/>
+  <text class="sm" x="70" y="192">Si₀.₇Ge₀.₃ spacer, 30 nm (separates electrons from the surface)</text>
+  <rect x="60" y="154" width="560" height="6" class="boxw"/>
+  <rect x="60" y="146" width="560" height="8" class="fillbg" style="stroke: var(--ink-3)"/>
+  <!-- gate layers -->
+  <rect x="60" y="134" width="150" height="12" class="box" style="fill: var(--ink-3)"/>
+  <rect x="470" y="134" width="150" height="12" class="box" style="fill: var(--ink-3)"/>
+  <rect x="215" y="122" width="80" height="24" class="boxb"/>
+  <rect x="385" y="122" width="80" height="24" class="boxb"/>
+  <rect x="160" y="108" width="65" height="38" class="boxl"/>
+  <rect x="285" y="108" width="110" height="38" class="boxl"/>
+  <rect x="455" y="108" width="65" height="38" class="boxl"/>
+  <rect x="140" y="40" width="200" height="46" class="boxa" style="fill-opacity:.55"/>
+  <rect x="420" y="40" width="200" height="46" class="boxa" style="fill-opacity:.55"/>
+  <!-- electrons -->
+  <ellipse cx="255" cy="223" rx="26" ry="5" class="f1" fill-opacity=".85"/>
+  <ellipse cx="425" cy="223" rx="26" ry="5" class="f1" fill-opacity=".85"/>
+  <ellipse cx="100" cy="223" rx="36" ry="5" class="f1" fill-opacity=".45"/>
+  <ellipse cx="580" cy="223" rx="36" ry="5" class="f1" fill-opacity=".45"/>
+  <!-- labels -->
+  <text class="sm" x="255" y="140" text-anchor="middle">P1</text>
+  <text class="sm" x="425" y="140" text-anchor="middle">P2</text>
+  <text class="sm" x="192" y="120" text-anchor="middle">B1</text>
+  <text class="sm" x="340" y="120" text-anchor="middle">B2</text>
+  <text class="sm" x="488" y="120" text-anchor="middle">B3</text>
+  <text class="sm" x="240" y="68" text-anchor="middle">Co micromagnet</text>
+  <text class="sm" x="520" y="68" text-anchor="middle">Co micromagnet</text>
+  <line x1="628" y1="140" x2="660" y2="140" class="thin"/><text class="sm" x="664" y="136">gates: 3 metal layers</text><text class="sm" x="664" y="150">separated by ~5 nm Al₂O₃</text>
+  <line x1="628" y1="157" x2="660" y2="176" class="thin"/><text class="sm" x="664" y="180">~1 nm Si cap (oxidized)</text>
+  <line x1="628" y1="223" x2="660" y2="223" class="thin"/><text class="sm tlab" x="664" y="219">strained ²⁸Si well, 8 nm:</text><text class="sm" x="664" y="233">electrons live here, ≈38 nm deep</text>
+  <line x1="628" y1="63" x2="660" y2="63" class="thin"/><text class="sm" x="664" y="67">200 nm Co, magnetized by B₀</text>
+  <text class="sm" x="255" y="246" text-anchor="middle">dot 1</text>
+  <text class="sm" x="425" y="246" text-anchor="middle">dot 2</text>
+  <text class="sm" x="100" y="246" text-anchor="middle">reservoir</text>
+  <text class="sm" x="580" y="246" text-anchor="middle">reservoir</text>
+  <text class="sm" x="20" y="30">not to scale: real lateral sizes are ~50–100 nm per gate, vertical sizes as labelled</text>
+</svg>
+</div>
+<figcaption>Cross-section of our device along the dot array, not to scale. Electrons are drawn up from the ohmic contacts into the 8 nm silicon well by positive gate voltages, and pooled into dots under the plunger gates P1 and P2. Barrier gates B1–B3 control the tunnel barriers. The screening gates (grey, lowest layer) block the plungers' leads from accumulating electrons elsewhere. The micromagnet sits on top of the whole gate stack.</figcaption>
+</figure>
+
+<p>The silicon wafer at the bottom is just a support. Silicon and germanium have lattice constants that differ by about 4%, so a germanium-rich layer cannot be grown directly on silicon without defects. Instead, the germanium fraction is increased gradually over a few micrometres (the <em>graded buffer</em>), so that the misfit dislocations form deep down and the top of the buffer is a <em>relaxed</em> Si<sub>0.7</sub>Ge<sub>0.3</sub> crystal with its own, larger lattice constant.</p>
+<p>The <b>quantum well</b> is a thin layer of pure silicon grown on top of that. It is forced to adopt the larger in-plane lattice constant of the SiGe beneath, so it is under tensile strain. Strain does something important for us. Bulk silicon has six equivalent conduction-band minima, or <dfn data-def="Equivalent minima of the conduction band in k-space. Bulk Si has six; tensile strain in a Si/SiGe well lowers the two along the growth direction, and the interface splits those two by the valley splitting.">valleys</dfn>, along ±x, ±y and ±z in momentum space. Tensile in-plane strain lowers the two valleys along the growth direction (±z) by much more than any energy we care about, so only those two matter. Those two are then split by the sharp interface into the <dfn data-def="The energy separating the two lowest valley states of an electron in a Si quantum dot, set by the atomic-scale structure of the interface; typically tens to a few hundred µeV in Si/SiGe.">valley splitting</dfn>, which in Si/SiGe is typically tens to a few hundred µeV and varies from dot to dot. We will meet it again in Chapter 14; for now remember that silicon electrons carry this extra, small degree of freedom.</p>
+<p>The SiGe on both sides of the well has a conduction band roughly 150 meV higher than the silicon, so electrons in the well are confined vertically to its 8 nm thickness. The confinement energy is tens of millielectronvolts, so vertically the electron is always in its ground state and the problem becomes two-dimensional.</p>
+<p>The <b>spacer</b> above the well is the most important design choice in the stack. Its thickness, 30 nm here, sets how far the electrons sit from the surface and the gates. A thicker spacer keeps the electrons away from charge traps at the oxide interface, which reduces disorder and charge noise. But it also makes the gates' influence weaker and blurrier: lever arms shrink, and the dots cannot be squeezed as tightly. Most modern Si/SiGe qubit devices use spacers of 30 to 60 nm <cite data-r="philips2022,zajac2016,borselli2015"></cite>.</p>
+<p>Two things are deliberately missing from this stack. First, there are no dopants. Older Si/SiGe devices had a layer of donors in the SiGe that supplied the electrons, but the ionized donors were a major source of charge noise and instability. Our device is <dfn data-def="A heterostructure with no intentional dopants; the 2D electron gas exists only where positive gate voltages accumulate it, drawing electrons from implanted ohmic contacts.">undoped</dfn>: no electrons are present until a gate pulls them in from the ohmic contacts <cite data-r="borselli2015"></cite>. Second, the silicon in the well is <b>isotopically purified</b>. Natural silicon contains 4.7% <sup>29</sup>Si, whose nucleus has spin 1/2. An electron in a dot spreads over roughly a million silicon atoms, about forty thousand of which are <sup>29</sup>Si. Their randomly oriented nuclear spins add up to a fluctuating magnetic field of about 10 µT, which dephases the qubit in about a microsecond <cite data-r="kawakami2014"></cite>. Growing the well from purified <sup>28</sup>Si (residual <sup>29</sup>Si around 800 ppm, or 0.08%) removes most of this effect and lengthens the dephasing time by an order of magnitude <cite data-r="yoneda2018"></cite>.</p>
+
+<figure>
+<div class="figbody"><!--plot:band-profile--></div>
+<figcaption>Conduction-band edge versus depth below a gate (schematic, simplified electrostatics). With the gate below its threshold voltage (orange), the bottom of the well lies above the Fermi level of the ohmic contacts, so no electrons enter. With the gate above threshold (blue), the gate's electric field tilts the bands down until the well dips below the Fermi level, and electrons flow in from the contacts. This is why the device is called accumulation-mode, and why everything stays empty until a gate is turned on.</figcaption>
+</figure>
+
+<h2>Where the electrons come from</h2>
+<p>Electrons enter through <dfn data-def="A low-resistance electrical contact to the 2D electron gas, made in Si by implanting phosphorus to form a degenerately doped n++ region, and in GaAs by annealing a Ni/Ge/Au alloy.">ohmic contacts</dfn>: regions near the edge of the device that are implanted with phosphorus so heavily that they conduct like a metal even at millikelvin temperatures. Each ohmic is wired to the outside world. Between the ohmics and the dots, large <b>lead gates</b> (also called reservoir or accumulation gates) are biased positive enough to accumulate a two-dimensional electron gas, a "sea" of electrons with a well-defined Fermi level. These seas are the <b>reservoirs</b> that the dots exchange electrons with, and they are what the ohmic contacts connect to.</p>
+<p>So the electrical path into a dot is: room-temperature wire → filters → ohmic contact → reservoir under a lead gate → tunnel barrier under a barrier gate → the dot. Every link in that chain can fail, and the first cooldown checks them one by one (Chapter 6).</p>
+
+<h2>The gates and what each one does</h2>
+<p>Figure 2.3 shows the gate layout from above. The design follows the <dfn data-def="A gate design in which several metal layers, separated by thin oxide, overlap so that each gate controls one feature (a dot or a barrier) with little cross-talk; introduced for Si by Angus, Zajac and Borselli and co-workers.">overlapping-gate architecture</dfn> introduced by Princeton and HRL, in which several layers of metal gates, separated by a few nanometres of aluminium oxide, overlap so that each gate's tip sits exactly where it is needed <cite data-r="zajac2016,borselli2015"></cite>.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 420" width="860" role="img" aria-label="Top view of the gate layout">
+  <!-- channel outline -->
+  <rect x="40" y="130" width="780" height="70" class="fillbg" style="stroke: var(--rule)"/>
+  <rect x="200" y="290" width="460" height="56" class="fillbg" style="stroke: var(--rule)"/>
+  <!-- screening gates -->
+  <rect x="40" y="96" width="780" height="34" class="box" style="fill: var(--ink-3); fill-opacity:.35"/>
+  <rect x="40" y="200" width="780" height="34" class="box" style="fill: var(--ink-3); fill-opacity:.35"/>
+  <rect x="200" y="346" width="460" height="30" class="box" style="fill: var(--ink-3); fill-opacity:.35"/>
+  <text class="sm" x="48" y="117">screening gate CS (layer 1)</text>
+  <text class="sm" x="48" y="222">screening gate CS (layer 1)</text>
+  <!-- lead gates -->
+  <rect x="40" y="140" width="150" height="50" class="boxa"/><text class="sm" x="52" y="168">lead gate LL</text>
+  <rect x="670" y="140" width="150" height="50" class="boxa"/><text class="sm" x="682" y="168">lead gate LR</text>
+  <!-- barriers layer 3 -->
+  <rect x="186" y="60" width="44" height="160" class="boxl"/><text class="sm" x="208" y="54" text-anchor="middle">B1</text>
+  <rect x="408" y="60" width="44" height="160" class="boxl"/><text class="sm" x="430" y="54" text-anchor="middle">B2</text>
+  <rect x="630" y="60" width="44" height="160" class="boxl"/><text class="sm" x="652" y="54" text-anchor="middle">B3</text>
+  <!-- plungers layer 2 -->
+  <rect x="258" y="20" width="120" height="186" class="boxb" style="fill-opacity:.85"/><text class="sm" x="318" y="40" text-anchor="middle">P1</text>
+  <rect x="482" y="20" width="120" height="186" class="boxb" style="fill-opacity:.85"/><text class="sm" x="542" y="40" text-anchor="middle">P2</text>
+  <!-- dots -->
+  <circle cx="318" cy="165" r="16" class="f1" fill-opacity=".9"/><text class="sm" x="318" y="169" text-anchor="middle" style="fill: var(--paper)">D1</text>
+  <circle cx="542" cy="165" r="16" class="f1" fill-opacity=".9"/><text class="sm" x="542" y="169" text-anchor="middle" style="fill: var(--paper)">D2</text>
+  <!-- sensor -->
+  <rect x="200" y="296" width="120" height="44" class="boxa"/><text class="sm" x="212" y="322">sensor lead SL</text>
+  <rect x="540" y="296" width="120" height="44" class="boxa"/><text class="sm" x="552" y="322">sensor lead SR</text>
+  <rect x="318" y="270" width="36" height="96" class="boxl"/><text class="sm" x="336" y="392" text-anchor="middle">SB1</text>
+  <rect x="506" y="270" width="36" height="96" class="boxl"/><text class="sm" x="524" y="392" text-anchor="middle">SB2</text>
+  <rect x="370" y="244" width="120" height="110" class="boxb" style="fill-opacity:.85"/><text class="sm" x="430" y="260" text-anchor="middle">SP</text>
+  <circle cx="430" cy="318" r="22" class="f2" fill-opacity=".85"/><text class="sm" x="430" y="322" text-anchor="middle" style="fill: var(--paper)">SD</text>
+  <!-- ohmics -->
+  <rect x="10" y="150" width="26" height="30" class="boxw"/><text class="sm" x="23" y="146" text-anchor="middle">O1</text>
+  <rect x="824" y="150" width="26" height="30" class="boxw"/><text class="sm" x="837" y="146" text-anchor="middle">O2</text>
+  <rect x="170" y="303" width="26" height="30" class="boxw"/><text class="sm" x="183" y="299" text-anchor="middle">O3</text>
+  <rect x="664" y="303" width="26" height="30" class="boxw"/><text class="sm" x="677" y="299" text-anchor="middle">O4</text>
+  <!-- magnet outline -->
+  <rect x="60" y="6" width="740" height="40" rx="3" class="acc dash" style="fill:none"/>
+  <text class="sm tacc" x="700" y="30">micromagnet above</text>
+  <text class="sm" x="430" y="410" text-anchor="middle">D1, D2: qubit dots · SD: sensor dot · O1–O4: ohmic contacts</text>
+</svg>
+</div>
+<figcaption>Top view of our device (schematic). Purple: plungers (P1, P2, and the sensor plunger SP). Teal: barriers (B1–B3 for the qubit dots, SB1 and SB2 for the sensor). Magenta: lead gates that accumulate the reservoirs over the ohmic contacts. Grey: screening gates that confine everything to narrow channels. The two qubit dots sit 90 nm apart, and the sensor dot sits about 100 nm away from them.</figcaption>
+</figure>
+
+<p>Each type of gate has one main job:</p>
+<ul>
+<li><b>Plunger gates</b> (P1, P2) sit directly above the dots. Raising a plunger's voltage lowers the potential energy of an electron in the dot below it, which pulls the dot's levels down and eventually lets another electron in. The plunger is the "how many electrons" knob.</li>
+<li><b>Barrier gates</b> (B1, B2, B3) sit between dots, or between a dot and a reservoir. Raising a barrier's voltage lowers the potential hill between two regions and makes tunnelling easier. B1 and B3 set how fast each dot exchanges electrons with its reservoir; B2 sets the tunnel coupling between the two dots, and therefore, later, the exchange interaction between the two spins (Chapter 24). Tunnel rates depend <em>exponentially</em> on the barrier voltage: a few millivolts change them by a factor of ten. HRL reported controlling a dot–reservoir rate over nine orders of magnitude with one barrier gate <cite data-r="borselli2015"></cite>.</li>
+<li><b>Screening gates</b> (CS) are in the lowest layer and are held at a low or slightly negative voltage. They stop the plungers' leads, which must cross over the device to reach the dots, from accumulating electrons along their whole length, so electrons gather only under the gate tips. They also define the narrow channel in which the dot array sits.</li>
+<li><b>Lead gates</b> (LL, LR, SL, SR) accumulate the reservoirs over the ohmic contacts. They are usually set once and left alone.</li>
+</ul>
+<p>Because each gate sits on a different layer, the tips can be placed tens of nanometres apart, and each gate is much closer to "its" feature than to anything else. That is the point of the overlapping design. In older single-layer depletion-mode devices, several gates had comparable influence on each dot. In the overlapping design the largest unwanted coupling is typically 20 to 30% <cite data-r="borselli2015"></cite>. Not zero, which is why virtual gates exist (Chapter 11), but small enough that tuning is manageable.</p>
+<p>The gate metal is aluminium or a titanium–palladium bilayer, a few tens of nanometres thick. Between layers there is a few nanometres of aluminium oxide grown by atomic layer deposition, and the same oxide separates the lowest gates from the semiconductor. This oxide matters more than it seems. It contains defects that can trap and release charges, and these fluctuating charges are one of the main sources of the charge noise that ultimately limits qubit coherence. Rochester measured noticeably more charge noise in devices with thicker oxide <cite data-r="connors2019"></cite>.</p>
+
+<h2>The charge sensor</h2>
+<p>Below the qubit dots, a second channel holds the <b>sensor dot</b> SD, with its own plunger SP, barriers SB1 and SB2, and reservoirs connected to ohmics O3 and O4. It is a full single-electron transistor in its own right: current can flow from O3 through SD to O4, but only when one of SD's levels lines up with the reservoirs.</p>
+<p>The trick that makes it a sensor is electrostatic. The sensor dot is close enough to the qubit dots that an electron entering D2 shifts SD's levels slightly, as if someone had nudged SP. If SD is tuned to the steep side of a conductance peak, that small shift produces a large change in current. In our device one electron on D2 shifts the sensor peak by roughly half its width, enough to see a single tunnelling event in a few microseconds once the sensor is read out with radio-frequency reflectometry (Chapters 9 and 10). The sensor's coupling falls off quickly with distance, roughly as the inverse cube in densely gated devices, because the metal gates screen it <cite data-r="zajac2016"></cite>. That is why sensors must sit within a dot pitch or two of the qubits.</p>
+
+<h2>The micromagnet</h2>
+<p>The last ingredient is magnetic. A uniform external field B₀ splits the spin states and sets the qubit frequency, but a uniform field cannot be used to rotate one spin without rotating all of them. The micromagnet solves both problems at once.</p>
+<p>It is a layer of cobalt about 200 nm thick, patterned on top of the gate stack. When the external field is applied in the plane of the device (0.40 T in our case), the cobalt magnetizes along it and produces its own stray field at the dots, about 0.15 T. That stray field has two parts that do different jobs (Figure 2.4):</p>
+<ul>
+<li><b>The longitudinal component</b> B<sub>∥</sub> points along B₀ and simply adds to it. Because it is different at the two dots, the two spins have different Zeeman energies and therefore different resonance frequencies. A microwave tone at one qubit's frequency rotates only that qubit. This is how individual spins are addressed with a shared drive line.</li>
+<li><b>The transverse component</b> B<sub>⊥</sub> points perpendicular to B₀ and changes with position. An oscillating voltage on a gate pushes the electron back and forth by a fraction of a nanometre. In a transverse gradient, that motion makes the electron feel an oscillating transverse magnetic field, which is exactly what drives spin resonance. This is <dfn data-def="Electric-dipole spin resonance: driving spin rotations with an oscillating electric field, which shakes the electron in a magnetic-field gradient (micromagnet) or acts through spin-orbit coupling.">electric-dipole spin resonance</dfn> (EDSR) with a "slanting" field <cite data-r="tokura2006,pioro2008"></cite>.</li>
+</ul>
+<figure>
+<div class="figbody"><!--plot:micromagnet-field--></div>
+<figcaption>Simulated stray field of a two-part cobalt micromagnet (200 nm thick, pole faces 300 nm apart, saturation magnetization μ₀M<sub>s</sub> = 1.8 T), evaluated 120 nm below its bottom surface along the dot array. At the dots the field adds about 0.15 T along B₀, and both components change by a few tenths of a millitesla per nanometre. The longitudinal gradient separates the two qubit frequencies; the transverse gradient makes EDSR possible.</figcaption>
+</figure>
+<p>The gradients are a double-edged sword, and this trade-off runs through the rest of the book. The transverse gradient makes driving fast. The longitudinal gradient makes the qubits addressable, but it also means that if the electron moves, its frequency changes. Charge noise jiggles every electron by picometres all the time, so a longitudinal gradient turns charge noise into frequency noise, and therefore into dephasing. RIKEN designed their magnet to keep the longitudinal gradient near 0.2 mT/nm for exactly this reason, and found that in purified silicon this was then what limited the coherence <cite data-r="yoneda2018"></cite>. Micromagnet design is a careful compromise <cite data-r="dumoulin2021,yoneda2015"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: from field to frequency</span>
+<p>For a free electron in silicon, g ≈ 2, so the Zeeman frequency is f = gμ<sub>B</sub>B/h ≈ 28.0 GHz/T × B.</p>
+<p>At dot 1 the total field is approximately B₀ + B<sub>∥</sub> = 0.40 + 0.148 T, plus a small perpendicular part of 0.093 T that adds in quadrature: |B| = √(0.548² + 0.093²) ≈ 0.556 T, giving f ≈ 15.6 GHz.</p>
+<p>At dot 2 the simulation gives B<sub>∥</sub> = 0.171 T and B<sub>⊥</sub> = 0.063 T, so |B| ≈ 0.575 T and f ≈ 16.1 GHz. The predicted difference is about 0.5 GHz.</p>
+<p>When we measure the real device in Chapter 18, the two qubits will be at 15.42 and 15.72 GHz: close to the prediction, but not equal to it. This is normal. Dots never sit exactly where the design puts them, and the magnet is never perfectly saturated or perfectly shaped. In the QuTech six-qubit device, the measured qubit frequencies did not follow the simulated spacing either <cite data-r="philips2022"></cite>. Simulations tell you the scale; only spectroscopy tells you the actual frequencies.</p>
+</div>
+<p>One practical consequence: the micromagnet only works properly once it is magnetized close to saturation, which for these cobalt structures takes an in-plane field of a few tenths of a tesla. That is one reason Si/SiGe micromagnet devices typically run at B₀ = 0.3 to 0.7 T, with qubit frequencies of 10 to 20 GHz <cite data-r="kawakami2014,yoneda2018,noiri2022,xue2022"></cite>. The field is ramped once, slowly, and then left alone.</p>
+
+<h2>The GaAs device, for contrast</h2>
+<p>Spin qubits were born in gallium arsenide, and many of the techniques in this book were invented there <cite data-r="hanson2007"></cite>. A typical GaAs device looks superficially similar but works in the opposite way:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Property</th><th>Our Si/SiGe device</th><th>Typical GaAs/AlGaAs device</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>Where electrons come from</td><td>Accumulated by positive gates from implanted ohmics (undoped)</td><td>Already present: a doped AlGaAs layer supplies a 2DEG at zero gate voltage</td><td>GaAs gates are negative and <em>deplete</em>; Si gates are positive and <em>accumulate</em></td></tr>
+<tr><td>Effective mass</td><td>0.19 m<sub>e</sub></td><td>0.067 m<sub>e</sub></td><td>GaAs dots can be larger for the same orbital spacing, so lithography is easier</td></tr>
+<tr><td>g-factor</td><td>≈ 2 (28 GHz/T)</td><td>≈ −0.44 (6.2 GHz/T)</td><td>GaAs needs several tesla for the same Zeeman energy</td></tr>
+<tr><td>Nuclear spins</td><td>Few (0.08% <sup>29</sup>Si after purification)</td><td>Every Ga and As nucleus has spin</td><td>GaAs spins dephase in ~10–20 ns unless the nuclei are controlled</td></tr>
+<tr><td>Valleys</td><td>Two low valleys, split by 10s–100s µeV</td><td>None (single Γ-point minimum)</td><td>Valley physics is a silicon-specific complication</td></tr>
+<tr><td>Spin–orbit coupling</td><td>Weak</td><td>Moderate</td><td>GaAs spins can be driven without a micromagnet, but relax faster</td></tr>
+</tbody></table></div>
+<p>The comparison explains the history. GaAs heterostructures were cleaner and easier to gate, so the first single-spin readout <cite data-r="elzerman2004"></cite>, the first coherent exchange oscillations <cite data-r="petta2005"></cite> and the first EDSR <cite data-r="nowack2007"></cite> were all done in GaAs. But the nuclear spins limited coherence so severely that the field moved to silicon once silicon devices became clean enough <cite data-r="zwanenburg2013,burkard2023"></cite>. GaAs remains a valuable teaching and research platform, and Chapter 27 uses it to explain singlet–triplet qubits in their original setting.</p>
+<p>Two other platforms deserve a mention. <b>Si-MOS</b> devices put the electrons directly at a Si/SiO₂ interface under the gates, with no SiGe spacer. Lever arms are larger and valley splittings are often larger, but the electrons sit right next to the oxide's defects. <b>Germanium hole</b> devices confine holes rather than electrons in a strained Ge well. Holes have strong spin–orbit coupling, so they can be driven electrically without any micromagnet, and they have no valleys <cite data-r="scappucci2021,hendrickx2021"></cite>. Chapter 29 covers them.</p>
+
+<h2>What can be wrong with a device before you start</h2>
+<p>A finished chip is the result of dozens of fabrication steps, and not every device on a chip works. Knowing the common failure modes helps you interpret the first measurements:</p>
+<ul>
+<li><b>Broken or shorted gates.</b> A gate line can be interrupted where it crosses a step in the layer below, or two layers can short through a pinhole in the oxide. The first electrical checks find these (Chapters 3 and 6).</li>
+<li><b>Gate leakage.</b> Weak oxide lets current flow from a gate into the semiconductor at high voltages. A leaky gate is noisy and must be kept below its leakage onset.</li>
+<li><b>Bad ohmics.</b> An ohmic contact that does not reach the well is an open circuit, and the reservoir it should feed is unusable.</li>
+<li><b>Disorder.</b> Trapped charges near the interface can create unintended dots or block the channel. Disorder shows up as irregular, non-periodic Coulomb peaks and charge transitions that cannot be attributed to any intended dot.</li>
+<li><b>Small valley splitting.</b> Not visible until spin experiments begin, and not fixable by tuning beyond a modest range. It is a property of the interface at the dot's location <cite data-r="wuetz2022"></cite>.</li>
+</ul>
+<p>The next three chapters take the chip from the box to the bottom of the fridge, and Chapter 6 starts checking for all of these.</p>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 2</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Heterostructure</td><td>8 nm ²⁸Si well (800 ppm ²⁹Si), 30 nm Si₀.₇Ge₀.₃ spacer, undoped</td><td>everything</td></tr>
+<tr><td>Gates</td><td>P1, P2, B1–B3, LL, LR, CS; sensor SP, SB1, SB2, SL, SR</td><td>Chapters 6–13</td></tr>
+<tr><td>Dot pitch</td><td>90 nm</td><td>Chapters 11, 24</td></tr>
+<tr><td>Applied field (planned)</td><td>0.40 T in plane</td><td>Chapter 14</td></tr>
+<tr><td>Micromagnet (simulated)</td><td>+0.15 T at the dots; gradients ≈ 0.25–0.3 mT/nm</td><td>Chapters 14, 18</td></tr>
+<tr><td>Expected qubit frequencies</td><td>≈ 15.5–16 GHz (simulation)</td><td>Chapter 18</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In our device, what happens if every gate is left at 0 V?</p>
+<details><summary>Show answer</summary><div>Nothing conducts. The heterostructure is undoped, so with no positive voltage on the lead gates there is no electron gas, and the ohmic contacts are not connected to anything. This is why the first cooldown measurements start by turning on the lead gates (Chapter 6).</div></details>
+<p>2. Why does a thicker SiGe spacer reduce charge noise but make tuning harder?</p>
+<details><summary>Show answer</summary><div>Charge noise comes largely from traps near the oxide and the surface. A thicker spacer puts the electrons farther from them, so their fluctuating fields are weaker at the dot. But the gates are also farther away, so each gate's potential is more spread out: lever arms are smaller, cross-coupling between gates is larger, and it is harder to make small, well-separated dots.</div></details>
+<p>3. A colleague says the micromagnet's longitudinal gradient is "pure benefit" because it gives addressability. What is the hidden cost?</p>
+<details><summary>Show answer</summary><div>A longitudinal gradient makes the qubit frequency depend on the electron's position. Charge noise moves the electron by tiny amounts, so the gradient converts charge noise into qubit frequency noise, which causes dephasing. In purified silicon this can become the dominant dephasing mechanism, so the gradient must be large enough to separate the qubits but no larger.</div></details>
+</div>

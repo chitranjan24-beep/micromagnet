@@ -1,0 +1,151 @@
+<!--meta {"id": "fridge", "part": "Part B · Getting a chip ready and cold", "title": "The fridge as part of the experiment"}-->
+
+<p class="lede">A dilution refrigerator can cool its coldest plate to 10 mK, but the electrons in a device on that plate are usually several times hotter. Whether they end up at 40 mK or at 200 mK depends almost entirely on how the wires reaching them are filtered, attenuated and thermally anchored. Since spin readout depends directly on electron temperature, the fridge wiring is really the first part of the experiment.</p>
+
+<h2>How the fridge gets cold</h2>
+<p>Modern "dry" dilution refrigerators need no liquid helium bath. Their cooling happens in stages, each a metal plate held at a fixed temperature, with the experiment hanging below the coldest one:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Stage</th><th>Temperature</th><th>What cools it</th><th>Typical cooling power</th></tr></thead>
+<tbody>
+<tr><td>50 K plate</td><td>40–60 K</td><td>first stage of the pulse-tube cryocooler</td><td>tens of watts</td></tr>
+<tr><td>4 K plate</td><td>3–4 K</td><td>second stage of the pulse tube</td><td>about 1 W</td></tr>
+<tr><td>Still</td><td>0.7–0.9 K</td><td>evaporation of ³He from the dilute phase</td><td>tens of mW</td></tr>
+<tr><td>Cold plate</td><td>≈ 100 mK</td><td>the outgoing ³He stream (heat exchangers)</td><td>sub-mW</td></tr>
+<tr><td>Mixing chamber (MXC)</td><td>8–20 mK</td><td>³He crossing from the concentrated to the dilute phase</td><td>≈ 10–20 µW at 20 mK, hundreds of µW at 100 mK</td></tr>
+</tbody></table></div>
+<p>The physics of the last stage is worth a sentence, because it is often described wrongly. Below about 0.8 K, a mixture of ³He and ⁴He separates into two liquid phases: one almost pure ³He (the concentrated phase) floating on one with about 6% ³He dissolved in superfluid ⁴He (the dilute phase). Moving a ³He atom from the concentrated phase into the dilute phase absorbs heat, much as evaporation does. This happens at the phase boundary in the <b>mixing chamber</b>, which is where the cooling is produced. The <b>still</b> supplies the driving force. It is heated to evaporate ³He preferentially from the dilute phase, which is then pumped away, recondensed and returned to the concentrated phase. The circulation of ³He through this loop produces the cooling, and the still heater sets how fast it circulates.</p>
+<p>Cooling from room temperature to base takes one to two days for a typical system. The outer vacuum can is pumped, the pulse tube cools everything to about 4 K over roughly a day, then the mixture is condensed and circulation started. Warming up takes a similar time, so a cooldown is a commitment: whatever is wrong with the wiring or the bonding stays wrong for days.</p>
+
+<h2>Why the electrons are hotter than the fridge</h2>
+<p>The electrons in the device's reservoirs exchange heat with two things: the crystal lattice, through electron–phonon scattering, and the outside world, through the wires connected to them. At millikelvin temperatures the electron–phonon coupling is extremely weak; the heat flow it can carry falls roughly as T⁵. The wires, meanwhile, carry noise: the thermal (Johnson) noise of every warm resistor along the way, radiation leaking down coaxial cables, and interference picked up from the lab. A tiny noise power, picowatts or less, is enough to keep the electrons well above the lattice temperature.</p>
+<p>The result is that the <dfn data-def="The temperature that describes the energy distribution (Fermi function) of electrons in the device's reservoirs; usually higher than the fridge temperature because of noise and weak electron–phonon coupling.">electron temperature</dfn> T<sub>e</sub>, the temperature that appears in the Fermi function of the reservoirs, is usually 30 to 150 mK even with the mixing chamber at 10 mK. In Si/SiGe single-shot readout experiments, values around 100 to 200 mK were common for years. Princeton reported about 45 mK by thermalizing the device carefully at the mixing chamber and eliminating ground loops, which was what made more than 99% readout visibility possible <cite data-r="mills2022ro"></cite>.</p>
+<p>Figure 4.1 shows why this matters so much. During spin readout (Chapter 15) the two spin levels of the dot are placed on either side of the reservoir's Fermi level. Only the upper (spin-up) electron should be able to tunnel out, into the empty states above the Fermi level. But the Fermi distribution is not a sharp step. At finite temperature some states below the Fermi level are also empty, so the spin-down electron has a small probability of leaving too, and that is counted as a wrong answer.</p>
+<figure>
+<div class="figbody"><!--plot:fermi-readout--></div>
+<figcaption>Probability that a reservoir state is empty, 1 − f(E), for three electron temperatures. The dashed lines mark our qubit's spin-down and spin-up levels placed symmetrically around the Fermi level, separated by the 64 µeV Zeeman energy. At 50 mK a state at the spin-down energy is empty with probability 6 × 10⁻⁴, so a spin-down electron almost never escapes. At 200 mK the probability is 14%, and spin-down electrons regularly fake a spin-up signal.</figcaption>
+</figure>
+<p>The relevant number is the ratio of Zeeman energy to thermal energy. For our qubit, E<sub>Z</sub>/k<sub>B</sub>T<sub>e</sub> ≈ 64 µeV / 4.3 µeV ≈ 15 at 50 mK, but only ≈ 3.7 at 200 mK. Keith and co-workers showed that Elzerman readout with 99% visibility requires E<sub>Z</sub> ≳ 13 k<sub>B</sub>T<sub>e</sub> <cite data-r="keith2019b,mills2022ro"></cite>. You can raise E<sub>Z</sub> with a larger magnetic field, but that costs you elsewhere: shorter T1, higher microwave frequencies, more heating. Lowering T<sub>e</sub> is the better route, and it is mostly decided by the wiring.</p>
+
+<h2>DC lines: slow on purpose</h2>
+<p>Most of the device's lines carry slowly varying gate voltages and source–drain biases. They are made of thin twisted pairs of resistive alloy wire (phosphor bronze, manganin or constantan) above 4 K, and often superconducting NbTi below. Resistive alloys are chosen because they conduct heat poorly: a copper wire from room temperature would carry far too much heat to the cold stages. Each wire is thermally anchored at every plate, by wrapping it around a copper post or gluing it to a copper bobbin, so that it arrives at each stage already at that stage's temperature.</p>
+<p>The lines are also filtered, in several stages, because noise at different frequencies needs different filters:</p>
+<ul>
+<li><b>Low-pass RC filters</b> (at room temperature, at the mixing chamber, and on the sample board) remove everything from audio frequencies upwards. A cutoff of 1 to 100 kHz is typical. These filters only work up to a few hundred megahertz, because their components stop behaving ideally at high frequencies.</li>
+<li><b>Microwave-absorbing filters</b> (metal-powder or Eccosorb filters, or meandering lossy lines) at the mixing chamber attenuate everything from about 100 MHz to tens of gigahertz by 50 dB or more. They stop thermal photons and radiation that would otherwise travel down the wires and heat the electrons, or excite the qubit directly.</li>
+</ul>
+<p>The consequence is that a DC line is <em>slow</em>: a step applied at room temperature arrives at the gate smeared over tens of microseconds to milliseconds. That is fine for setting operating points and for slow sweeps, but any gate that must be pulsed quickly needs a separate coaxial line and a bias tee (Chapter 3).</p>
+
+<h2>Coaxial lines and attenuators</h2>
+<p>Fast pulses, microwaves and the reflectometry carrier travel on coaxial cables. A coaxial cable from room temperature carries not only your signal but also the thermal noise of the 300 K electronics at its top, with a noise temperature of 300 K. If nothing is done, that noise arrives at the device and corresponds to hundreds of thermal photons per mode at 15 GHz.</p>
+<p>The standard remedy is a chain of <b>attenuators</b>, each bolted to a stage. An attenuator of power ratio A at temperature T<sub>s</sub> passes a fraction 1/A of the incoming noise and adds its own thermal noise in proportion to what it absorbs:</p>
+\[ T_{\text{out}} = \frac{T_{\text{in}}}{A} + T_s\left(1 - \frac{1}{A}\right). \]
+<p>Apply this stage by stage and the noise temperature falls to near the coldest stage's temperature, provided each stage has enough attenuation to suppress the noise from above (Figure 4.2).</p>
+<figure>
+<div class="figbody"><!--plot:line-noise--></div>
+<figcaption>Noise temperature carried by a coaxial line at each stage, for three attenuation schemes (computed with the formula above). With 20 dB at 4 K and 10 dB each at the still, cold plate and mixing chamber, the noise temperature at the device is about 34 mK. That corresponds to a thermal photon number of about 4 × 10⁻¹⁰ at 15.4 GHz. With only 20 dB at 4 K the line delivers 7 K of noise to the device.</figcaption>
+</figure>
+<p>Attenuation is not free, though. A pulse or microwave signal is attenuated by the same factor, so the room-temperature source must be stronger, and the power absorbed in each attenuator heats that stage. Spin-qubit experiments need fairly large signals. Plunger pulses are millivolts to tens of millivolts at the gate, and EDSR needs a few millivolts of microwave amplitude. Their lines therefore usually get less attenuation than the readout input, and the remaining noise is accepted. The balance between "enough attenuation to be cold" and "enough signal to work" is a standing design decision for every line.</p>
+<div class="box numbers"><span class="tag">Worked numbers: microwave power at the gate</span>
+<p>Suppose EDSR needs a microwave amplitude of 2 mV at the gate. In a 50 Ω line the power is P = V²/(2Z₀) = (2 × 10⁻³)² / 100 = 4 × 10⁻⁸ W, which is 40 nW or −44 dBm.</p>
+<p>The line has 40 dB of attenuators (Figure 4.3) plus about 10 dB of cable loss at 15 GHz, 50 dB in total. The source must therefore deliver −44 + 50 = +6 dBm, about 4 mW, at room temperature.</p>
+<p>All but 40 nW of that is dissipated inside the fridge, mostly in the attenuators on the colder stages and in the cables. On the coldest stages, microwatts of heating are already significant. This is one reason long microwave bursts change the temperature of the device and shift the qubit frequency, an effect we will meet in Chapter 22 <cite data-r="undseth2023"></cite>.</p>
+</div>
+
+<h2>The readout chain</h2>
+<p>The reflectometry readout (Chapter 10) needs two coaxial paths: one to send a weak radio-frequency carrier down to the tank circuit, and one to bring the reflected signal back up. Figure 4.3 shows how they are arranged.</p>
+
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 470" width="860" role="img" aria-label="Fridge wiring diagram">
+  <defs><marker id="f-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <!-- stages -->
+  <g>
+    <line x1="120" y1="40" x2="840" y2="40" class="thin"/><text class="sm" x="10" y="44">300 K</text>
+    <line x1="120" y1="100" x2="840" y2="100" class="ln2"/><text class="sm" x="10" y="104">50 K</text>
+    <line x1="120" y1="170" x2="840" y2="170" class="ln2"/><text class="sm" x="10" y="174">4 K</text>
+    <line x1="120" y1="240" x2="840" y2="240" class="ln2"/><text class="sm" x="10" y="244">still (0.8 K)</text>
+    <line x1="120" y1="300" x2="840" y2="300" class="ln2"/><text class="sm" x="10" y="304">cold plate</text>
+    <line x1="120" y1="370" x2="840" y2="370" class="ln2"/><text class="sm" x="10" y="374">MXC (10 mK)</text>
+  </g>
+  <!-- DC lines -->
+  <text class="sm" x="150" y="28">DC gates</text>
+  <line x1="160" y1="40" x2="160" y2="440" class="ln"/>
+  <rect x="146" y="150" width="28" height="14" class="box"/><text class="sm" x="180" y="161">anchor</text>
+  <rect x="146" y="346" width="28" height="20" class="boxl"/><text class="sm" x="180" y="356">RC + powder</text><text class="sm" x="180" y="368">filters</text>
+  <!-- fast gate line -->
+  <text class="sm" x="260" y="28">fast pulses</text>
+  <line x1="280" y1="40" x2="280" y2="440" class="ln" style="stroke-width:2.4"/>
+  <rect x="266" y="150" width="28" height="18" class="boxw"/><text class="sm" x="300" y="162">10 dB</text>
+  <rect x="266" y="350" width="28" height="18" class="boxw"/><text class="sm" x="300" y="362">3–10 dB</text>
+  <!-- MW line -->
+  <text class="sm" x="380" y="28">microwaves</text>
+  <line x1="400" y1="40" x2="400" y2="440" class="ln" style="stroke-width:2.4"/>
+  <rect x="386" y="150" width="28" height="18" class="boxw"/><text class="sm" x="420" y="162">20 dB</text>
+  <rect x="386" y="222" width="28" height="18" class="boxw"/><text class="sm" x="420" y="234">10 dB</text>
+  <rect x="386" y="350" width="28" height="18" class="boxw"/><text class="sm" x="420" y="362">10 dB</text>
+  <!-- RF in -->
+  <text class="sm" x="510" y="28">RF carrier in</text>
+  <line x1="540" y1="40" x2="540" y2="400" class="ln" style="stroke-width:2.4"/>
+  <rect x="526" y="150" width="28" height="18" class="boxw"/><text class="sm" x="560" y="162">20 dB</text>
+  <rect x="526" y="222" width="28" height="18" class="boxw"/><text class="sm" x="560" y="234">10 dB</text>
+  <rect x="526" y="282" width="28" height="18" class="boxw"/><text class="sm" x="560" y="294">10 dB</text>
+  <!-- coupler -->
+  <rect x="520" y="384" width="180" height="30" rx="4" class="boxa"/><text class="sm" x="610" y="403" text-anchor="middle">directional coupler (MXC)</text>
+  <line x1="610" y1="414" x2="610" y2="440" class="ln" style="stroke-width:2.4"/>
+  <!-- RF out -->
+  <text class="sm" x="680" y="28">RF signal out</text>
+  <line x1="680" y1="384" x2="680" y2="40" class="ln" style="stroke-width:2.4"/>
+  <path d="M664,190 L696,190 L680,162 Z" class="boxb"/><text class="sm" x="704" y="180">HEMT amplifier</text><text class="sm" x="704" y="193">+35–40 dB, T_N ≈ 2–5 K</text>
+  <path d="M664,62 L696,62 L680,34 Z" class="boxb" transform="translate(0,20)"/><text class="sm" x="704" y="66">room-temperature amplifiers</text>
+  <text class="sm" x="704" y="330">superconducting or low-loss coax</text><text class="sm" x="704" y="343">(every dB lost before the HEMT costs SNR)</text>
+  <!-- sample -->
+  <rect x="140" y="440" width="560" height="26" rx="4" class="box"/><text class="sm" x="420" y="457" text-anchor="middle">sample board: RC filters · bias tees · MW line · tank circuit → device</text>
+</svg>
+</div>
+<figcaption>The lines into a typical spin-qubit fridge (attenuator values are typical, not universal). DC gates use filtered, thermally anchored twisted pairs. Fast pulse lines carry modest attenuation, because they need millivolt pulses at the gate. Microwave lines carry more. The reflectometry carrier is attenuated heavily on the way down. The reflected signal is separated by a directional coupler at the mixing chamber and amplified by a cryogenic HEMT amplifier at 4 K before any significant loss occurs.</figcaption>
+</figure>
+<p>Two features of this chain are easy to get wrong:</p>
+<ul>
+<li><b>The directional coupler must be cold.</b> The carrier comes down a heavily attenuated line, but the weak reflected signal must not go back up through those attenuators; it would lose 40 dB on the way. A directional coupler at the mixing chamber separates the two waves: the incoming carrier passes through to the tank, and the reflected wave is routed into a separate, low-loss output line towards the amplifier. At the 100 MHz to 1 GHz frequencies of reflectometry, cryogenic circulators are large and rarely used; directional couplers are the standard solution <cite data-r="vigneau2023"></cite>.</li>
+<li><b>The amplifier must match the frequency.</b> The first amplifier, a high-electron-mobility transistor (HEMT) amplifier at 4 K, sets the noise of the whole readout. Its noise temperature is a few kelvin, far below room-temperature amplifiers. It must be specified for the reflectometry band. An amplifier built for 4 to 8 GHz, common in superconducting-qubit setups, does nothing for a 200 MHz reflectometry signal. Some groups add a superconducting parametric amplifier at the mixing chamber to come closer to the quantum limit <cite data-r="stehlik2015,vigneau2023"></cite>.</li>
+</ul>
+<p>The signal level involved is tiny. The carrier power at the tank is typically around −100 dBm (0.1 pW), because a larger carrier heats the sensor and broadens its Coulomb peaks (Chapter 10). After 35 to 40 dB of cryogenic gain and more at room temperature, the signal reaches the digitizer at a comfortable level.</p>
+
+<h2>The magnet</h2>
+<p>The static field B₀ comes from a superconducting magnet around the sample space: a solenoid for one field direction, or a vector magnet with three orthogonal coils if the field direction must be varied. For our device the field is in plane along the micromagnet's magnetization axis, 0.40 T.</p>
+<p>Superconducting magnets are ramped slowly (typically 0.05 to 0.2 T per minute near the sample) to avoid heating the fridge through eddy currents and to protect the magnet from quenching. Once at field, many magnets are switched into <b>persistent mode</b>: a superconducting switch closes across the coil, the current circulates without the power supply, and the supply can be ramped down. This removes the supply's current noise. But a persistent magnet slowly decays, by parts per million per hour, and at 15 GHz a decay of 1 ppm per hour shifts the qubit frequency by 15 kHz per hour. RIKEN recalibrated their qubit frequency roughly every hour for this reason <cite data-r="yoneda2018"></cite>.</p>
+<p>One common misconception deserves correcting: magnetic shields of mu-metal or superconducting foil, standard for superconducting qubits, are not used around spin-qubit samples in a superconducting magnet. A high-permeability shield would saturate in a field of a few tenths of a tesla, and a superconducting shield would expel or trap the very field the experiment needs.</p>
+
+<h2>Cooling down</h2>
+<p>With the shields closed and the device grounded at the breakout box, the cooldown itself is mostly automated. A few habits make it smoother:</p>
+<ul>
+<li>Keep every device line grounded during the cooldown, and log the stage temperatures.</li>
+<li>At 4 K, before condensing the mixture, check again that every line is continuous and isolated. Some faults (a cracked solder joint, a broken bond that has lifted) only appear when the board contracts, and they are much cheaper to find now than at base temperature.</li>
+<li>Once at base, wait for the mixing chamber to settle before measuring anything temperature-sensitive. The device's own thermal anchoring may take hours to equilibrate.</li>
+</ul>
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> charge transitions and Coulomb peaks are much broader than expected, and a Fermi-function fit gives T<sub>e</sub> of 150 to 300 mK although the mixing chamber is at 10 mK.</p>
+<p><b>Likely causes, in rough order of frequency:</b> ground loops between instruments (mains-frequency currents through the shields and wiring); insufficient high-frequency filtering on some line; a hot or noisy instrument connected to a gate; poor thermal anchoring of the chip; too large a sensor excitation, which heats the reservoirs <cite data-r="mills2022ro"></cite>.</p>
+<p><b>What to do:</b> measure the electron temperature from the width of a dot–reservoir transition (Chapter 8) while disconnecting instruments one by one, and while lowering the sensor excitation. A sudden improvement points to the culprit.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 4</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Mixing chamber base temperature</td><td>10 mK</td><td>reference</td></tr>
+<tr><td>Target electron temperature</td><td>≈ 50 mK (E<sub>Z</sub>/k<sub>B</sub>T<sub>e</sub> ≈ 15)</td><td>Chapters 8, 15</td></tr>
+<tr><td>Readout chain</td><td>carrier ≈ −100 dBm at the tank; cold coupler; 4 K HEMT</td><td>Chapter 10</td></tr>
+<tr><td>Line attenuation</td><td>MW 40 dB; fast pulses ≈ 13–20 dB; RF in ≈ 40 dB plus coupler</td><td>Chapters 13, 18</td></tr>
+<tr><td>Magnet</td><td>in-plane, persistent mode; drift ≈ ppm per hour</td><td>Chapters 14, 20</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your electron temperature is 120 mK and your Zeeman energy is 64 µeV. By how much would you need to raise the magnetic field to recover E<sub>Z</sub> = 15 k<sub>B</sub>T<sub>e</sub>? What would that cost?</p>
+<details><summary>Show answer</summary><div>k<sub>B</sub>T at 120 mK is 10.3 µeV, so 15 k<sub>B</sub>T is 155 µeV, about 2.4 times the present Zeeman energy. The total field would have to go from 0.55 T to about 1.3 T, and the qubit frequency from 15.4 GHz to about 37 GHz. Microwave delivery at 37 GHz is much harder, heating grows, T1 typically shortens strongly at higher field, and the micromagnet gradients do not scale up. Lowering T<sub>e</sub> is almost always the better choice.</div></details>
+<p>2. A line has 20 dB at 4 K and nothing else. What noise temperature reaches the device, and why is that a problem for a 15 GHz qubit?</p>
+<details><summary>Show answer</summary><div>T = 300/100 + 4 × 0.99 ≈ 7 K. At 15.4 GHz, hf/k<sub>B</sub> ≈ 0.74 K, so the thermal photon number is 1/(e<sup>0.74/7</sup> − 1) ≈ 9. That noise can drive spin transitions, heat the electrons, and add dephasing. Further attenuation on the colder stages is needed.</div></details>
+<p>3. Why is a directional coupler placed at the mixing chamber instead of at room temperature?</p>
+<details><summary>Show answer</summary><div>If the incoming and reflected waves were separated at room temperature, the reflected signal would have to travel back up through all the attenuators on the input line, losing tens of decibels before reaching any amplifier. With a cold coupler, the reflected signal goes straight into a low-loss output line and the 4 K amplifier, preserving its signal-to-noise ratio.</div></details>
+</div>
