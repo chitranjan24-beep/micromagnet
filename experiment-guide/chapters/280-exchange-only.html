@@ -1,0 +1,62 @@
+<!--meta {"id": "exchange-only", "part": "Part H · Other ways to encode a qubit", "title": "Exchange-only qubits: everything from one interaction"}-->
+
+<p class="lede">If exchange can rotate a two-spin qubit about one axis, could it do everything, with no field gradient and no microwaves at all? With three spins it can. The exchange-only qubit encodes one qubit in three electrons, and every gate, single- or two-qubit, becomes a sequence of exchange pulses. It is the most demanding encoding for the device and the pulse electronics, and also, at the time of writing, the one with the largest integrated systems in silicon. This chapter explains the idea, how its experiments run, and where it stands.</p>
+
+<h2>The encoding</h2>
+<p>Three spins have eight states. Exchange conserves the total spin, so it never mixes states of different total spin S or projection m. Among the eight there are two independent ways to make S = ½ with a given m, distinguished by whether spins 1 and 2 form a singlet (S<sub>12</sub> = 0) or a triplet (S<sub>12</sub> = 1). Those two define the qubit <cite data-r="divincenzo2000,andrews2019"></cite>:</p>
+\[ |0\rangle:\ S_{12} = 0, \qquad |1\rangle:\ S_{12} = 1, \qquad \text{both with total } S = \tfrac12. \]
+<p>Exchange between spins 1 and 2, J<sub>12</sub>, distinguishes these two states directly and rotates the qubit about z. Exchange between spins 2 and 3, J<sub>23</sub>, also acts within the subspace, but about an axis tilted by 120° from z. Two non-parallel axes are enough for any rotation: every single-qubit gate is a short sequence of J<sub>12</sub> and J<sub>23</sub> pulses, typically four <cite data-r="andrews2019"></cite>. The value of m does not matter, so the qubit is insensitive to the global field, like the singlet–triplet qubit, and needs no field to operate.</p>
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 860 300" width="860" role="img" aria-label="Triple dot and exchange rotation axes">
+  <defs><marker id="eo-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink"/></marker></defs>
+  <text class="ttl" x="30" y="30">three dots, three spins, two exchange couplings</text>
+  <circle cx="90" cy="140" r="40" class="boxa"/><circle cx="230" cy="140" r="40" class="boxa"/><circle cx="370" cy="140" r="40" class="boxa"/>
+  <text class="lbl" x="84" y="146">1</text><text class="lbl" x="224" y="146">2</text><text class="lbl" x="364" y="146">3</text>
+  <path d="M130,118 Q160,90 190,118" class="t1" fill="none"/><text class="sm" x="140" y="88">J₁₂ (gate X1)</text>
+  <path d="M270,118 Q300,90 330,118" class="t2" fill="none"/><text class="sm" x="280" y="88">J₂₃ (gate X2)</text>
+  <text class="sm" x="30" y="214">|0⟩: spins 1 and 2 in a singlet</text>
+  <text class="sm" x="30" y="232">|1⟩: spins 1 and 2 in a triplet</text>
+  <text class="sm" x="30" y="250">(total spin ½ in both; spin 3 completes it)</text>
+  <text class="sm" x="30" y="276">readout: Pauli blockade of the pair 1–2</text>
+  <text class="ttl" x="520" y="30">rotation axes in the qubit's Bloch sphere</text>
+  <circle cx="660" cy="160" r="105" class="thin"/>
+  <line x1="660" y1="160" x2="660" y2="50" class="t1" marker-end="url(#eo-ar)"/><text class="sm" x="668" y="60">J₁₂: z axis</text>
+  <line x1="660" y1="160" x2="751" y2="212" class="t2" marker-end="url(#eo-ar)"/><text class="sm" x="742" y="232">J₂₃: 120° from z</text>
+  <line x1="555" y1="160" x2="765" y2="160" class="thin" stroke-dasharray="3 3"/><text class="sm" x="770" y="164">x</text>
+  <path d="M660,95 A65,65 0 0,1 716,192" class="thin" fill="none"/><text class="sm" x="710" y="126">120°</text>
+</svg>
+</div>
+<figcaption>The exchange-only qubit. Left: three electrons in a triple dot, with two exchange couplings controlled by the barrier gates X1 and X2. Right: in the qubit's Bloch sphere (x–z plane shown), J<sub>12</sub> rotates about z and J<sub>23</sub> about an axis 120° away. Alternating pulses of the two give any single-qubit rotation.</figcaption>
+</figure>
+
+<h2>How the experiments run</h2>
+<p>Every step of Parts E–G has an exchange-only counterpart, but built from baseband pulses only:</p>
+<ul>
+<li><b>Initialization</b> loads a singlet into a pair, as in Chapter 16. HRL initializes at the boundary between two and three electrons in about 300 ns <cite data-r="blumoff2022"></cite>.</li>
+<li><b>Readout</b> measures S<sub>12</sub> by Pauli blockade of the pair, with a dot charge sensor. HRL's integration took 980 ns, with a combined initialization and measurement infidelity of 2.5 × 10<sup>−3</sup> <cite data-r="blumoff2022"></cite>.</li>
+<li><b>Single-qubit gates</b> are sequences of exchange pulses, each a few nanoseconds long at J/h of the order of 100 MHz. HRL's control of a triangular exchange-only qubit with RFSoC electronics used pre-distorted 10 ns pulses with J/h ≈ 75–78 MHz <cite data-r="wessels2026"></cite>.</li>
+<li><b>Two-qubit gates</b> are long sequences of exchange pulses between the six spins of two qubits. A CNOT took 28 pulses in HRL's 2023 device and 37 pulses in 45 time steps in their 2026 processor <cite data-r="weinstein2023,hrl2026qpu"></cite>.</li>
+</ul>
+<p>Two physical requirements stand out. First, a large valley splitting, because readout and initialization depend on a well-separated singlet–triplet splitting in the doubly occupied dot, which in silicon is set by the valleys (Chapters 14, 16). HRL engineers its heterostructures for this <cite data-r="blumoff2022,hrl2026qpu"></cite>. Second, low magnetic noise. Field differences between the dots, from <sup>29</sup>Si and <sup>73</sup>Ge nuclei, cause both dephasing and <dfn data-def="Loss of a qubit's state out of its two-level computational subspace into other states of the physical system, for example spin states of the wrong total spin in an exchange-only qubit.">leakage</dfn>: they mix the qubit's S = ½ states with the S = 3/2 states outside the code. HRL's blind randomized benchmarking separated a total error of 0.35% into 0.17% of leakage and the rest <cite data-r="andrews2019"></cite>, and quadrupolar <sup>73</sup>Ge nuclei in the barriers produce characteristic noise peaks <cite data-r="eng2015"></cite>.</p>
+
+<div class="box numbers"><span class="tag">Worked numbers: the pulse budget of an exchange-only CNOT</span>
+<p>Suppose each exchange pulse has an error of 2 × 10<sup>−4</sup>. A 37-pulse CNOT then has an error of at least 37 × 2 × 10<sup>−4</sup> ≈ 0.7%, before any idling errors. To reach a 0.3% CNOT, the error per pulse must be below about 10<sup>−4</sup>.</p>
+<p>This is why exchange-only work focuses on the quality of individual exchange pulses and on running many of them in parallel, and why HRL quotes an error per exchange pulse as a system-level figure of merit <cite data-r="hrl2026spins48"></cite>.</p>
+</div>
+
+<h2>Variants</h2>
+<p>Several refinements of the basic scheme have appeared. The resonant exchange qubit keeps one exchange coupling on and drives the other at radio frequency, which allows fast two-axis control at a sweet spot <cite data-r="medford2013rx"></cite>. A triangular arrangement of three dots couples every pair of spins, which allows all three exchange couplings to be pulsed at once. That gives single-qubit Clifford gates of 99.86% with always-on, simultaneous exchange <cite data-r="acuna2024,broz2025aeon"></cite>. It also gives a leakage-protected idle: with all three couplings equal, an energy gap of 3J/2 separates the qubit from the leakage states <cite data-r="broz2026lpi"></cite>. Intel operated two exchange-only qubits in a linear six-dot section of its 12-dot Tunnel Falls devices, with all five barriers pulsed in parallel. Single-qubit Clifford fidelities were 99.84% and 99.41%, the CNOT reached 97.55%, the SWAP 99.03%, and the first iSWAP for exchange-only qubits was demonstrated <cite data-r="madzik2025eo"></cite>.</p>
+
+<h2>Where it stands</h2>
+<p>The exchange-only approach has been developed most consistently by HRL. Their 2023 device showed universal two-qubit logic with a 97.1% two-qubit Clifford fidelity, a 96.3% CNOT and a 99.3% SWAP <cite data-r="weinstein2023"></cite>. Their 2026 processor combined a 54-dot, three-rail array configurable as up to 18 exchange-only qubits with a custom cryogenic CMOS controller at 4 K and a superconducting ribbon cable to the chip <cite data-r="hrl2026qpu"></cite>. It reported mean errors of 2 × 10<sup>−4</sup> for single-qubit gates and 3 × 10<sup>−3</sup> for the CNOT, with a best CNOT error of 9 × 10<sup>−4</sup>, median exchange quality of 674 oscillations, and a median T<sub>2</sub>* of 19 µs. With that system they ran a distance-5 repetition code, with a 4.7-fold reduction of the logical error from distance 3 to distance 5, and a [[4,2,2]] error-detecting code <cite data-r="hrl2026qpu"></cite>. Benchmarks across arrays of up to 48 spins found a system-level error of 3 × 10<sup>−4</sup> per exchange pulse <cite data-r="hrl2026spins48"></cite>.</p>
+<p>The appeal is clear from that list: no microwaves, so no heating from microwave bursts and no microwave crosstalk; only baseband pulses, which are much easier to generate on a cryogenic CMOS chip; and insensitivity to the global field. The costs are three dots per qubit, every gate exposed to charge noise through J, long pulse sequences for two-qubit gates, leakage to manage, and the need for nanosecond-precise, well-pre-distorted baseband pulses on every exchange gate.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does an exchange-only qubit need three spins rather than two?</p>
+<details><summary>Show answer</summary><div>Exchange between two spins only rotates S against T<sub>0</sub> about one axis, and the field difference needed for a second axis is not exchange. With three spins, there are two independent S = ½ states that two different exchange couplings, J<sub>12</sub> and J<sub>23</sub>, rotate about two non-parallel axes. That provides universal control from exchange alone.</div></details>
+<p>2. Where does leakage come from in an exchange-only qubit, if exchange conserves total spin?</p>
+<details><summary>Show answer</summary><div>From whatever does not conserve total spin: mainly magnetic field differences between the dots, from nuclear spins or residual gradients, and spin–orbit effects. These mix the qubit's S = ½ states with the S = 3/2 states, which lie outside the code.</div></details>
+<p>3. Compared with our single-spin device, which parts of the electronics become simpler and which harder for an exchange-only processor?</p>
+<details><summary>Show answer</summary><div>Simpler: no microwave sources, IQ mixers or microwave lines, and no micromagnet. Harder: every exchange gate needs a fast baseband line with nanosecond timing, sub-percent amplitude accuracy and pre-distortion, and there are about three times as many dots, and so gates, per qubit.</div></details>
+</div>

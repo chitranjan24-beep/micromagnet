@@ -1,0 +1,69 @@
+<!--meta {"id": "holes-shuttling", "part": "Part H · Other ways to encode a qubit", "title": "Holes, hopping, flopping and shuttling"}-->
+
+<p class="lede">The device in this book is one design among several, and four ideas from the others are worth knowing well, because they change the experiment in instructive ways. Holes in germanium replace the micromagnet with the material's own spin–orbit coupling. Hopping spins replace microwaves with baseband pulses. Flopping-mode qubits trade a little charge character for much stronger driving. And shuttling moves the electrons themselves, so that qubits no longer need to sit next to each other to interact.</p>
+
+<h2>Holes in germanium</h2>
+<p>In a strained germanium quantum well between SiGe barriers, the charge carriers can be holes rather than electrons. The plunger voltages become negative, the ohmic contacts are often aluminium, and the effective mass is light, so dots are larger and easier to define <cite data-r="scappucci2021,lawrie2020"></cite>. Three properties change the qubit experiment substantially.</p>
+<ul>
+<li><b>Strong spin–orbit coupling.</b> A hole's spin is tied to its orbital motion, so an oscillating voltage on a gate drives spin resonance directly, with no micromagnet. Rabi frequencies above 100 MHz were reached early, with two-qubit CX gates in 75 ns <cite data-r="hendrickx2020"></cite>, and the first hole qubit in planar germanium came in 2018 <cite data-r="watzinger2018"></cite>.</li>
+<li><b>No valleys.</b> The valence band has no valley degeneracy, so the valley-splitting issues of Chapter 14 disappear.</li>
+<li><b>An anisotropic g-tensor.</b> The g-factor depends strongly on the field direction, from about 0.1 in the plane to over 10 out of the plane, and on the gate voltages. That gives each qubit a different frequency and quantization axis, which is a resource for control but also a source of variability and of sensitivity to charge noise. Operating at a sweet spot of the g-tensor, QuTech measured T<sub>2</sub>* = 9.2 µs, limited by 1/f charge noise <cite data-r="hendrickx2024"></cite>.</li>
+</ul>
+<p>Germanium arrays have grown quickly: four qubits with universal control <cite data-r="hendrickx2021"></cite>, a 16-dot crossbar with shared control lines <cite data-r="borsoi2024"></cite>, a two-dimensional ten-qubit array <cite data-r="john2025"></cite>, simultaneous single-qubit driving at 99.992% native gate fidelity <cite data-r="lawrie2023"></cite>, and an 18-qubit modular array with average single-qubit fidelity of 99.8% and simultaneous operation of all qubits <cite data-r="dijkema2026"></cite>. Hole qubits also work in silicon, in CMOS-style transistors and nanowires <cite data-r="maurand2016,froning2021"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: why holes run at low field</span>
+<p>With an in-plane hole g-factor of 0.2, a 15 GHz qubit would need B = 15 GHz/(0.2 × 14 GHz/T) ≈ 5.4 T. Germanium experiments therefore run at tens to hundreds of millitesla and qubit frequencies of a few hundred megahertz to a few gigahertz.</p>
+<p>At 1 GHz, E<sub>Z</sub> is only 4 µeV, about k<sub>B</sub>T at 50 mK, so Elzerman readout is impossible. Germanium experiments use Pauli spin blockade, often latched, for readout <cite data-r="hendrickx2021"></cite>.</p>
+</div>
+
+<h2>Hopping spins: rotation without microwaves</h2>
+<p>If neighbouring dots have different quantization axes, as germanium holes do because of their g-tensors, then moving a spin from one dot to the next suddenly changes the axis it precesses about. A spin that hops into a dot with a tilted axis and waits there for part of a precession period has been rotated, just as if it had been driven. Hopping back and forth with the right timing implements any single-qubit gate with baseband pulses only. QuTech demonstrated hopping-based single-qubit gates of 99.97%, shuttling of 99.992% per hop and a two-qubit gate of 99.3% in germanium <cite data-r="wang2024hop"></cite>. The idea also works for electrons in silicon, where a micromagnet's stray field provides the tilted axes. In a 2 × 2 silicon array, hopping gates of at least 99.50% matched the 99.54% of resonant EDSR gates, without the pulse-induced frequency shifts of Chapter 22 <cite data-r="unseld2024"></cite>.</p>
+<p>Hopping spins are a reminder that "single-spin qubit" and "microwave control" are separate choices. A single spin can be driven by baseband pulses too, if the device provides tilted axes, so the advantages of exchange-based encodings, which avoid microwaves, can partly be had without encoding a qubit in several spins.</p>
+
+<h2>Flopping mode: borrowing the charge</h2>
+<p>In ordinary EDSR the electron sits in one dot and is shaken by about half a nanometre (Chapter 18). If instead a single electron is shared between two dots at zero detuning, with t<sub>c</sub> comparable to the Zeeman energy, a small voltage moves it across the whole double dot, a hundred nanometres, through a large field gradient. The spin then couples much more strongly to the electric field. Princeton showed that this flopping-mode EDSR is almost three orders of magnitude more efficient than conventional driving <cite data-r="croot2020"></cite>. The price is that the qubit now has partly charge character and is more exposed to charge noise, but theory shows a sweet spot where that coupling is suppressed <cite data-r="benito2019"></cite>.</p>
+<p>The same charge–spin hybridization makes a spin talk to a microwave photon in a superconducting resonator. Strong coupling between a single electron spin and a photon was demonstrated in silicon by two groups in 2018 <cite data-r="mi2018,samkharadze2018"></cite>, and two spins 4 mm apart were made to interact through a resonator <cite data-r="borjans2020"></cite>. That is one of the routes towards long-range connections between spin-qubit modules.</p>
+
+<h2>Shuttling: moving the qubit</h2>
+<p>Exchange works only between neighbours, which makes it hard to connect qubits that are far apart, or to leave room between qubits for wiring and electronics. Moving the electron itself, with its spin intact, solves both problems. Two ways of doing it are in use (Figure 29.1).</p>
+<figure>
+<div class="figbody">
+<svg viewBox="0 0 860 260" width="860" role="img" aria-label="Bucket-brigade and conveyor-mode shuttling">
+  <text class="ttl" x="30" y="28">bucket brigade: one dot at a time</text>
+  <g>
+    <rect x="30" y="60" width="60" height="24" rx="4" class="boxl"/><rect x="100" y="60" width="60" height="24" rx="4" class="boxl"/><rect x="170" y="60" width="60" height="24" rx="4" class="boxl"/><rect x="240" y="60" width="60" height="24" rx="4" class="boxl"/><rect x="310" y="60" width="60" height="24" rx="4" class="boxl"/>
+    <text class="sm" x="44" y="76">P1</text><text class="sm" x="114" y="76">P2</text><text class="sm" x="184" y="76">P3</text><text class="sm" x="254" y="76">P4</text><text class="sm" x="324" y="76">P5</text>
+    <path d="M30,140 Q60,170 90,140 Q130,150 160,140 Q200,150 230,140 Q270,150 300,140 Q340,150 370,140" class="t1" fill="none"/>
+    <circle cx="125" cy="150" r="7" class="fillink"/>
+    <path d="M140,124 C165,108 185,108 200,124" class="thin" style="stroke-width:1.4" fill="none"/><text class="sm" x="150" y="104">pulse P3 down, P2 up</text>
+    <text class="sm" x="30" y="200">each plunger pulsed in turn; the electron tunnels</text>
+    <text class="sm" x="30" y="216">from dot to dot. Needs one tuned dot per step.</text>
+  </g>
+  <text class="ttl" x="470" y="28">conveyor: a travelling potential well</text>
+  <g>
+    <rect x="470" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="520" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="570" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="620" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="670" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="720" y="60" width="44" height="24" rx="4" class="boxl"/><rect x="770" y="60" width="44" height="24" rx="4" class="boxl"/>
+    <text class="sm" x="484" y="76">A</text><text class="sm" x="534" y="76">B</text><text class="sm" x="584" y="76">C</text><text class="sm" x="634" y="76">D</text><text class="sm" x="684" y="76">A</text><text class="sm" x="734" y="76">B</text><text class="sm" x="784" y="76">C</text>
+    <path d="M470,135 C500,135 510,165 540,165 C570,165 580,135 610,135 C640,135 650,165 680,165 C710,165 720,135 750,135 C780,135 790,165 820,165" class="t2" fill="none"/>
+    <circle cx="540" cy="157" r="7" class="fillink"/>
+    <line x1="560" y1="185" x2="640" y2="185" class="thin" style="stroke-width:1.4" marker-end="url(#e-ar2)"/>
+    <defs><marker id="e-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink"/></marker></defs>
+    <text class="sm" x="470" y="214">four phase-shifted sine waves on repeating gates</text>
+    <text class="sm" x="470" y="230">move the wells; control lines do not grow with length.</text>
+  </g>
+</svg>
+</div>
+<figcaption>Two ways of shuttling an electron. Bucket brigade (left): plungers are pulsed one after another, and the electron tunnels from dot to dot. Conveyor mode (right): a few phase-shifted sinusoidal signals on a repeating set of gates create a moving potential well that carries the electron along, with a number of control signals that does not grow with the length of the channel.</figcaption>
+</figure>
+<ul>
+<li><b>Bucket brigade.</b> QuTech moved a spin back and forth through a four-dot silicon array up to 250 times <cite data-r="zwerver2023"></cite>. RIKEN used shuttling to make a two-qubit gate: moving the electrons apart switched exchange off with an on/off ratio above 1000, and each shuttle preserved 99.6% of the spin coherence <cite data-r="noiri2022shuttle"></cite>. In germanium, spin states were shuttled over effective distances beyond 300 µm, and superpositions over 9 µm, extended to 49 µm with dynamical decoupling <cite data-r="vanriggelen2024"></cite>.</li>
+<li><b>Conveyor mode.</b> Jülich and Aachen moved a single electron through a 420 nm Si/SiGe channel with four sinusoidal control signals, with a fidelity of 99.42% including a reversal of direction <cite data-r="seidler2022"></cite>. The same technique maps the valley splitting along the channel with nanometre resolution, using spin pairs as probes <cite data-r="volmer2023"></cite>. Valleys are one of the main limits of shuttling in silicon, because an electron moving over a spot of small valley splitting can be excited into the upper valley.</li>
+</ul>
+<p>Shuttling changes the architecture: qubits can sit in sparse arrays connected by shuttling buses, rather than in dense blocks. QuTech used a shuttling bus with four "bus stops" to run weight-four parity checks, the basic operation of the surface code, and to entangle five qubits <cite data-r="undseth2026"></cite>.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A germanium hole qubit has g = 0.3 in the plane. What field gives a 2 GHz qubit, and what is E<sub>Z</sub>/k<sub>B</sub>T at 50 mK?</p>
+<details><summary>Show answer</summary><div>B = 2 GHz/(0.3 × 14 GHz/T) ≈ 0.48 T. E<sub>Z</sub> = 2 GHz × 4.14 µeV/GHz ≈ 8.3 µeV, about 1.9 k<sub>B</sub>T. Far too small for energy-selective readout, which is why blockade readout is used.</div></details>
+<p>2. Why does a hopping gate need dots with different quantization axes?</p>
+<details><summary>Show answer</summary><div>If both dots had the same axis, moving the spin between them would only change its precession rate about the same axis, a z rotation. A tilted axis in the second dot makes the spin precess about a different direction while it waits there, which rotates it away from the original axis: a real x or y rotation.</div></details>
+<p>3. What limits conveyor-mode shuttling in Si/SiGe that is much less of an issue in germanium?</p>
+<details><summary>Show answer</summary><div>The valley splitting varies along the channel. Where it becomes small, the moving electron can be excited into the upper valley, which changes its spin dynamics and can cause errors. Germanium holes have no valley degeneracy.</div></details>
+</div>

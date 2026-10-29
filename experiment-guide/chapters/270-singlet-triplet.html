@@ -1,0 +1,71 @@
+<!--meta {"id": "singlet-triplet", "part": "Part H · Other ways to encode a qubit", "title": "Singlet–triplet qubits: two spins, no microwaves"}-->
+
+<p class="lede">Everything so far has used one electron spin per qubit, driven by microwaves. A different choice puts one qubit into the joint state of two spins, and drives it with nothing but voltage pulses. This singlet–triplet qubit was the first spin qubit to be coherently controlled, in GaAs in 2005, and it is still used in GaAs, silicon and germanium. This chapter explains how it works, how its experiments differ from those of Parts E–G, and what it gains and gives up.</p>
+
+<h2>The encoding</h2>
+<p>Two electrons in a double dot, in (1,1), have four spin states. In a magnetic field the polarized triplets T<sub>+</sub> = ↑↑ and T<sub>−</sub> = ↓↓ are split off by the Zeeman energy. The two states with zero total spin projection, the singlet S and the triplet T<sub>0</sub>, remain, and they form the qubit <cite data-r="petta2005,hanson2007"></cite>:</p>
+\[ |0\rangle = |S\rangle = \tfrac{1}{\sqrt2}(|{\uparrow\downarrow}\rangle - |{\downarrow\uparrow}\rangle), \qquad |1\rangle = |T_0\rangle = \tfrac{1}{\sqrt2}(|{\uparrow\downarrow}\rangle + |{\downarrow\uparrow}\rangle). \]
+<p>A uniform magnetic field shifts both states equally, so the qubit does not care about the global field or its fluctuations: only differences between the two dots matter. Two such differences provide the two control axes of the Bloch sphere:</p>
+<ul>
+<li><b>Exchange, J.</b> It splits S from T<sub>0</sub>, so it rotates the qubit about the z axis. It is switched by the detuning or the barrier, in nanoseconds, exactly as in Chapter 24.</li>
+<li><b>The field difference, ΔE<sub>Z</sub>.</b> A different field in the two dots makes the two spins precess at different rates, which turns S into T<sub>0</sub> and back: a rotation about x. In GaAs it comes from the nuclear spins, in silicon from a micromagnet, and in SiMOS or germanium from differences of the g-factor.</li>
+</ul>
+<p>The qubit's frequency is √(J² + ΔE<sub>Z</sub>²)/h, and its rotation axis tilts from x towards z as J grows (Figure 27.1). Moving the detuning moves the qubit between the two regimes.</p>
+<figure>
+<div class="figbody"><!--plot:st-levels--></div>
+<figcaption>The two control axes of a singlet–triplet qubit versus detuning (illustrative, with ΔE<sub>Z</sub>/h = 60 MHz). Deep in (1,1), J is negligible and the field difference rotates the qubit about x. Near the (0,2) transition, J grows exponentially and dominates, rotating the qubit about z. The qubit's splitting (orange) follows the larger of the two.</figcaption>
+</figure>
+
+<h2>The experimental cycle</h2>
+<p>A singlet–triplet experiment needs no microwaves. Its whole cycle is a sequence of detuning pulses on the charge stability diagram of Chapter 11, with readout by the spin blockade of Chapter 16:</p>
+<ol>
+<li><b>Initialize</b> in (0,2), where the ground state is S(0,2).</li>
+<li><b>Separate</b>: pulse quickly into (1,1). If the pulse is fast compared with the field difference, the state stays a singlet.</li>
+<li><b>Operate</b>: wait in (1,1), where ΔE<sub>Z</sub> rotates S towards T<sub>0</sub>, or pulse towards (0,2), where J rotates the phase. Combinations of the two give any rotation.</li>
+<li><b>Read out</b>: return to the blockade window. S enters (0,2), T<sub>0</sub> stays in (1,1), and the charge sensor tells them apart. The readout must be in singlet–triplet mode, that is, faster than T<sub>0</sub> relaxes into S at the readout point (Chapter 16). The first single-shot readout of this kind, by rf reflectometry in GaAs, reached more than 90% fidelity in a few microseconds <cite data-r="barthel2009"></cite>.</li>
+</ol>
+<p>The first oscillations seen in such a qubit are those driven by ΔE<sub>Z</sub>, and they reveal at once the main difference between materials (Figure 27.2).</p>
+<figure>
+<div class="figbody"><!--plot:st-oscillations--></div>
+<figcaption>Singlet–triplet oscillations driven by the field difference (simulated). In GaAs, the difference comes from the nuclear spins: it is large but random and changes from shot to shot, so the averaged oscillation dies within about 15 ns. In silicon with a micromagnet, the difference is set by the magnet and is stable, so the oscillations persist <cite data-r="wu2014"></cite>.</figcaption>
+</figure>
+
+<h2>GaAs: making the most of a noisy field</h2>
+<p>In GaAs, every nucleus has a spin, and the nuclear field difference between the two dots fluctuates by milliteslas. The first coherent control of a singlet–triplet qubit found T<sub>2</sub>* ≈ 10 ns, extended to about a microsecond by a spin echo <cite data-r="petta2005"></cite>. The response of the field was to turn the problem into a tool. Pumping the nuclear spins with repeated cycles of the qubit pulse sequence built up a stable field difference of hundreds of millitesla, which gave a reliable x axis and universal control <cite data-r="foletti2009"></cite>. Dynamical decoupling extended the coherence beyond 200 µs <cite data-r="bluhm2011"></cite>. Later, the nuclear field difference was measured in real time and fed back into the control within milliseconds, using FPGA-based Bayesian estimation <cite data-r="berritta2024,benestad2024"></cite>.</p>
+<p>The GaAs singlet–triplet qubit also produced many of the techniques used throughout this book: exchange-based noise spectroscopy <cite data-r="dial2013"></cite>, symmetric barrier control of exchange <cite data-r="martins2016"></cite>, two-qubit entanglement, first through the capacitive coupling of neighbouring qubits' charge dipoles and later by exchange <cite data-r="shulman2012,nichol2017"></cite>, and operation of a 2 × 2 array of four qubits with multiplexed readout <cite data-r="fedele2021"></cite>. Single-qubit gates reached 99.5% with numerically optimized pulses and closed-loop calibration <cite data-r="cerfontaine2020"></cite>.</p>
+
+<h2>Silicon and germanium</h2>
+<p>Silicon removes most of the nuclear noise, and a micromagnet provides a stable field difference. HRL demonstrated singlet–triplet oscillations in Si/SiGe in 2012 <cite data-r="maune2012"></cite>, and a Wisconsin–Delft collaboration showed two-axis control with a micromagnet in 2014 <cite data-r="wu2014"></cite>. Several variants followed. With a large gradient, the qubit can instead be defined by the two antiparallel states and driven resonantly by modulating J at its frequency; RIKEN reached 99.6% this way, limited by the remaining <sup>29</sup>Si <cite data-r="takeda2020st"></cite>. In SiMOS, where no magnet is used, spin–valley coupling gives a field difference that can be switched electrically and drive the qubit above 200 MHz <cite data-r="jock2022"></cite>.</p>
+<p>In germanium, hole spins have large and anisotropic g-factors, so a small field already gives a sizeable g-factor difference. Singlet–triplet hole qubits work below 10 mT, a field low enough to coexist with superconducting aluminium <cite data-r="jirovec2021"></cite>. QuTech operated four singlet–triplet qubits in a 2 × 4 germanium array, with single-qubit gate fidelities of 99.49–99.84% and Bell-state fidelities of 73–90% <cite data-r="zhang2024st"></cite>. Driving the qubit resonantly and continuously gives a "dressed" qubit whose coherence time rose tenfold, from 1.9 to 20.3 µs, with gate fidelities around 99.6% <cite data-r="tsoukalas2026"></cite>.</p>
+
+<h2>The price: charge noise through J</h2>
+<p>A singlet–triplet qubit is controlled by exchange, so every gate is exposed to charge noise through dJ/dV. The quality of exchange oscillations, the number of periods before they decay, is its key figure of merit, and it depends strongly on how J is turned on (Figure 27.3). Tilting the double dot with the detuning makes J very sensitive to voltage; raising the barrier at the symmetry point reduces that sensitivity several-fold <cite data-r="martins2016,reed2016"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:exchange-osc--></div>
+<figcaption>Exchange oscillations of a singlet–triplet qubit (illustrative). With detuning control (green, orange), doubling J doubles the rotation rate but also the sensitivity to charge noise, so the number of visible oscillations falls. With symmetric barrier control (blue), the same J decays far more slowly.</figcaption>
+</figure>
+<p>Because all control is in baseband pulses of a few nanoseconds, the qubit is also very sensitive to the shape of those pulses. A pulse whose edge is still settling, as in Chapter 13, makes J drift during the gate and chirps the oscillations. Rochester's in-situ measurement and pre-distortion of the pulse response was demonstrated precisely to remove such chirps <cite data-r="duan2026"></cite>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Single spin (Parts E–G)</th><th>Singlet–triplet</th></tr></thead>
+<tbody>
+<tr><td>Dots per qubit</td><td>1</td><td>2</td></tr>
+<tr><td>Control signals</td><td>microwaves (10–20 GHz) + baseband</td><td>baseband only (≲ 1 GHz)</td></tr>
+<tr><td>Field needed</td><td>0.3–1 T (for Elzerman readout); less with blockade</td><td>small, often tens of mT</td></tr>
+<tr><td>Sensitivity to global field noise</td><td>full</td><td>none, only to field differences</td></tr>
+<tr><td>Sensitivity to charge noise</td><td>through the micromagnet gradient</td><td>through J during every gate</td></tr>
+<tr><td>Readout</td><td>Elzerman or blockade</td><td>blockade in singlet–triplet mode</td></tr>
+<tr><td>Typical gate time</td><td>50–200 ns</td><td>1–50 ns</td></tr>
+</tbody></table></div>
+
+<h2>Could our device run a singlet–triplet qubit?</h2>
+<p>Yes, with care. Our field difference is 300 MHz, so free S–T<sub>0</sub> rotations take about 1.7 ns per half period, which needs sub-nanosecond pulse timing and the pre-distortion of Chapter 13. A more natural choice is RIKEN's resonant approach: define the qubit by the antiparallel states ↑↓ and ↓↑ and drive it by modulating J at 300 MHz with the AWG <cite data-r="takeda2020st"></cite>. The readout would need the blockade in singlet–triplet mode, which our 1 µs T<sub>0</sub> lifetime at the readout point makes difficult (Chapter 16), or a latched readout. In short: the encoding is available in any double dot, but the device's parameters, field difference and readout speed, decide whether it is a good one.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why is a singlet–triplet qubit insensitive to fluctuations of the external magnet, while a single-spin qubit is not?</p>
+<details><summary>Show answer</summary><div>S and T<sub>0</sub> both have zero total spin projection, so a uniform field shifts them by the same amount and their energy difference does not change. A single spin's energy is directly proportional to the field.</div></details>
+<p>2. In GaAs, the averaged S–T<sub>0</sub> oscillation dies in 15 ns, but an echo extends coherence to microseconds. Why does the echo work so well here?</p>
+<details><summary>Show answer</summary><div>The nuclear field difference is large but changes slowly, over microseconds to seconds. Within one shot it is nearly constant, so an echo that reverses the evolution halfway cancels it, just as for the slow noise in Chapter 21.</div></details>
+<p>3. Why does symmetric exchange control help a singlet–triplet qubit more than it helps a single-spin qubit?</p>
+<details><summary>Show answer</summary><div>The singlet–triplet qubit uses J for all its z rotations and is exposed to J noise during every gate; a single-spin qubit uses J only for two-qubit gates. Reducing dJ/dV therefore improves every operation of the singlet–triplet qubit.</div></details>
+</div>

@@ -1,0 +1,62 @@
+<!--meta {"id": "choosing", "part": "Part H · Other ways to encode a qubit", "title": "Choosing an encoding: single spins, singlet–triplet or exchange-only?"}-->
+
+<p class="lede">Reading recent papers, it can look as if the field has moved away from single-spin qubits towards singlet–triplet and exchange-only encodings. It has not, quite. What has happened is more interesting: each encoding has matured where its strengths matter most, the record numbers are now spread across all three, and the boundaries between them are blurring. This chapter compares them on the quantities that decide an experiment, and gives a way to choose.</p>
+
+<h2>Has the field shifted?</h2>
+<p>Look at who does what. Most groups working on gate-defined spin qubits, in Si/SiGe, SiMOS and germanium, use single-spin qubits in the sense of Loss and DiVincenzo <cite data-r="lossdiv"></cite>: QuTech, RIKEN, Princeton, UNSW, Intel, CEA and the germanium groups. The single-spin approach holds the single-qubit fidelity record, 99.9992% at RIKEN <cite data-r="takeda2026"></cite>, several of the best two-qubit results, 99.5–99.65% <cite data-r="xue2022,noiri2022,mills2022"></cite>, and the largest simultaneously operated germanium array, 18 qubits <cite data-r="dijkema2026"></cite>.</p>
+<p>At the same time, three developments explain why it may look like a shift:</p>
+<ul>
+<li><b>Exchange-only qubits matured.</b> HRL, which has pursued them for more than a decade, reported in 2026 an 18-qubit-capable processor with a cryogenic CMOS controller, mean single-qubit errors of 2 × 10<sup>−4</sup>, mean CNOT errors of 3 × 10<sup>−3</sup> and repetition and error-detecting codes <cite data-r="hrl2026qpu"></cite>. Intel showed exchange-only qubits operated in parallel in its foundry devices <cite data-r="madzik2025eo"></cite>. These are among the most integrated spin-qubit systems to date, and they get attention for it.</li>
+<li><b>Singlet–triplet qubits returned in germanium.</b> Four coupled singlet–triplet qubits, and dressed singlet–triplet qubits with tenfold longer coherence, appeared in 2024–2026 <cite data-r="zhang2024st,tsoukalas2026"></cite>, alongside the long GaAs tradition.</li>
+<li><b>Microwaves became a recognized problem.</b> The heating effect of Chapter 22 <cite data-r="undseth2023"></cite>, crosstalk between simultaneously driven qubits <cite data-r="heinz2021,wu2025"></cite>, and the difficulty of bringing many microwave lines into a fridge all favour baseband control. Exchange-based encodings are baseband by construction.</li>
+</ul>
+<p>So the accurate summary is: not a shift but a split, with convergence. Single spins remain the majority and the simplest route to high fidelity; exchange-based encodings have become serious contenders for integrated, baseband-controlled systems; and single spins themselves are increasingly controlled with baseband pulses too, through hopping gates <cite data-r="wang2024hop,unseld2024"></cite>. Architecture studies even suggest mixing them: a surface code built from single-spin and singlet–triplet qubits together outperformed one built from single spins alone in a recent comparison <cite data-r="gutierrez2026"></cite>.</p>
+
+<h2>A side-by-side comparison</h2>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Single spin (LD)</th><th>Singlet–triplet (ST)</th><th>Exchange-only (EO)</th></tr></thead>
+<tbody>
+<tr><td>Spins per qubit</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>Single-qubit control</td><td>microwaves (EDSR, ESR) or hopping</td><td>exchange + field difference, baseband</td><td>exchange only, baseband</td></tr>
+<tr><td>Two-qubit gate</td><td>one exchange pulse (CZ) or CROT</td><td>exchange or capacitive</td><td>tens of exchange pulses</td></tr>
+<tr><td>Field needed</td><td>0.3–1 T for Elzerman readout; less with blockade; mT for holes</td><td>small; needs a field difference</td><td>none required</td></tr>
+<tr><td>Global field noise</td><td>sensitive</td><td>immune</td><td>immune</td></tr>
+<tr><td>Charge noise enters</td><td>through gradients; through J only in 2Q gates</td><td>through J in every z rotation</td><td>through J in every gate</td></tr>
+<tr><td>Leakage</td><td>minor</td><td>to T<sub>±</sub></td><td>to S = 3/2 states; must be managed</td></tr>
+<tr><td>Readout</td><td>Elzerman or blockade</td><td>blockade, singlet–triplet mode</td><td>blockade of a pair</td></tr>
+<tr><td>Electronics</td><td>microwave sources, IQ mixers, AWG</td><td>fast AWG, ns pulses</td><td>fast AWG per exchange gate, ns pulses, pre-distortion</td></tr>
+<tr><td>Best reported (examples)</td><td>1Q 99.9992% <cite data-r="takeda2026"></cite>; 2Q 99.65% <cite data-r="xue2022"></cite></td><td>1Q 99.5–99.84% <cite data-r="cerfontaine2020,zhang2024st"></cite>; 2Q ~90% <cite data-r="nichol2017"></cite></td><td>1Q error 2 × 10<sup>−4</sup>; CNOT error 3 × 10<sup>−3</sup> mean <cite data-r="hrl2026qpu"></cite></td></tr>
+</tbody></table></div>
+<p>Two cautions about the last row. Different groups benchmark differently, with or without leakage, by interleaved RB, blind RB or GST, so numbers are indicative, not a ranking. And the best number of each encoding often comes from a group that optimized everything around it.</p>
+
+<h2>The trade-off underneath</h2>
+<p>All three encodings use the same physical ingredients: electron spins, exchange, a field and its gradients. They differ in where the control comes from, and therefore in which noise they are exposed to.</p>
+<ul>
+<li>A <b>single spin</b> is controlled by an oscillating field it sees through a gradient or spin–orbit coupling. It is sensitive to everything that changes its Zeeman energy, the global field and the gradient at its position, but its idle and its single-qubit gates do not involve exchange, so it can be well protected from charge noise except during two-qubit gates. The price is microwaves.</li>
+<li>An <b>exchange-based</b> qubit uses voltage pulses only. It is blind to global field noise, and baseband pulses are easy to generate, distribute and integrate, even on a cryogenic chip. The price is that exchange, and so charge noise through dJ/dV, is involved in every operation, that each qubit costs two or three dots, and that entangling gates are long sequences.</li>
+</ul>
+<p>Which price is easier to pay depends on the material and on what you are trying to build.</p>
+
+<h2>How to choose for an experiment</h2>
+<ol>
+<li><b>Start from the material.</b> In GaAs, the nuclear field makes single spins hard to keep coherent and gives singlet–triplet qubits a free x axis; ST is the natural choice. In Si/SiGe with a micromagnet, single spins with EDSR are the best-trodden path. In germanium, spin–orbit coupling gives single holes fast electrical driving at low field, and the large g-factor differences make singlet–triplet qubits attractive too.</li>
+<li><b>Look at the readout.</b> Elzerman readout needs a reservoir beside each qubit and E<sub>Z</sub> ≳ 13 k<sub>B</sub>T<sub>e</sub>. Blockade readout works for every encoding, but needs a large singlet–triplet splitting in the doubly occupied dot, which in silicon means a large valley splitting.</li>
+<li><b>Look at the electronics.</b> A microwave chain with IQ mixers and calibrated sidebands is a different instrument from a set of fast, pre-distorted baseband channels. RFSoC-based systems can provide both: HRL's open-source spinQICK, built on QICK, supports single-spin and exchange-only control <cite data-r="wessels2026"></cite>.</li>
+<li><b>Count the dots.</b> Each exchange-only qubit needs three working dots with tunable couplings; each singlet–triplet qubit, two. Device yield decides how many qubits you actually get.</li>
+<li><b>Be clear about the goal.</b> For learning the physics, a single-spin qubit in a double dot exposes every step of this book, and its experiments transfer directly to the other encodings: the same tune-up, the same exchange, the same blockade readout. For building a large, integrated processor, the choice is open, and the field is testing all three.</li>
+</ol>
+
+<div class="box numbers"><span class="tag">Worked numbers: a CNOT in each encoding</span>
+<p>Single spins: one CZ pulse of 200 ns plus a few single-qubit gates: about 0.3–0.5 µs. Error budget dominated by charge noise on J during one pulse.</p>
+<p>Singlet–triplet: an exchange- or capacitively-coupled sequence of a few tens of nanoseconds to a microsecond, depending on the coupling. Errors from charge noise on J in every step.</p>
+<p>Exchange-only: about 37 exchange pulses of a few nanoseconds in 45 time steps, well under a microsecond with fast pulses. Errors add over all pulses, so each must be better than about 10<sup>−4</sup> for a 0.3% CNOT <cite data-r="hrl2026qpu"></cite>.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why do exchange-based encodings suit cryogenic CMOS control better than single spins with EDSR?</p>
+<details><summary>Show answer</summary><div>They need only baseband voltage pulses, which cryogenic CMOS circuits can generate with little power and a small footprint. Single spins with EDSR need gigahertz microwave signals with controlled phase and amplitude for each qubit frequency, which are much harder to generate and distribute at low temperature without heating.</div></details>
+<p>2. A colleague says single-spin qubits are obsolete because exchange-only qubits reached 99.98% single-qubit fidelity. What would you answer?</p>
+<details><summary>Show answer</summary><div>Single-spin qubits have reached higher single-qubit fidelities, above 99.999%, and similar two-qubit fidelities, and they make up most of the field. The exchange-only result is impressive mainly because of the level of integration it comes with. Each encoding moves the difficulty to a different place; none is obsolete.</div></details>
+<p>3. Your device is Si/SiGe without a micromagnet, with reservoirs only at the ends of a linear array, and you have only baseband AWGs. Which encoding is most natural?</p>
+<details><summary>Show answer</summary><div>Without a micromagnet there is no gradient for EDSR, and without microwaves no resonant driving. Reservoirs only at the ends rule out Elzerman readout for inner qubits. An exchange-only encoding, read out by blockade, fits these constraints best, with singlet–triplet qubits as an option if g-factor differences can provide a second axis.</div></details>
+</div>

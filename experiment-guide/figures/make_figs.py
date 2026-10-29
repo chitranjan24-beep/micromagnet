@@ -1607,6 +1607,53 @@ def rb2q_decay():
     save('rb2q-decay', ax.svg(legend_pos='tr'))
 
 
+
+# ---------------------------------------------------------------- chapter 27: singlet-triplet qubits
+@fig
+def st_levels():
+    eps = np.linspace(-1.0, 0.95, 500)          # meV, (0,2) at eps > 1
+    Jm = 0.05 + 2000.0 * np.exp((eps - 0.8) / 0.1)   # MHz: residual 50 kHz deep in (1,1), steep near (0,2)
+    dBz = 60.0                                     # MHz (micromagnet-sized gradient for an Si ST qubit)
+    Ep = 0.5 * np.sqrt(Jm ** 2 + dBz ** 2)
+    ax = Axes(600, 320, xlim=(-1.0, 0.95), ylim=(-1.6, 3.6), xlabel='detuning ε (meV), towards (0,2) →', ylabel='log₁₀ energy splitting (MHz)', mt=18,
+              yticks=[-1, 0, 1, 2, 3], yfmt=lambda v: {-1: '0.1', 0: '1', 1: '10', 2: '100', 3: '1000'}.get(v, ''))
+    ax.line(eps, np.log10(Jm), 't1', 'J(ε): rotation about z')
+    ax.hline(np.log10(dBz), 'thin dash', 'ΔE_Z/h = 60 MHz: rotation about x', lx=-0.5)
+    ax.line(eps, np.log10(2 * Ep), 't2', 'qubit splitting √(J² + ΔE_Z²)')
+    ax.text(-0.95, 1.95, 'deep in (1,1): ΔE_Z dominates', 'sm')
+    ax.text(0.30, 3.25, 'near (0,2): J dominates', 'sm')
+    save('st-levels', ax.svg(legend_pos='br'))
+
+
+@fig
+def st_oscillations():
+    rng = np.random.default_rng(111)
+    t = np.linspace(0, 200, 401)     # ns
+    # GaAs: nuclear gradient, random each shot: sigma 15 MHz -> T2* ~ 15 ns
+    sig = 15.0
+    f = rng.normal(20.0, sig, 3000)
+    Pg = 0.5 * (1 - np.cos(2 * np.pi * f[None, :] * t[:, None] * 1e-3)).mean(axis=1)
+    # Si micromagnet: 60 MHz gradient, small noise
+    f2 = rng.normal(12.5, 0.25, 3000)
+    Ps = 0.5 * (1 - np.cos(2 * np.pi * f2[None, :] * t[:, None] * 1e-3)).mean(axis=1)
+    ax = Axes(600, 300, xlim=(0, 200), ylim=(-0.03, 1.05), xlabel='time in (1,1) (ns)', ylabel='triplet probability', mt=18, yticks=[0, 0.5, 1])
+    ax.line(t, Pg, 't2', 'GaAs: nuclear gradient, random each shot (T₂* ≈ 15 ns)')
+    ax.line(t, Ps, 't1', 'Si with micromagnet: stable 12.5 MHz gradient')
+    save('st-oscillations', ax.svg(legend_pos='tr'))
+
+
+@fig
+def exchange_osc():
+    t = np.linspace(0, 100, 600)    # ns
+    out = []
+    ax = Axes(600, 300, xlim=(0, 100), ylim=(-0.03, 1.4), xlabel='exchange pulse duration (ns)', ylabel='singlet probability', mt=18, yticks=[0, 0.5, 1])
+    for J, Q, cls, lab in [(50.0, 18, 't3', 'J = 50 MHz, tilted (detuning) control'), (100.0, 12, 't2', 'J = 100 MHz, tilted'), (100.0, 40, 't1', 'J = 100 MHz, symmetric (barrier) control')]:
+        tau = Q / J * 1e3 / np.pi       # ns, decay time for Q oscillations (Gaussian)
+        P = 0.5 + 0.5 * np.cos(2 * np.pi * J * t * 1e-3) * np.exp(-(t / tau) ** 2)
+        ax.line(t, P, cls, lab)
+    save('exchange-osc', ax.svg(legend_pos='tr'))
+
+
 # ================================================================ main
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)
