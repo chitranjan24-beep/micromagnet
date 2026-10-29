@@ -1,0 +1,56 @@
+<!--meta {"id": "error-budget", "part": "Part I · Running a device", "title": "Error budgets: where the errors come from and what to fix"}-->
+
+<p class="lede">Every chapter since Part E has ended with numbers: coherence times, fidelities, noise amplitudes. Put together, they explain the device's performance, and that explanation is the most useful thing an experiment produces, because it says what to change next. This chapter assembles the error budget of our two-qubit device from the measurements of the previous chapters, checks it against what was measured directly, and uses it to decide what would improve the device most.</p>
+
+<h2>Building a budget</h2>
+<p>An error budget assigns the total error of each operation to physical mechanisms, using independently measured parameters and a model for how each causes errors. Its credibility comes from closure: the sum of the parts should reproduce the directly measured total, and when it does not, the difference points to a mechanism that has been missed. Princeton's readout budget, which assigned their spin-up error to relaxation (0.2%), missed blips (0.5%) and drift of the read level (0.1%), is a good example of the method <cite data-r="mills2022ro"></cite>.</p>
+<p>For our device the ingredients are:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Measured quantity</th><th>Value</th><th>Chapter</th></tr></thead>
+<tbody>
+<tr><td>T<sub>2</sub>* (100 s), T<sub>2</sub><sup>H</sup></td><td>6 µs, 29 µs</td><td>20, 21</td></tr>
+<tr><td>Frequency noise</td><td>S<sub>f</sub> = A/f, A = 87 kHz²</td><td>20, 21</td></tr>
+<tr><td>Rabi decay at 4 MHz</td><td>τ<sub>R</sub> ≈ 40 µs</td><td>19</td></tr>
+<tr><td>Exchange law and its noise</td><td>e-fold per 5 mV; slow noise ≈ 0.35 mV</td><td>24, 25</td></tr>
+<tr><td>Residual exchange</td><td>J<sub>off</sub> = 23 kHz</td><td>24</td></tr>
+<tr><td>Readout model</td><td>Γ = 30 kHz, T<sub>e</sub> = 50 mK, 0.5 µs resolution, T<sub>1</sub> = 30 ms</td><td>15, 17</td></tr>
+<tr><td>Heating shift</td><td>−120 kHz, compensated by a prepulse</td><td>22</td></tr>
+</tbody></table></div>
+
+<h2>The budget</h2>
+<figure class="wide">
+<div class="figbody"><!--plot:error-budget--></div>
+<figcaption>Error budget of our device, assembled from the measured parameters (bars) and compared with the directly measured totals in the text. Each bar is one operation; its segments are the contributions of different mechanisms. Readout and idle dominate, the CZ is limited by charge noise on the exchange, and the single-qubit gates are a small contribution.</figcaption>
+</figure>
+<ul>
+<li><b>X90, 0.07%.</b> Dephasing during a 62.5 ns pulse contributes only about 0.005%, because the drive protects against slow noise. The rest is attributed to noise in the drive and to heating, consistent with the Rabi decay, plus a residual calibration error. Measured by interleaved RB: 0.07% ✓.</li>
+<li><b>CZ, 0.70%.</b> Slow charge noise equivalent to 0.35 mV on the barrier changes J by 7%, giving a conditional phase error of about 0.07π and an infidelity of 0.55%. Dephasing of both qubits during 200 ns adds 0.1%, and small swap and calibration errors the rest. Measured by interleaved RB: 0.7% ✓.</li>
+<li><b>Readout and initialization, 1.35% on average.</b> Missed short blips dominate the spin-up error, initialization contributes 0.4%, thermal escape and relaxation the rest. Measured: F<sub>↓</sub> = 99.7%, F<sub>↑</sub> = 97.6%, an average error of 1.35% ✓.</li>
+<li><b>Idle for 1 µs, 1.25%.</b> The Ramsey dephasing alone gives about 0.9% averaged over states, and the residual exchange of 23 kHz adds a conditional phase of 8°, another 0.3%. With staggered echo pulses on both qubits, the idle error falls to about 0.06%.</li>
+</ul>
+<div class="box numbers"><span class="tag">Worked numbers: closing the two-qubit Clifford budget</span>
+<p>A two-qubit Clifford contains on average 1.5 CZ gates (1.05%), about eight single-qubit gates (8 × 0.08% = 0.65%), and idling: while one qubit is driven, the other waits for about 0.5 µs per Clifford, roughly 0.6% unechoed.</p>
+<p>Total: about 2.3%, against the measured 2.4% from two-qubit RB (Chapter 26). The budget closes, and it shows that idling costs almost as much as the single-qubit gates. Simultaneous driving, or echoes during idles, would recover most of it.</p>
+</div>
+
+<h2>What would help most?</h2>
+<p>A budget turns "improve the device" into specific targets. For our device, ranked by how much they would reduce the error of a typical circuit:</p>
+<ol>
+<li><b>Echo the idles, or remove them.</b> Idling is the largest error per microsecond. Dynamical decoupling during waits reduces it from 1.25% to 0.06% per microsecond, at the cost of a few extra pulses; scheduling single-qubit gates in parallel removes the waits altogether. QuTech's six-qubit circuit experiments came to the same conclusion: errors accumulated quickly when idling was not minimized <cite data-r="fernandez2025"></cite>.</li>
+<li><b>Faster readout.</b> Doubling the sensor bandwidth at the same SNR would roughly halve the missed-blip error, from 0.75% to 0.4%. Parity readout, already at 99.5% visibility in our model, is the faster option where it applies.</li>
+<li><b>Quieter exchange.</b> Charge noise on J scales as the square of the voltage noise, so halving the slow barrier noise would reduce the CZ error from 0.7% to about 0.3%. Options: operate at a smaller J for longer, track J in real time, or improve the device's charge noise, which depends on the oxide and interfaces <cite data-r="connors2019"></cite>.</li>
+<li><b>Better initialization.</b> Initialization by measurement and feedback (Chapter 17) would remove most of the 0.4% initialization error <cite data-r="philips2022"></cite>.</li>
+</ol>
+<p>Some improvements are not worth pursuing yet. Single-qubit gates at 0.07% are ten times better than the CZ; making them perfect would hardly change a circuit's fidelity. A good budget keeps effort on the largest terms.</p>
+
+<h2>From the budget to error correction</h2>
+<p>Quantum error correction needs every operation below a threshold, about 1% for the surface code, and well below it in practice to keep the overhead manageable. Our device is below 1% for gates, close to it for readout, and above it for unechoed idles. Architecture studies with realistic spin-qubit parameters reach a similar conclusion: logical error rates are limited by gate errors, especially one- and two-qubit gate errors, rather than by memory errors <cite data-r="gutierrez2026"></cite>. That is a reminder that idles can be dealt with by decoupling, while gate errors must be reduced at their physical source. The first error-correction experiments on spin qubits, repetition codes, error detection and parity checks, all built their success on error budgets of exactly this kind <cite data-r="hrl2026qpu,undseth2026,zhang2025qed"></cite>.</p>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A budget predicts a 0.5% CZ error, but interleaved RB measures 1.2%. What do you do?</p>
+<details><summary>Show answer</summary><div>Look for a missing mechanism rather than adjusting the known ones. Candidates: leakage or partial swaps from fast ramps, heating during the barrier pulse, crosstalk to a spectator, drift of J during the measurement, or a miscalibrated single-qubit phase correction. Each can be tested separately, for example by changing the ramp time or the duty cycle.</div></details>
+<p>2. Why does halving the charge noise reduce the CZ error by about four times?</p>
+<details><summary>Show answer</summary><div>The CZ error is dominated by the conditional phase error δφ, which is proportional to the fluctuation of J, which is proportional to the voltage noise. The infidelity goes as δφ², so halving the noise quarters that contribution.</div></details>
+<p>3. Why can memory errors be less important than gate errors for error correction, even when the idle error is larger per microsecond?</p>
+<details><summary>Show answer</summary><div>Idle errors can be suppressed with dynamical decoupling during waits, and circuits can be scheduled to minimize idle time. Gate errors cannot be decoupled away: they come from the operations themselves, and every error-correction cycle needs many of them.</div></details>
+</div>

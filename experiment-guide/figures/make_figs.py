@@ -1618,9 +1618,9 @@ def st_levels():
     ax = Axes(600, 320, xlim=(-1.0, 0.95), ylim=(-1.6, 3.6), xlabel='detuning ε (meV), towards (0,2) →', ylabel='log₁₀ energy splitting (MHz)', mt=18,
               yticks=[-1, 0, 1, 2, 3], yfmt=lambda v: {-1: '0.1', 0: '1', 1: '10', 2: '100', 3: '1000'}.get(v, ''))
     ax.line(eps, np.log10(Jm), 't1', 'J(ε): rotation about z')
-    ax.hline(np.log10(dBz), 'thin dash', 'ΔE_Z/h = 60 MHz: rotation about x', lx=-0.5)
+    ax.hline(np.log10(dBz), 'thin dash', 'ΔE_Z/h = 60 MHz: rotation about x', lx=-0.98)
     ax.line(eps, np.log10(2 * Ep), 't2', 'qubit splitting √(J² + ΔE_Z²)')
-    ax.text(-0.95, 1.95, 'deep in (1,1): ΔE_Z dominates', 'sm')
+    ax.text(-0.95, 2.6, 'deep in (1,1): ΔE_Z dominates', 'sm')
     ax.text(0.30, 3.25, 'near (0,2): J dominates', 'sm')
     save('st-levels', ax.svg(legend_pos='br'))
 
@@ -1652,6 +1652,75 @@ def exchange_osc():
         P = 0.5 + 0.5 * np.cos(2 * np.pi * J * t * 1e-3) * np.exp(-(t / tau) ** 2)
         ax.line(t, P, cls, lab)
     save('exchange-osc', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- chapter 31: drift and calibration
+@fig
+def drift_recal():
+    rng = np.random.default_rng(121)
+    n, dt = 2880, 10.0                    # 8 h at 10 s
+    f = np.fft.rfftfreq(n, dt)
+    amp = np.zeros_like(f)
+    amp[1:] = np.sqrt(A_1F / f[1:] / (2 * dt * n)) * n
+    x = np.fft.irfft(amp * np.exp(1j * rng.uniform(0, 2 * np.pi, f.size)), n)
+    t = np.arange(n) * dt / 3600.0        # hours
+    x = x - x[0] - 1.5 * t + np.where(t > 5.2, 40.0, 0.0)
+    # slow part only (what a 10-min calibration can follow): smooth over 60 s
+    k = 6
+    xs = np.convolve(x, np.ones(k) / k, mode='same')
+    upd = np.zeros_like(x)
+    step = int(600 / dt)
+    for i in range(0, n, step):
+        upd[i:i + step] = xs[i]
+    resid = xs - upd
+    ax = Axes(860, 300, xlim=(0, 8), ylim=(-120, 120), xlabel='time (h)', ylabel='frequency error of Q1 (kHz)', mt=18)
+    ax.area(np.array([0, 8]), np.array([-15, -15]), np.array([15, 15]), 'fa3')
+    ax.line(t, xs, 't2', 'without updates')
+    ax.line(t, resid, 't1', 'with a Ramsey update every 10 min')
+    ax.text(4.6, -108, 'shaded: tolerance ±15 kHz', 'sm')
+    ax.text(5.25, 100, 'charge jump at 5.2 h', 'sm')
+    save('drift-recal', ax.svg(legend_pos='bl'))
+
+
+
+# ---------------------------------------------------------------- chapter 32: error budgets
+@fig
+def error_budget():
+    rows = [
+        ('CZ gate', [('charge noise on J', 0.55, 'sig-i'), ('dephasing', 0.10, 'sig-q'), ('leakage / swap', 0.03, 'sig-3'), ('calibration, drift', 0.02, 'sig-4')]),
+        ('readout + init (avg)', [('missed blips', 0.75, 'sig-i'), ('initialization', 0.40, 'sig-q'), ('thermal escape', 0.07, 'sig-3'), ('relaxation, other', 0.13, 'sig-4')]),
+        ('idle 1 µs', [('dephasing (T₂*)', 0.90, 'sig-q'), ('residual exchange', 0.30, 'sig-i'), ('heating drift', 0.05, 'sig-4')]),
+        ('idle 1 µs, echoed', [('dephasing (T₂ᴴ)', 0.05, 'sig-q'), ('residual exchange', 0.01, 'sig-i')]),
+        ('X90 gate', [('drive noise, heating', 0.05, 'sig-i'), ('calibration', 0.015, 'sig-4'), ('dephasing', 0.005, 'sig-q')]),
+    ]
+    W, H = 860, 330
+    x0, x1 = 170, 820
+    scale = (x1 - x0) / 1.6
+    parts = [f'<svg viewBox="0 0 {W} {H}" width="{W}" role="img" xmlns="http://www.w3.org/2000/svg">']
+    for k, v in enumerate([0, 0.4, 0.8, 1.2, 1.6]):
+        xx = x0 + v * scale
+        parts.append(f'<line x1="{xx:.1f}" y1="20" x2="{xx:.1f}" y2="{H - 50}" style="stroke:var(--rule)"/>')
+        parts.append(f'<text class="sm" x="{xx:.1f}" y="{H - 34}" text-anchor="middle">{v:.1f}%</text>')
+    parts.append(f'<text class="sm" x="{(x0 + x1) / 2:.0f}" y="{H - 12}" text-anchor="middle">error per operation</text>')
+    for i, (name, comps) in enumerate(rows):
+        y = 30 + i * 52
+        parts.append(f'<text class="lbl" x="{x0 - 10}" y="{y + 18}" text-anchor="end">{name}</text>')
+        xc = x0
+        tot = sum(c[1] for c in comps)
+        for (lab, val, col) in comps:
+            w = val * scale
+            parts.append(f'<rect x="{xc:.1f}" y="{y}" width="{max(w, 1.5):.1f}" height="26" style="fill:var(--{col});fill-opacity:.75"/>')
+            if w > 70:
+                parts.append(f'<text class="sm" x="{xc + 5:.1f}" y="{y + 17}" style="fill:#fff">{lab}</text>')
+            xc += w
+        parts.append(f'<text class="sm" x="{xc + 6:.1f}" y="{y + 17}">{tot:.2f}%</text>')
+        small = [c for c in comps if c[1] * scale <= 70]
+        if small:
+            txt = '; '.join(f'{c[0]} {c[1]:.2g}%' for c in small)
+            parts.append(f'<text class="sm" x="{x0}" y="{y + 40}" style="font-size:10px">{txt}</text>')
+    parts.append('</svg>')
+    save('error-budget', ''.join(parts))
 
 
 # ================================================================ main

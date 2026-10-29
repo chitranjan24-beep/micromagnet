@@ -1,0 +1,90 @@
+<!--meta {"id": "keeping-it-running", "part": "Part I · Running a device", "title": "Keeping it running: drift, calibration graphs and automation"}-->
+
+<p class="lede">By now every number in the device passport has been measured, and almost none of them stays put. The sensor's operating point moves when a charge trap switches, the readout level drifts with slow charge noise, the qubit frequencies wander by tens of kilohertz an hour, and the exchange law shifts over days. A device is only as good as the procedure that keeps it calibrated. This chapter describes what drifts and how fast, how to organize recalibration so that it is quick and trustworthy, and how much of the tuning itself can be automated.</p>
+
+<h2>What drifts, and how fast</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Parameter</th><th>Typical drift</th><th>Consequence if not tracked</th><th>Our update interval</th></tr></thead>
+<tbody>
+<tr><td>Sensor operating point</td><td>jumps when nearby traps switch; slow drift over hours</td><td>readout contrast falls, threshold wrong</td><td>30 min, or on a contrast check</td></tr>
+<tr><td>Readout level / point</td><td>~10 µeV per hour</td><td>Elzerman window misplaced; blockade point outside the strip</td><td>30 min</td></tr>
+<tr><td>Qubit frequencies</td><td>1/f noise, tens of kHz; magnet drift ~kHz/h</td><td>phase errors in every gate and idle</td><td>10 min</td></tr>
+<tr><td>π/2 amplitudes</td><td>~0.1% per day; heating-dependent</td><td>coherent rotation errors</td><td>daily</td></tr>
+<tr><td>Phase crosstalk, CZ phases</td><td>slow; change with frequency changes</td><td>coherent phase errors in circuits</td><td>daily</td></tr>
+<tr><td>J(vB2) law</td><td>~5% per day; jumps after charge rearrangements</td><td>CZ conditional phase wrong</td><td>daily, plus after any jump</td></tr>
+<tr><td>Virtual-gate matrix</td><td>stable for days to weeks</td><td>crosstalk compensation imperfect</td><td>weekly, or after a large retune</td></tr>
+<tr><td>Everything</td><td>a thermal cycle resets the device</td><td>full re-tune (Parts C–G)</td><td>each cooldown</td></tr>
+</tbody></table></div>
+<p>The intervals are not arbitrary. Each is set by comparing how fast the parameter drifts with how much error the drift may cause before the next update. For the qubit frequency, our tolerance is ±15 kHz, which keeps the phase error of a 1 µs idle to about 5°. With 1/f noise and a slow magnet drift, a Ramsey update every 10 minutes keeps the frequency inside that band most of the time, though not always (Figure 31.1). Princeton recalibrated readout and frequency about every 30 minutes during 14-hour runs <cite data-r="mills2022ro"></cite>; RIKEN recalibrated readout point and threshold about hourly and followed the magnet drift with Ramsey measurements <cite data-r="yoneda2018"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:drift-recal--></div>
+<figcaption>Frequency error of qubit 1 over eight hours (simulated). Without updates (orange), slow 1/f noise, the magnet drift and a charge jump at 5.2 h take the qubit far outside the tolerance. With a Ramsey update every 10 minutes (blue), the slow drift and the jump are removed. What remains is noise faster than the update interval, about 14 kHz rms, which no periodic calibration can remove. Only faster tracking or echo sequences reduce it.</figcaption>
+</figure>
+
+<h2>The calibration graph</h2>
+<p>Calibrations depend on each other. A π/2 amplitude measured with the wrong frequency is wrong; a frequency measured with a misplaced readout point is noisy; everything depends on the sensor. The natural structure is a directed graph: each node is one calibration, with a quick check and a full measurement, and each arrow says which calibration must be valid before another can be run (Figure 31.2).</p>
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 330" width="860" role="img" aria-label="Calibration dependency graph">
+  <defs><marker id="cg-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <g class="sm">
+    <rect x="20" y="140" width="120" height="46" rx="6" class="boxl"/><text x="30" y="160">sensor point</text><text x="30" y="176">5 s · 30 min</text>
+    <rect x="175" y="80" width="130" height="46" rx="6" class="boxl"/><text x="185" y="100">readout point</text><text x="185" y="116">35 s · 30 min</text>
+    <rect x="175" y="200" width="130" height="46" rx="6" class="boxl"/><text x="185" y="220">threshold, IQ angle</text><text x="185" y="236">5 s · 30 min</text>
+    <rect x="345" y="140" width="130" height="46" rx="6" class="boxa"/><text x="355" y="160">rough frequency</text><text x="355" y="176">17 s · on failure</text>
+    <rect x="345" y="30" width="130" height="46" rx="6" class="boxa"/><text x="355" y="50">fine frequency</text><text x="355" y="66">Ramsey · 10 min</text>
+    <rect x="345" y="250" width="130" height="46" rx="6" class="boxa"/><text x="355" y="270">X90 amplitude</text><text x="355" y="286">error amp. · daily</text>
+    <rect x="515" y="250" width="140" height="46" rx="6" class="boxa"/><text x="525" y="270">phase crosstalk</text><text x="525" y="286">Ramsey · daily</text>
+    <rect x="515" y="90" width="140" height="46" rx="6" class="box"/><text x="525" y="110">J(vB2) law</text><text x="525" y="126">daily · after jumps</text>
+    <rect x="700" y="90" width="140" height="46" rx="6" class="box"/><text x="710" y="110">CZ amplitude</text><text x="710" y="126">decoupled Ramsey</text>
+    <rect x="700" y="200" width="140" height="46" rx="6" class="box"/><text x="710" y="220">CZ phases</text><text x="710" y="236">virtual Z · daily</text>
+  </g>
+  <g class="thin">
+    <line x1="140" y1="155" x2="173" y2="112" marker-end="url(#cg-ar)"/>
+    <line x1="140" y1="172" x2="173" y2="215" marker-end="url(#cg-ar)"/>
+    <line x1="305" y1="110" x2="343" y2="155" marker-end="url(#cg-ar)"/>
+    <line x1="305" y1="222" x2="343" y2="172" marker-end="url(#cg-ar)"/>
+    <line x1="410" y1="140" x2="410" y2="78" marker-end="url(#cg-ar)"/>
+    <line x1="410" y1="186" x2="410" y2="248" marker-end="url(#cg-ar)"/>
+    <line x1="475" y1="273" x2="513" y2="273" marker-end="url(#cg-ar)"/>
+    <line x1="475" y1="58" x2="513" y2="105" marker-end="url(#cg-ar)"/>
+    <line x1="655" y1="113" x2="698" y2="113" marker-end="url(#cg-ar)"/>
+    <line x1="770" y1="136" x2="770" y2="198" marker-end="url(#cg-ar)"/>
+    <line x1="655" y1="268" x2="698" y2="232" marker-end="url(#cg-ar)"/>
+  </g>
+  <text class="sm" x="20" y="318">Each box: what is calibrated, how long the full calibration takes (QuTech's timings where available) and how often it is re-run.</text>
+</svg>
+</div>
+<figcaption>A calibration graph for our two qubits. Arrows point from a calibration to the ones that depend on it: the sensor and readout come first, then single-qubit frequency and amplitude, then two-qubit parameters. Times for the first steps follow QuTech's six-qubit calibration routine <cite data-r="philips2022"></cite>.</figcaption>
+</figure>
+<p>Three rules make such a graph efficient and safe.</p>
+<ul>
+<li><b>Check before you calibrate.</b> Each node has a fast check, a few points that confirm the parameter is still within tolerance, and a full calibration that runs only if the check fails. Most of the time the check passes, and the whole graph is verified in seconds.</li>
+<li><b>Recurse downwards on failure.</b> If a check fails, first check the nodes it depends on. A failed amplitude check is often a frequency that has drifted, and a failed frequency check is often a readout point that has moved. Calibrating the wrong node wastes time and can corrupt good parameters.</li>
+<li><b>Accept updates explicitly.</b> A calibration that fits badly, or gives a value far from the last one, should not silently overwrite it. QuTech had the operator accept or reject each update of their 108 parameters; their full calibration took about an hour, ran twice a week, and a daily subset ran every morning, with frequencies and readout re-run during the day <cite data-r="philips2022"></cite>.</li>
+</ul>
+
+<h2>Faster than calibration: real-time tracking</h2>
+<p>Some drifts are too fast for periodic calibration. The nuclear field in GaAs changes in milliseconds, and a charge trap can switch several times a minute. The answer is to estimate the parameter continuously during the experiment and correct it in real time, which needs the decision to be made in the control electronics, not in a PC. FPGA-based Bayesian estimators that choose each next measurement adaptively have tracked the nuclear field gradient of a singlet–triplet qubit and applied it to two-axis control within milliseconds <cite data-r="benestad2024,berritta2024"></cite>. Similar feedback stabilized the sensor point and other parameters of a silicon double dot simultaneously <cite data-r="bryan2026"></cite>. This is where control systems with on-board processing, such as RFSoC-based ones, offer more than just waveform generation.</p>
+
+<h2>Automating the tune-up</h2>
+<p>The first-cooldown steps of Parts C and D, turning on, finding pinch-offs, forming dots, finding the last electron, building virtual gates, are increasingly automated. The steps lend themselves to it: each has a clear target, a standard measurement and a recognizable result. Princeton demonstrated computer-automated tuning of quantum-dot arrays early on <cite data-r="mills2019"></cite>, and the field's progress, from rule-based scripts to machine-learning classifiers of charge stability diagrams, is reviewed in <cite data-r="zwolak2023"></cite>. Specific steps now have robust automated methods, such as tuning charge sensors <cite data-r="vanosch2025"></cite> and extracting virtual-gate matrices quickly <cite data-r="che2024"></cite>. Intel's cryogenic wafer prober measures single-electron behaviour across whole 300 mm wafers, which turns device tuning into statistics on thousands of devices <cite data-r="neyens2024"></cite>.</p>
+<p>Automation does not remove the need to understand each step; it moves it. Someone has to decide what a good pinch-off looks like, what tolerance a frequency needs, and when a calibration result is suspicious. That is the knowledge this book has tried to build.</p>
+
+<h2>Record everything</h2>
+<p>Every dataset should carry the full state of the device at the time: all DC voltages, the virtual-gate matrix, the pulse parameters, the field, the fridge temperatures, and the most recent value and timestamp of every calibrated parameter. The device passport of this book is a small version of that record. Without it, a result from last week cannot be reproduced, and a drift cannot be diagnosed.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the calibration graph runs, every node passes its fit, and yet circuit results are worse than yesterday.</p>
+<p><b>Likely causes:</b> a parameter that is not in the graph has drifted, often a crosstalk phase, the heating steady state, or a virtual-gate coefficient after a charge rearrangement; or a check is too lenient and passes a parameter that is slightly off.</p>
+<p><b>What to do:</b> run a diagnostic that exercises everything, such as AllXY and a short RB on each qubit, and compare with the stored reference values. Tighten the tolerance of the checks that let the error through, and add the missing parameter to the graph.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does a failed X90 amplitude check usually call for a frequency check first?</p>
+<details><summary>Show answer</summary><div>An amplitude calibration assumes the drive is on resonance. A detuned drive rotates about a tilted axis and makes the rotation look wrong, which the amplitude calibration would then "fix" with the wrong amplitude. Checking the frequency, the node it depends on, avoids corrupting a good amplitude.</div></details>
+<p>2. With 1/f frequency noise of A = 87 kHz², what rms frequency error remains between updates every 10 minutes, counting noise from 1/(10 min) to 1/(60 s)?</p>
+<details><summary>Show answer</summary><div>σ² = A ln(f<sub>high</sub>/f<sub>low</sub>) = 87 kHz² × ln(10) ≈ 200 kHz², so σ ≈ 14 kHz. Faster updates reduce it only logarithmically; noise faster than 1/(60 s) adds further, up to the bandwidth of the experiment.</div></details>
+<p>3. What should a dataset's metadata include so that it can be reproduced a month later?</p>
+<details><summary>Show answer</summary><div>All gate voltages and virtual-gate matrices, magnetic field and its history, fridge temperatures, readout configuration (sensor point, carrier frequency and power, threshold), all pulse definitions and calibrated parameters with timestamps, and the software and firmware versions used.</div></details>
+</div>

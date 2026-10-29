@@ -1,0 +1,72 @@
+<!--meta {"id": "month-in-lab", "part": "Part I · Running a device", "title": "The whole flow again: a month in the lab"}-->
+
+<p class="lede">This last chapter runs through the experiment once more, as it happens in time: from a bonded chip to benchmarked two-qubit gates, then into the routine of running a device day after day. It is a summary, but also a map. Each step lists what it needs from earlier steps and what it hands on, so that when something fails you know where to look.</p>
+
+<h2>The first month, step by step</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>When</th><th>Step</th><th>Needs</th><th>Hands on</th><th>Ch.</th></tr></thead>
+<tbody>
+<tr><td>Week −2</td><td>Inspect, bond, room-temperature checks; mount; wiring checks</td><td>a device and a sample board</td><td>gate resistances, no shorts</td><td>3</td></tr>
+<tr><td>Week −1</td><td>Cooldown; thermometry; line checks cold</td><td>a working fridge</td><td>base temperature, working lines</td><td>4, 5</td></tr>
+<tr><td>Day 1</td><td>Leakage tests; accumulation; ohmic contacts</td><td>cold device</td><td>safe voltage ranges, turn-on 0.36 V</td><td>6</td></tr>
+<tr><td>Day 2</td><td>Pinch-offs, barrier maps, first dot</td><td>accumulated 2DEG</td><td>pinch-off voltages, a single dot</td><td>7</td></tr>
+<tr><td>Day 3</td><td>Coulomb diamonds; lever arms; T<sub>e</sub></td><td>a transport dot</td><td>α = 0.10 eV/V, E<sub>C</sub> = 6.5 meV, T<sub>e</sub> = 50 mK</td><td>8</td></tr>
+<tr><td>Day 4</td><td>Sensor dot and compensation; reflectometry: resonance, matching, SNR</td><td>tuned sensor barriers</td><td>a sensor on its flank; SNR 6 in 2 µs</td><td>9, 10</td></tr>
+<tr><td>Days 5–7</td><td>Double dot; last electron; virtual gates</td><td>fast charge sensing</td><td>(1,1) operating point, virtual-gate matrix</td><td>11</td></tr>
+<tr><td>Day 8</td><td>Tunnel couplings, PAT, tunnel rates</td><td>virtual gates</td><td>t<sub>c</sub>, Γ, the detuning axis</td><td>12</td></tr>
+<tr><td>Day 9</td><td>Pulses: amplitudes, distortion, delays; video mode</td><td>charge transitions as references</td><td>calibrated, pre-distorted pulses</td><td>13</td></tr>
+<tr><td>Day 10</td><td>Field; valley splittings</td><td>pulses</td><td>B, E<sub>VS</sub></td><td>14</td></tr>
+<tr><td>Days 11–13</td><td>Spin readout: Elzerman, blockade; fidelities; T<sub>1</sub></td><td>tunnel rates, pulses</td><td>single-shot readout, T<sub>1</sub> = 30 ms</td><td>15–17</td></tr>
+<tr><td>Day 14</td><td>Resonance search</td><td>readout, microwaves</td><td>qubit frequencies</td><td>18</td></tr>
+<tr><td>Days 15–17</td><td>Rabi, Ramsey, echo, noise spectrum</td><td>resonances</td><td>π pulses, T<sub>2</sub>*, T<sub>2</sub>, S(f)</td><td>19–21</td></tr>
+<tr><td>Days 18–19</td><td>Calibration, RB, GST</td><td>coherent control</td><td>99.85% Cliffords</td><td>22, 23</td></tr>
+<tr><td>Days 21–24</td><td>Exchange, CZ, Bell state, 2Q RB</td><td>two calibrated qubits</td><td>99.3% CZ, 94% Bell</td><td>24–26</td></tr>
+<tr><td>From then on</td><td>Calibration graph, experiments, error budget</td><td>everything above</td><td>results</td><td>31, 32</td></tr>
+</tbody></table></div>
+<p>Two things about this timeline are worth saying plainly. First, it is optimistic. Every step can take several times longer when a device misbehaves, and many devices never get past Day 2 or Day 7: a shorted gate, a barrier that does not pinch off, a valley splitting too small for readout. The first weeks are as much about deciding whether a device is worth continuing with as about tuning it. Second, the order is not negotiable. Each step uses numbers from the previous ones, and skipping one, for example going to spin readout before the tunnel rates are measured, usually costs more time than doing it.</p>
+
+<h2>Where to look when something fails</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Symptom</th><th>Look first at</th><th>Ch.</th></tr></thead>
+<tbody>
+<tr><td>Gates leak or do not hold voltage</td><td>bonds, sample board, ESD damage</td><td>3, 6</td></tr>
+<tr><td>No accumulation</td><td>ohmics, leakage, gate voltage range</td><td>6</td></tr>
+<tr><td>Transitions smeared or missing in fast maps</td><td>tunnel rates below the pixel rate; latching</td><td>11–13</td></tr>
+<tr><td>Readout contrast drops</td><td>sensor operating point, threshold</td><td>9, 17</td></tr>
+<tr><td>No spin bump</td><td>T<sub>e</sub>, tunnel rates, pulse amplitude</td><td>15</td></tr>
+<tr><td>No blockade</td><td>valley splitting of the doubly occupied dot</td><td>14, 16</td></tr>
+<tr><td>No EDSR line</td><td>microwave delivery (PAT), field, timing</td><td>12, 18</td></tr>
+<tr><td>Lopsided chevron</td><td>heating, pulse distortion</td><td>19, 22</td></tr>
+<tr><td>T<sub>2</sub>* varies run to run</td><td>charge traps, measurement time</td><td>20</td></tr>
+<tr><td>RB decay not exponential</td><td>heating, drift</td><td>22, 23</td></tr>
+<tr><td>J cannot be turned off</td><td>symmetry point, barrier range, neighbours</td><td>24</td></tr>
+<tr><td>CZ degrades over hours</td><td>J drift; recalibrate the J law</td><td>25, 31</td></tr>
+</tbody></table></div>
+<p>Appendix C collects all the "When it goes wrong" boxes in one place.</p>
+
+<h2>A routine week</h2>
+<p>Once a device works, the rhythm changes from discovery to production. A typical week with our device might look like this:</p>
+<ul>
+<li><b>Every morning:</b> check the fridge, then run the calibration graph from the top. Sensor and readout first, then frequencies and amplitudes, then the J law and the CZ. Look at AllXY and a short RB for each qubit before starting the day's experiments.</li>
+<li><b>During the day:</b> experiments run with the frequency, readout and sensor checks interleaved every 10–30 minutes. Long runs are split into blocks with calibrations in between, and the order of measurements is randomized so that drift affects everything equally.</li>
+<li><b>Overnight:</b> long measurements such as GST, two-qubit RB or noise spectroscopy, with automatic recalibration and with every calibration result logged. Check in the morning that nothing jumped.</li>
+<li><b>Weekly:</b> full recalibration including virtual gates and crosstalk; T<sub>1</sub>, T<sub>2</sub>* and echo for each qubit, to see slow changes in the device; check the readout chain's gain and the tank's resonance frequency.</li>
+<li><b>After a large charge jump:</b> stop, find the new operating point with a quick charge stability map, re-run the calibration graph from the bottom, and note the event. If jumps become frequent, a short warm-up to a few kelvin, or a full thermal cycle, sometimes resets the traps, at the cost of re-tuning.</li>
+</ul>
+
+<h2>What the device taught us</h2>
+<p>Looking back at the passport, the device's whole performance follows from a handful of physical numbers: the lever arm and charging energy that set the voltage scales, the electron temperature and Zeeman energy that set readout, the valley splitting that sets relaxation and blockade, the micromagnet's gradients that set driving and dephasing, the 1/f charge noise that sets coherence and exchange quality, and the tunnel couplings that set everything involving two electrons. Each of those was measured by a simple experiment early on, and each reappeared, sometimes chapters later, as the limit of something more complex. That chain from simple measurements to qubit performance is what a spin-qubit experiment really is. Following it once, step by step, is the best preparation for following it on a new device, in a different material, or with a different encoding.</p>
+
+<div class="box passport"><span class="tag">Device passport · final</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Group</th><th>Quantities</th></tr></thead>
+<tbody>
+<tr><td>Electrostatics</td><td>α<sub>P</sub> = 0.10 eV/V; E<sub>C</sub> = 6.5 meV; orbital 3 meV; t<sub>c</sub> = 20 µeV × exp(vB2/10 mV)</td></tr>
+<tr><td>Thermal</td><td>T<sub>e</sub> = 50 mK</td></tr>
+<tr><td>Readout</td><td>reflectometry SNR 6 in 2 µs; Elzerman F<sub>↓</sub> 99.7%, F<sub>↑</sub> 97.6%; parity 96.2/95.0% incl. init</td></tr>
+<tr><td>Spin</td><td>B<sub>ext</sub> = 0.40 T; f<sub>1</sub> = 15.420 GHz, f<sub>2</sub> = 15.720 GHz; E<sub>VS</sub> 180/120 µeV; T<sub>1</sub> 34/30 ms</td></tr>
+<tr><td>Coherence</td><td>T<sub>2</sub>* 6.0/6.4 µs; T<sub>2</sub><sup>H</sup> 29/31 µs; CPMG 840 µs (N = 1024); S<sub>f</sub> = 87 kHz²/f</td></tr>
+<tr><td>Single-qubit gates</td><td>f<sub>R</sub> = 4 MHz; F<sub>C</sub> 99.85/99.83%; X90 99.93%</td></tr>
+<tr><td>Two-qubit gates</td><td>J = 69 MHz × exp(vB2/5 mV); CZ 200 ns, 99.3%; Bell 94% corrected; 2Q Clifford 97.6%</td></tr>
+</tbody></table></div>
+</div>

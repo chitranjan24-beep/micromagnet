@@ -1,0 +1,50 @@
+<!--meta {"id": "parameters", "part": "Appendices", "title": "Appendix B · Parameter tables", "numbered": false}-->
+
+<p class="lede">Typical parameters of the main gate-defined spin-qubit platforms, our device's final values for comparison, and a compact list of reference results with their sources. The platform values are typical ranges from the literature cited in the text, not limits; individual devices vary widely.</p>
+
+<h2>Platforms at a glance</h2>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Si/SiGe electrons</th><th>SiMOS electrons</th><th>GaAs electrons</th><th>Ge holes</th></tr></thead>
+<tbody>
+<tr><td>Carrier, gate polarity</td><td>electrons, positive (accumulation)</td><td>electrons, positive (accumulation)</td><td>electrons, negative (depletion of a doped 2DEG)</td><td>holes, negative (accumulation)</td></tr>
+<tr><td>Effective mass (in plane)</td><td>0.19 m<sub>e</sub></td><td>0.19 m<sub>e</sub></td><td>0.067 m<sub>e</sub></td><td>≈ 0.05–0.1 m<sub>e</sub></td></tr>
+<tr><td>g-factor</td><td>≈ 2.00</td><td>≈ 2.00, small gate-dependent shifts</td><td>−0.44</td><td>strongly anisotropic, ≈ 0.1–0.5 in plane, ≈ 10–15 out of plane</td></tr>
+<tr><td>Valley splitting</td><td>≈ 20–300 µeV, varies dot to dot <cite data-r="wuetz2022"></cite></td><td>≈ 0.1–1 meV, gate-tunable <cite data-r="yang2013"></cite></td><td>none</td><td>none</td></tr>
+<tr><td>Nuclear spins</td><td><sup>29</sup>Si 4.7% natural; 800 ppm or less purified; <sup>73</sup>Ge in barriers</td><td><sup>29</sup>Si 4.7% natural; ≤ 800 ppm purified</td><td>all nuclei spinful</td><td><sup>73</sup>Ge 7.8% natural; purifiable</td></tr>
+<tr><td>Single-qubit drive</td><td>EDSR with micromagnet</td><td>ESR antenna, or EDSR via spin–orbit or a magnet</td><td>EDSR (spin–orbit, micromagnet), or exchange (ST)</td><td>EDSR via intrinsic spin–orbit; hopping</td></tr>
+<tr><td>Typical T<sub>2</sub>* (purified where possible)</td><td>≈ 2–20 µs <cite data-r="philips2022,yoneda2018"></cite></td><td>up to ≈ 100 µs with an ESR antenna <cite data-r="veldhorst2014"></cite></td><td>≈ 10–20 ns <cite data-r="petta2005"></cite></td><td>≈ 1–10 µs <cite data-r="hendrickx2024"></cite></td></tr>
+<tr><td>Typical field</td><td>0.3–1 T</td><td>0.5–1.5 T (ESR), lower with blockade readout</td><td>0.1–10 T</td><td>tens to hundreds of mT</td></tr>
+<tr><td>Typical readout</td><td>Elzerman or blockade</td><td>Elzerman, blockade, gate-based</td><td>blockade (ST), Elzerman at high field</td><td>blockade, often latched</td></tr>
+</tbody></table></div>
+
+<h2>Our device: final values</h2>
+<p>The complete device passport is at the end of Chapter 33. The values most often needed in calculations are:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Quantity</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Lever arm α<sub>P</sub></td><td>0.10 eV/V</td><td>Charging energy</td><td>6.5 meV</td></tr>
+<tr><td>Orbital spacing</td><td>3 meV</td><td>T<sub>e</sub></td><td>50 mK</td></tr>
+<tr><td>B<sub>ext</sub>, f<sub>1</sub>, f<sub>2</sub></td><td>0.40 T, 15.420 GHz, 15.720 GHz</td><td>E<sub>VS</sub> (D1, D2)</td><td>180, 120 µeV</td></tr>
+<tr><td>T<sub>1</sub></td><td>≈ 30 ms</td><td>T<sub>2</sub>*, T<sub>2</sub><sup>H</sup></td><td>6 µs, 29 µs</td></tr>
+<tr><td>f<sub>R</sub>, t<sub>π</sub></td><td>4 MHz, 125 ns</td><td>Clifford fidelity</td><td>99.85%</td></tr>
+<tr><td>J law</td><td>69 MHz × exp(vB2/5 mV)</td><td>CZ</td><td>200 ns, 99.3%</td></tr>
+</tbody></table></div>
+
+<h2>Reference results</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Result</th><th>Number</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>First single-shot spin readout (GaAs, 10 T)</td><td>visibility ≈ 65%</td><td><cite data-r="elzerman2004"></cite></td></tr>
+<tr><td>Elzerman readout in silicon</td><td>visibility 99.12%</td><td><cite data-r="mills2022ro"></cite></td></tr>
+<tr><td>Enhanced latching readout</td><td>&gt; 99.86% in 65 µs</td><td><cite data-r="harveycollard2018"></cite></td></tr>
+<tr><td>Exchange-only SPAM</td><td>2.5 × 10<sup>−3</sup> joint init + readout infidelity, &lt; 1 µs</td><td><cite data-r="blumoff2022"></cite></td></tr>
+<tr><td>Single-qubit gate, Si/SiGe</td><td>99.9992% (π/2)</td><td><cite data-r="takeda2026"></cite></td></tr>
+<tr><td>Simultaneous single-qubit gates</td><td>&gt; 99.99% for up to three qubits</td><td><cite data-r="wu2025"></cite></td></tr>
+<tr><td>Two-qubit gate, Si/SiGe (GST)</td><td>99.65% CZ</td><td><cite data-r="xue2022"></cite></td></tr>
+<tr><td>CNOT via CROT</td><td>99.51%</td><td><cite data-r="noiri2022"></cite></td></tr>
+<tr><td>Hopping gates, germanium</td><td>1Q 99.97%, 99.992% per hop, 2Q 99.3%</td><td><cite data-r="wang2024hop"></cite></td></tr>
+<tr><td>Exchange-only processor</td><td>1Q error 2 × 10<sup>−4</sup>, CNOT error 3 × 10<sup>−3</sup> (mean)</td><td><cite data-r="hrl2026qpu"></cite></td></tr>
+<tr><td>Germanium array</td><td>18 qubits, 99.8% average 1Q</td><td><cite data-r="dijkema2026"></cite></td></tr>
+<tr><td>Coherence with CPMG, Si/SiGe</td><td>3.1 ms (N = 1024)</td><td><cite data-r="yoneda2018"></cite></td></tr>
+<tr><td>Shuttling, conveyor mode</td><td>99.42% single-electron fidelity over 420 nm</td><td><cite data-r="seidler2022"></cite></td></tr>
+</tbody></table></div>

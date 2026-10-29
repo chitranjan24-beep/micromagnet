@@ -1,0 +1,69 @@
+<!--meta {"id": "refresher", "part": "Appendices", "title": "Appendix A · Physics and units refresher", "numbered": false}-->
+
+<p class="lede">The handful of facts, conversions and formulas used throughout the book, collected for quick reference. Each is explained where it first appears; this appendix is for looking things up.</p>
+
+<h2>Energy, frequency, temperature, voltage</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Conversion</th><th>Value</th><th>Typical use</th></tr></thead>
+<tbody>
+<tr><td>1 GHz × h</td><td>4.136 µeV</td><td>qubit frequency ↔ energy</td></tr>
+<tr><td>1 K × k<sub>B</sub></td><td>86.17 µeV (20.8 GHz)</td><td>temperature ↔ energy</td></tr>
+<tr><td>k<sub>B</sub>T at 50 mK</td><td>4.3 µeV (1.04 GHz)</td><td>thermal broadening</td></tr>
+<tr><td>µ<sub>B</sub></td><td>57.88 µeV/T</td><td>Zeeman energy</td></tr>
+<tr><td>gµ<sub>B</sub>/h, g = 2</td><td>27.99 GHz/T (115.8 µeV/T)</td><td>silicon electron qubits</td></tr>
+<tr><td>|g|µ<sub>B</sub>/h, g = −0.44</td><td>6.16 GHz/T</td><td>GaAs electrons</td></tr>
+<tr><td>Gate voltage × lever arm</td><td>1 mV × 0.10 eV/V = 100 µeV</td><td>voltage ↔ dot energy</td></tr>
+<tr><td>e²/h</td><td>38.7 µS (25.8 kΩ)</td><td>conductance unit</td></tr>
+<tr><td>Spin-flip time</td><td>t<sub>π</sub> = 1/(2f<sub>R</sub>)</td><td>4 MHz → 125 ns</td></tr>
+</tbody></table></div>
+
+<h2>Power and noise in 50 Ω</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>P(dBm) = 10 log<sub>10</sub>(P/1 mW)</td><td>0 dBm = 1 mW = 0.224 V rms = 0.632 V peak-to-peak</td></tr>
+<tr><td>−100 dBm</td><td>0.1 pW, 2.24 µV rms</td></tr>
+<tr><td>Thermal noise power</td><td>k<sub>B</sub>TB: −174 dBm/Hz at 300 K</td></tr>
+<tr><td>Johnson noise voltage</td><td>√(4k<sub>B</sub>TR) per √Hz: 0.9 nV/√Hz for 50 Ω at 300 K</td></tr>
+<tr><td>Attenuator noise</td><td>T<sub>out</sub> = T<sub>in</sub>/A + T<sub>s</sub>(1 − 1/A), A the linear attenuation, T<sub>s</sub> its temperature</td></tr>
+<tr><td>Reflection coefficient</td><td>Γ = (Z − Z<sub>0</sub>)/(Z + Z<sub>0</sub>)</td></tr>
+<tr><td>LC resonance</td><td>f<sub>0</sub> = 1/(2π√(LC))</td></tr>
+<tr><td>RC time constant</td><td>τ = RC; 3 dB bandwidth 1/(2πRC)</td></tr>
+</tbody></table></div>
+
+<h2>A spin in a field</h2>
+<p>A spin-½ in a static field along z has energies ±E<sub>Z</sub>/2 with E<sub>Z</sub> = gµ<sub>B</sub>B, and precesses at the Larmor frequency f<sub>L</sub> = E<sub>Z</sub>/h. A state cos(θ/2)|↓⟩ + e<sup>iφ</sup> sin(θ/2)|↑⟩ is a point on the Bloch sphere at polar angle θ and azimuth φ; the measured spin-up probability is sin²(θ/2).</p>
+<p>A transverse field oscillating at frequency f with amplitude B<sub>1</sub> is, in the frame rotating at f, a static field of amplitude B<sub>1</sub>/2 in the equatorial plane plus a field along z proportional to the detuning Δ = f<sub>L</sub> − f. The spin rotates about their sum at the generalized Rabi frequency √(f<sub>R</sub>² + Δ²), with f<sub>R</sub> = gµ<sub>B</sub>B<sub>1</sub>/(2h):</p>
+\[ P_\uparrow(t) = \frac{f_R^2}{f_R^2 + \Delta^2}\,\sin^2\!\left(\pi\sqrt{f_R^2+\Delta^2}\,t\right). \]
+<p>The phase of the drive sets the direction of the rotation axis in the equatorial plane. Rotations about z are equivalent to shifting the phase of all later drive pulses.</p>
+
+<h2>Decay laws</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Experiment</th><th>Typical decay</th><th>Relation</th></tr></thead>
+<tbody>
+<tr><td>Relaxation</td><td>exp(−t/T<sub>1</sub>)</td><td>sets the ceiling T<sub>2</sub> ≤ 2T<sub>1</sub></td></tr>
+<tr><td>Ramsey, quasi-static noise</td><td>exp[−(t/T<sub>2</sub>*)²]</td><td>T<sub>2</sub>* = √2/(2πσ<sub>f</sub>), σ<sub>f</sub> the rms frequency spread</td></tr>
+<tr><td>Ramsey, 1/f noise S = A/f</td><td>approximately Gaussian</td><td>σ<sub>f</sub>² ≈ A ln(f<sub>high</sub>/f<sub>low</sub>); depends on the measurement time</td></tr>
+<tr><td>Hahn echo, 1/f noise</td><td>approximately Gaussian</td><td>T<sub>2</sub><sup>H</sup> ≈ 5 T<sub>2</sub>* for typical parameters</td></tr>
+<tr><td>CPMG, 1/f noise</td><td>T<sub>2</sub> ∝ N<sup>≈0.5</sup></td><td>−ln W ≈ 8 S<sub>f</sub>(f<sub>0</sub>) t at f<sub>0</sub> = N/(2t), S one-sided in Hz²/Hz</td></tr>
+<tr><td>Low-power linewidth</td><td>Gaussian, FWHM = 2.35 σ<sub>f</sub></td><td>same σ<sub>f</sub> as Ramsey</td></tr>
+</tbody></table></div>
+
+<h2>Fidelities and benchmarking</h2>
+<ul>
+<li>State fidelity to a pure target: F = ⟨ψ|ρ|ψ⟩.</li>
+<li>Readout: visibility V = F<sub>0</sub> + F<sub>1</sub> − 1; average readout fidelity (F<sub>0</sub> + F<sub>1</sub>)/2.</li>
+<li>Randomized benchmarking: F(m) = Ap<sup>m</sup> + B; average Clifford fidelity F<sub>C</sub> = 1 − (1 − p)(d − 1)/d, with d = 2 for one qubit and 4 for two.</li>
+<li>Average gate fidelity and process (entanglement) fidelity: F<sub>avg</sub> = (dF<sub>pro</sub> + 1)/(d + 1).</li>
+<li>A small coherent rotation error θ gives an average infidelity of about θ²/6 for one qubit; a conditional phase error δφ on a CZ gives about 0.15 δφ².</li>
+<li>Binomial uncertainty of an estimated probability: σ = √(p(1 − p)/N).</li>
+</ul>
+
+<h2>Charge physics</h2>
+<ul>
+<li>Constant-interaction addition energy: E<sub>add</sub> = E<sub>C</sub> + ΔE, with E<sub>C</sub> = e²/C<sub>Σ</sub>. The plunger spacing of Coulomb peaks is ΔV = E<sub>add</sub>/(eα).</li>
+<li>Lever arm from Coulomb diamonds: α = |m<sub>S</sub>m<sub>D</sub>/(m<sub>S</sub> − m<sub>D</sub>)| from the two edge slopes, or V<sub>SD</sub> at the diamond tip divided by its width in gate voltage.</li>
+<li>Fermi function: f(E) = 1/(1 + e<sup>E/k<sub>B</sub>T</sup>). A thermally broadened Coulomb peak has FWHM = 3.53 k<sub>B</sub>T<sub>e</sub>/(eα) in gate voltage.</li>
+<li>Two-level charge system with tunnel coupling t<sub>c</sub>: splitting Ω = √(ε² + 4t<sub>c</sub>²); polarization P = ½[1 + (ε/Ω) tanh(Ω/2k<sub>B</sub>T)].</li>
+<li>Exchange in the Hubbard picture at the symmetric point: J ≈ 4t<sub>c</sub>²/U.</li>
+</ul>
