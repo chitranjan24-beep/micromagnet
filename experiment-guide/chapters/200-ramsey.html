@@ -1,0 +1,84 @@
+<!--meta {"id": "ramsey", "part": "Part F · One qubit", "title": "Ramsey: the qubit's clock and how it wanders"}-->
+
+<p class="lede">A Rabi oscillation shows that the qubit can be rotated. A Ramsey experiment shows how well it keeps time when left alone, which is what a qubit does most of the time in any computation. It is the most precise way to measure the qubit frequency, and its decay, T<sub>2</sub>*, is the first measure of the noise that will set most of the error budget. This chapter explains the experiment, why its result depends on how long you measure, and how to follow the qubit frequency as it drifts.</p>
+
+<h2>Two π/2 pulses and a wait</h2>
+<p>A π/2 pulse puts the spin on the equator of the Bloch sphere. Left alone, it precesses about the field at the qubit frequency. In the rotating frame of the drive, it stands still if the drive is exactly on resonance, and turns slowly at the detuning Δ otherwise. After a wait τ, a second π/2 pulse rotates the equator back onto the poles. Where the spin ends up depends on the angle 2πΔτ it has turned through: the measured spin-up probability oscillates with τ at the detuning frequency, the <dfn data-def="The oscillation of the measured spin probability in a Ramsey experiment as a function of the free-evolution time, at the frequency difference between the qubit and the drive.">Ramsey fringe</dfn> <cite data-r="burkard2023"></cite>.</p>
+\[ P_\uparrow(\tau) = \tfrac{1}{2}\left[1 + \cos(2\pi\Delta\tau)\,e^{-(\tau/T_2^*)^2}\right]. \]
+<p>The fringes are a clock comparison: the drive's frequency against the qubit's. They measure Δ to a precision of roughly 1/(2πτ<sub>max</sub>), far better than a spectroscopy line. To measure the qubit frequency, detune the drive on purpose by about 1 MHz, so that several fringes fit into the decay, and fit (Figure 20.1).</p>
+<figure>
+<div class="figbody"><!--plot:ramsey-fringes--></div>
+<figcaption>Ramsey fringes of qubit 1 with the drive detuned by 1 MHz (simulated, 200 shots per point). The fringe frequency gives the detuning, hence the qubit frequency, to a few kilohertz. The Gaussian envelope gives T<sub>2</sub>* = 6.0 µs.</figcaption>
+</figure>
+<p>One subtlety: the fringe frequency gives |Δ|, not its sign. Whether the qubit is above or below the drive follows from a second measurement at a different intentional detuning, or by advancing the phase of the second pulse with τ, which adds a known frequency to the fringes. Delft used the phase of the second pulse as an independent check of their Ramsey data <cite data-r="kawakami2014"></cite>.</p>
+
+<h2>Why the fringes fade</h2>
+<p>Every shot of the experiment uses the qubit frequency at that moment. If the frequency fluctuates slowly from shot to shot by a random amount with standard deviation σ<sub>f</sub>, each shot's fringe has a slightly different phase, and their average washes out once 2πσ<sub>f</sub>τ approaches one. For Gaussian-distributed, quasi-static fluctuations the envelope is Gaussian, exp[−(τ/T<sub>2</sub>*)²], with</p>
+\[ T_2^* = \frac{\sqrt{2}}{2\pi\sigma_f}. \]
+<p>So T<sub>2</sub>* is not a property of a single shot, in which the spin hardly dephases, but of the spread of frequencies over the whole data set. Our 6 µs corresponds to σ<sub>f</sub> ≈ 38 kHz, a frequency stability of 2.4 parts per million at 15.4 GHz. RIKEN's purified-silicon qubit reached T<sub>2</sub>* = 20 µs, with an envelope exponent of 2.0, the Gaussian shape expected for slow noise <cite data-r="yoneda2018"></cite>. The shape of the envelope is itself informative: an exponential decay instead points to noise that is fast compared to τ.</p>
+
+<h2>A dephasing time that depends on your patience</h2>
+<p>Where does the frequency spread come from? In our device mostly from charge noise, moving the electron in the micromagnet's longitudinal gradient (Chapter 14), with a smaller contribution from the remaining <sup>29</sup>Si nuclei. Charge noise in these devices has a 1/f spectrum: equal noise power in every decade of frequency, down to the lowest frequencies anyone has measured <cite data-r="connors2019,yoneda2018"></cite>. That has an unsettling consequence. A measurement that lasts longer includes slower fluctuations, so its frequency spread is larger and its T<sub>2</sub>* shorter. For 1/f noise, the variance grows with the logarithm of the total measurement time (Figure 20.2).</p>
+<figure>
+<div class="figbody"><!--plot:t2star-averaging--></div>
+<figcaption>T<sub>2</sub>* expected for our qubit versus the total time over which the Ramsey data are collected, for 1/f frequency noise. The same qubit has T<sub>2</sub>* ≈ 9 µs measured in 10 ms and about 5 µs measured over three hours. A T<sub>2</sub>* is only meaningful together with the measurement time it was taken over.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: logarithms and patience</span>
+<p>For noise with spectral density S(f) = A/f between a lowest frequency f<sub>low</sub> ≈ 1/T<sub>meas</sub> and a highest frequency f<sub>high</sub> ≈ 1/τ, the variance is σ<sub>f</sub>² = A ln(f<sub>high</sub>/f<sub>low</sub>).</p>
+<p>Our numbers: A ≈ 87 kHz², f<sub>high</sub> ≈ 100 kHz. For a 100 s measurement, ln(10<sup>5</sup> × 100) ≈ 16, so σ<sub>f</sub> = √(87 × 16) ≈ 38 kHz and T<sub>2</sub>* = 6 µs. For a 1 hour measurement, ln(3.6 × 10<sup>8</sup>) ≈ 20, σ<sub>f</sub> ≈ 42 kHz and T<sub>2</sub>* ≈ 5.4 µs.</p>
+<p>A factor of 36 in time costs only 10% in T<sub>2</sub>*, which is why 1/f noise is often mistaken for "a fixed T<sub>2</sub>*", until a much longer or shorter experiment is done.</p>
+</div>
+<p>This is the main reason published T<sub>2</sub>* values are hard to compare, and why good papers state the averaging time. It also shows the way to better effective coherence. If the slow part of the noise could be measured and corrected as it happens, only the fast part would remain. The two ways of doing that, echo sequences and frequency tracking, are the subject of the rest of this chapter and of the next.</p>
+
+<h2>Following the frequency: Ramsey tracking</h2>
+<p>A single Ramsey measurement with a few hundred shots takes about a second and determines the frequency to a few kilohertz. Repeating it continuously turns the qubit into a sensor of its own environment (Figure 20.3). RIKEN recorded 3600 such measurements over 24 minutes and found that the same 1/f spectrum measured by echo experiments at high frequencies extended down to 0.01 Hz, seven decades in all <cite data-r="yoneda2018"></cite>. Such records also show events that averages hide: jumps when a nearby charge trap switches state, slow drifts from the superconducting magnet, and correlations between the frequencies of neighbouring qubits, which reveal whether the noise is local or shared <cite data-r="yoneda2023"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:frequency-drift--></div>
+<figcaption>Left: the frequency of qubit 1 tracked with Ramsey measurements every 2 s for two hours (simulated). It wanders by tens of kilohertz with 1/f noise, drifts slowly with the superconducting magnet, and jumps once by 45 kHz when a nearby charge trap switches. Right: the spectrum of the record follows 1/f (dashed) down to 10<sup>−3</sup> Hz.</figcaption>
+</figure>
+<p>Because the slow noise dominates, simply re-measuring the frequency and updating the drive removes much of it. Groups do this at different time scales. RIKEN recalibrated the microwave frequency by Ramsey measurements to follow the decay of the magnet's persistent current <cite data-r="yoneda2018"></cite>. Princeton retuned frequency and readout about every 30 minutes during 14-hour runs <cite data-r="mills2022ro"></cite>. QuTech's calibration graph re-runs the frequency calibration several times a day <cite data-r="philips2022"></cite>. At the fast end, the frequency can be estimated in real time on an FPGA from a few single shots and corrected within milliseconds, using Bayesian estimation that chooses each next measurement to be maximally informative. This has been demonstrated for the fluctuating nuclear field of GaAs and for silicon double dots <cite data-r="benestad2024,berritta2024,bryan2026"></cite>. Chapter 31 puts these into a calibration strategy.</p>
+
+<h2>What sets the frequency noise</h2>
+<p>A Ramsey experiment measures the total frequency noise, not its causes. Separating them takes deliberate variations, each a small experiment of its own:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Source</th><th>Signature</th><th>Test</th></tr></thead>
+<tbody>
+<tr><td>Charge noise via b<sub>long</sub></td><td>1/f spectrum; correlated with the dot's position</td><td>Move the dot along the gradient with the gates: the noise scales with the local b<sub>long</sub>. RIKEN measured the frequency's gate sensitivity, 93 kHz/mV, with a voltage "bump" pulse <cite data-r="yoneda2018"></cite>.</td></tr>
+<tr><td>Nuclear spins (<sup>29</sup>Si)</td><td>slow, field-independent spread; Gaussian decay</td><td>Compare natural and purified silicon; it scales with the <sup>29</sup>Si concentration <cite data-r="rojasarias2026"></cite>.</td></tr>
+<tr><td>Magnet drift</td><td>slow, monotonic, same sign for all qubits</td><td>Correlated drift in both qubits, proportional to their frequencies.</td></tr>
+<tr><td>Heating by pulses</td><td>frequency shift that depends on the preceding pulses</td><td>Vary the duty cycle at fixed Ramsey timing (Chapter 22) <cite data-r="undseth2023"></cite>.</td></tr>
+</tbody></table></div>
+<p>For our device, moving the dots by a few nanometres along the gradient changes T<sub>2</sub>* in proportion to the local b<sub>long</sub>, which identifies charge noise through the micromagnet as the main source, as in most micromagnet devices <cite data-r="yoneda2018,struck2020"></cite>.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the Ramsey fringes are clean on one run and much shorter-lived on the next, or the fringe frequency changes between consecutive runs.</p>
+<p><b>Likely cause:</b> slow frequency jumps, often a charge trap near the dot switching between two states. Each run then catches one or both frequencies.</p>
+<p><b>What to do:</b> track the frequency continuously for an hour (Figure 20.3) to see the jumps directly. If a fluctuator switches often, a small change of gate voltages can move it out of its active range, or the dot away from it.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 16</span>
+<p>Ramsey Q1, 1 MHz detuning, 300 shots/pt, 100 s total: T2* = 6.0 µs, exponent 2.0. Frequency corrected +0.2 kHz. Q2: T2* = 6.4 µs.</p>
+<p>Tracking 2 h, 2 s per point: 1/f down to 1 mHz; one TLS jump of 45 kHz at 74 min (Q1 only); magnet drift −1.5 kHz/h on both. Frequency update every 10 min from now on.</p>
+<p>Gate sensitivity df/dvP1 = 90 kHz/mV at Q1 (bump pulse).</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 20</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>T<sub>2</sub>* (100 s averaging)</td><td>6.0 µs (Q1), 6.4 µs (Q2); Gaussian</td><td>Chapters 21, 32</td></tr>
+<tr><td>Frequency noise</td><td>1/f, A ≈ 87 kHz², σ<sub>f</sub> ≈ 38 kHz</td><td>Chapter 21</td></tr>
+<tr><td>Gate sensitivity</td><td>90 kHz/mV (Q1, vP1)</td><td>Chapters 21, 24</td></tr>
+<tr><td>Magnet drift</td><td>−1.5 kHz/h</td><td>Chapter 31</td></tr>
+<tr><td>Frequency update interval</td><td>10 min</td><td>Chapter 31</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Ramsey fringes at a programmed detuning of +2 MHz oscillate at 2.05 MHz. With a programmed detuning of −2 MHz they oscillate at 1.95 MHz. Where is the qubit?</p>
+<details><summary>Show answer</summary><div>The actual detunings are Δ = (programmed offset) − (qubit offset). If the qubit is δ above the nominal frequency, the fringes oscillate at |2 MHz − δ| and |−2 MHz − δ|. From 2.05 and 1.95 MHz: |2 − δ| = 2.05 needs δ = −0.05 MHz, and then |−2 + 0.05| = 1.95 ✓. The qubit is 50 kHz below the nominal frequency.</div></details>
+<p>2. Why does a Ramsey experiment measure frequency far more precisely than a spectroscopy line of the same total duration?</p>
+<details><summary>Show answer</summary><div>Ramsey interferometry compares phases accumulated over the full free evolution time, with the spin fully on the equator, the most phase-sensitive state. A spectroscopy line, especially a power-broadened one, spreads the measurement over a range of frequencies set by the drive. Ramsey's resolution is set only by the evolution time and the shot noise.</div></details>
+<p>3. A colleague quotes T<sub>2</sub>* = 12 µs for a qubit like ours. What should you ask before comparing?</p>
+<details><summary>Show answer</summary><div>How long the measurement took in total, and whether any frequency tracking or post-selection was applied. With 1/f noise, a fast measurement or one with frequent recalibration gives a longer T<sub>2</sub>*. Also ask about the field and the dot's position in the gradient, which change the noise coupling.</div></details>
+</div>

@@ -1,0 +1,95 @@
+<!--meta {"id": "benchmarking", "part": "Part F · One qubit", "title": "How good are the gates? Benchmarking and tomography"}-->
+
+<p class="lede">After calibration, every gate looks right in every test we have used so far. The question now is quantitative: what fraction of the time does a gate do the wrong thing? Answering it is harder than it sounds, because errors of 0.1% are far smaller than the errors of preparing and reading the qubit. This chapter describes the two standard answers. Randomized benchmarking gives one robust number by making errors add up in a predictable way. Gate set tomography gives a full description of each operation, including preparation and measurement.</p>
+
+<h2>The problem with measuring small errors directly</h2>
+<p>To measure a gate error of 0.1% directly, you would prepare a state, apply the gate once, and compare the outcome with the ideal one. But the preparation and the readout of our qubit together have errors of a few percent (Chapter 17), thirty times larger than the effect you are looking for. Correcting for them is possible only if they are known far more precisely than they are. Repeating the gate many times amplifies its error, as in the calibration of Chapter 22, but a specific repeated gate amplifies specific errors coherently and hides others. What is needed is a way to amplify all errors equally and to separate them cleanly from preparation and measurement.</p>
+
+<h2>Randomized benchmarking</h2>
+<p>Randomized benchmarking (RB) applies a long sequence of m gates drawn at random from the 24 single-qubit Clifford gates, the rotations that map the six poles of the Bloch sphere onto each other, followed by one final Clifford that undoes the whole sequence. Ideally the qubit returns to its starting state. Each random sequence is different, and averaged over many sequences, any error in the gates is converted into an effective depolarization of the same strength per gate. The probability of finding the expected outcome then decays exponentially with the length of the sequence <cite data-r="burkard2023"></cite>:</p>
+\[ F(m) = A\,p^m + B, \qquad F_C = 1 - \frac{(1-p)(d-1)}{d}, \]
+<p>with d = 2 for one qubit. The constants A and B absorb preparation and measurement errors, which occur once per sequence, not once per gate. The decay constant p depends only on the gates. That is the whole trick: the slope is immune to SPAM (Figure 23.1).</p>
+<figure>
+<div class="figbody"><!--plot:rb-decay--></div>
+<figcaption>Randomized benchmarking of qubit 1 (simulated; 20 random sequences per length, 1000 shots each). The reference decay (blue) gives p = 0.9970 and an average Clifford fidelity F<sub>C</sub> = 99.85%. Interleaving the X90 gate after every Clifford (orange) makes the decay faster; the ratio of the two decay constants gives the X90 fidelity, 99.93%. Each small dot is one random sequence; their spread grows as the sequences become longer.</figcaption>
+</figure>
+<p>A Clifford is not a physical gate. Each is compiled from the primitive gates, here X90 and Y90 rotations and virtual Z, using on average 1.875 physical pulses per Clifford for the standard decomposition. Dividing the Clifford error by that number gives the average error per primitive gate: RIKEN's 99.861% Clifford fidelity became 99.926% per gate this way <cite data-r="yoneda2018"></cite>. Our 99.85% gives 99.92% per gate.</p>
+
+<h2>Interleaved RB: one gate at a time</h2>
+<p>To isolate one particular gate, interleave it after every random Clifford and compare the decay with the reference. The ratio p<sub>interleaved</sub>/p<sub>reference</sub> is the depolarizing parameter of that gate alone, which gives its fidelity. This interleaved RB is how most quoted single-gate fidelities are measured. Princeton's 99.96% average and RIKEN's 99.51% CNOT were interleaved measurements <cite data-r="mills2022ro,noiri2022"></cite>. Interleaved RB has a known weakness: when the interleaved gate's error is small and coherent, the estimate can be off by an amount comparable to the error itself, so it is best treated as an estimate with an uncertainty range.</p>
+
+<div class="box numbers"><span class="tag">Worked numbers: our gates</span>
+<p>Reference p = 0.9970: F<sub>C</sub> = 1 − 0.003/2 = 99.85%, a primitive-gate error of 0.15%/1.875 ≈ 0.08%.</p>
+<p>Interleaved with X90, p = 0.99556: p<sub>X90</sub> = 0.99556/0.9970 = 0.99856, so F<sub>X90</sub> = 1 − 0.00144/2 = 99.93%.</p>
+<p>What would this error be if it came only from dephasing during the 62.5 ns pulse? With T<sub>2</sub>* = 6 µs, a Gaussian decay gives an error of roughly ½(62.5 ns/6 µs)² ≈ 5 × 10<sup>−5</sup>, and the driving protects against slow noise even further. So our gates are limited by something else: the drive's own noise, heating, and residual calibration error. That is the usual situation in silicon spin qubits, and the reason driven coherence matters (Chapter 19).</p>
+</div>
+
+<h2>Practical notes</h2>
+<ul>
+<li><b>Sequence lengths.</b> Choose lengths that span the decay: from 1 to at least the length where F(m) has fallen most of the way to B, here about 1000. Logarithmic spacing at the start pins A and the early decay.</li>
+<li><b>Number of sequences.</b> About 20 random sequences per length, each with a few hundred to a thousand shots, gives fidelities to about ±0.01% for a qubit like ours. RIKEN used 20 random sets with 1000 shots each <cite data-r="yoneda2018"></cite>; Princeton used 200 sequences with 100 averages each and lengths up to 4096 Cliffords <cite data-r="mills2022ro"></cite>.</li>
+<li><b>Two final states.</b> Run each sequence twice, with the final Clifford chosen to end in |0⟩ and in |1⟩, and fit the difference. This removes B and makes the fit more robust.</li>
+<li><b>Interleave everything else.</b> Randomize the order of sequence lengths and sequences, so that slow drifts affect all lengths alike.</li>
+</ul>
+
+<h2>What RB can hide</h2>
+<p>RB rests on assumptions: errors that are the same every time a gate is applied, independent of what came before, and confined to the qubit. Spin qubits violate each of these in ways that are worth knowing.</p>
+<ul>
+<li><b>Memory effects.</b> Heating makes a gate's error depend on the previous pulses (Chapter 22). The RB decay is then not a pure exponential, and fitting one anyway gives a misleading number. Long sequences heat more than short ones, so the decay may steepen with m.</li>
+<li><b>Leakage.</b> If the qubit leaves its two-level subspace, for example to a valley excited state or, for encoded qubits, to other spin states, RB sees it as an error only partly. Modified protocols measure leakage separately: HRL's blind RB separated 0.17% of leakage from a 0.35% total error in their exchange-only qubit <cite data-r="andrews2019"></cite>.</li>
+<li><b>Crosstalk.</b> RB on one qubit while the others idle says nothing about what that qubit's gates do to the others. Simultaneous RB, running independent sequences on several qubits at once, reveals crosstalk as a lower fidelity than in isolated RB.</li>
+<li><b>Readout artefacts.</b> In arrays read out by parity, off-resonant excitation of a neighbouring qubit during RB can mimic gate errors. RIKEN identified this, together with the effect of rectangular pulses, as a source of artefacts at the 10<sup>−5</sup> level, and avoided it with spectrally tailored pulses on the way to a π/2 fidelity of 99.9992% <cite data-r="takeda2026"></cite>.</li>
+</ul>
+
+<h2>Gate set tomography</h2>
+<p>RB gives one number per gate. Gate set tomography (GST) gives the full process matrix of each gate, together with the prepared state and the measurement, all fitted self-consistently from one large data set. It uses specific short "fiducial" sequences that prepare and measure informationally complete sets of states, and "germs", short gate sequences repeated many times to amplify each kind of error. Because preparation and measurement are fitted as parts of the model, GST separates them from the gates, which RB cannot <cite data-r="xue2022"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:gst-budget--></div>
+<figcaption>What GST adds (simulated result for our qubit): the error of each operation in the gate set, separated into a coherent part, which better calibration could remove, and an incoherent part from decoherence. Preparation and measurement appear as operations in their own right. Here the measurement dominates, the gates are mostly limited by incoherent errors, and the idle of 125 ns costs about as much as a gate.</figcaption>
+</figure>
+<p>Two examples show what GST tells you that RB does not. Princeton's GST of their single qubit found preparation 99.76%, measurement 99.35%, X and Y gates near 99.96%, and an idle of only 99.43%, limited by T<sub>2</sub>* = 3.2 µs. So the qubit was worse at doing nothing than at doing gates, a direct pointer to dynamical decoupling during idle periods <cite data-r="mills2022ro"></cite>. QuTech's two-qubit GST found single-qubit gate fidelities of about 99.7% in the single-qubit subspace but only 99.16% when the other qubit's state was included, revealing crosstalk and idling errors that single-qubit RB missed. Its error generators then fed back into calibration, after which incoherent errors dominated <cite data-r="xue2022"></cite>.</p>
+<p>The cost of GST is data and analysis: thousands of distinct sequences, and fitting software such as pyGSTi. It is used selectively, for a final characterization or when RB numbers are puzzling, while RB serves as the routine health check.</p>
+
+<h2>Where the field stands</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Result</th><th>Single-qubit fidelity</th><th>Method</th></tr></thead>
+<tbody>
+<tr><td>RIKEN 2018, purified Si/SiGe, micromagnet</td><td>99.93% per gate</td><td>RB <cite data-r="yoneda2018"></cite></td></tr>
+<tr><td>Princeton 2022, purified Si/SiGe</td><td>99.96% average</td><td>interleaved RB, GST <cite data-r="mills2022ro"></cite></td></tr>
+<tr><td>QuTech 2022, six qubits</td><td>99.77–99.96%</td><td>RB <cite data-r="philips2022"></cite></td></tr>
+<tr><td>RIKEN 2025, simultaneous driving</td><td>&gt; 99.99% for up to three qubits</td><td>RB <cite data-r="wu2025"></cite></td></tr>
+<tr><td>RIKEN 2026</td><td>99.9992% (π/2)</td><td>RB <cite data-r="takeda2026"></cite></td></tr>
+</tbody></table></div>
+<p>Single-qubit gates are no longer the weak point in silicon. The work has moved to two-qubit gates, readout, crosstalk in arrays, and keeping all of it calibrated, which is where the rest of the book goes.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the RB decay is not a clean exponential: it bends down at long sequence lengths, or the spread between random sequences is much larger than shot noise.</p>
+<p><b>Likely causes:</b> errors that change during a sequence, most often heating that accumulates with the number of pulses, or drift of the qubit frequency during the hours of the measurement. A large spread between sequences means the errors are coherent and do not average out, typically a residual miscalibration.</p>
+<p><b>What to do:</b> run RB with a prepulse and fixed duty cycle (Chapter 22). Randomize the order of sequences and lengths. Recalibrate and check AllXY, then repeat.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 19</span>
+<p>RB Q1: p = 0.9970 ± 0.0001 → F_C = 99.85%; per primitive gate 99.92%. IRB X90: 99.93%; Y90: 99.92%. Q2: F_C = 99.83%.</p>
+<p>Simultaneous RB (Q1 and Q2 driven at the same time, both frequencies on P1): F_C = 99.71% / 99.68%. Crosstalk costs ≈ 0.15%. Single-qubit gates done sequentially for now.</p>
+<p>GST (Q1, 6 h of data): prep 99.85%, meas 98.6%, X90 99.93%, Y90 99.92%, idle 125 ns 99.95%. Gates mostly incoherent-limited.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 23</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Clifford fidelity</td><td>Q1 99.85%, Q2 99.83%</td><td>Chapters 26, 32</td></tr>
+<tr><td>Primitive gates</td><td>X90 99.93%, Y90 99.92% (IRB, Q1)</td><td>Chapter 32</td></tr>
+<tr><td>Simultaneous driving</td><td>F<sub>C</sub> ≈ 99.7%; sequential preferred</td><td>Chapter 26</td></tr>
+<tr><td>GST (Q1)</td><td>prep 99.85%, meas 98.6%, idle 99.95%</td><td>Chapter 32</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does RB not care about the readout fidelity, as long as the readout is not too bad?</p>
+<details><summary>Show answer</summary><div>Preparation and readout happen once per sequence, whatever its length. Their errors reduce the amplitude A and shift the offset B of the decay, but not its rate p, which depends only on how much error each additional Clifford adds. A worse readout only makes the decay smaller and therefore noisier to fit.</div></details>
+<p>2. An RB experiment gives p = 0.995. What are the average Clifford fidelity and, with 1.875 gates per Clifford, the average primitive gate fidelity?</p>
+<details><summary>Show answer</summary><div>F<sub>C</sub> = 1 − 0.005/2 = 99.75%. Error per primitive gate ≈ 0.25%/1.875 ≈ 0.13%, so about 99.87%.</div></details>
+<p>3. GST shows that the idle operation has a larger error than the X90 gate of the same length. Why can that happen, and what would you do?</p>
+<details><summary>Show answer</summary><div>During the idle, the qubit is fully exposed to slow frequency noise, and its phase drifts. During the X90 pulse, the drive suppresses the effect of slow detuning to second order. So idling can be worse than driving. The fix is to decouple idle periods with echo pulses, or to shorten them by better scheduling.</div></details>
+</div>

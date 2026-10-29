@@ -1090,6 +1090,345 @@ def line_field():
     save('line-field', ax.svg(legend_pos='br'))
 
 
+
+# ---------------------------------------------------------------- chapter 19: Rabi
+VIS_E, OFF_E = 0.973, 0.003      # Elzerman visibility and offset (chapter 17)
+
+
+@fig
+def rabi_chevron():
+    rng = np.random.default_rng(41)
+    d = np.linspace(-12, 12, 121)          # MHz
+    t = np.linspace(0, 1.5, 151)           # us
+    D, T = np.meshgrid(d, t)
+    fr = 4.0
+    Om = np.sqrt(fr ** 2 + D ** 2)
+    P = fr ** 2 / Om ** 2 * np.sin(np.pi * Om * T) ** 2
+    Pm = rng.binomial(150, OFF_E + VIS_E * P) / 150
+    ax = Axes(600, 360, xlim=(-12, 12), ylim=(0, 1.5), xlabel='detuning from 15.420 GHz (MHz)', ylabel='burst duration (µs)', grid=False, mt=18)
+    ax.image(colormap(Pm[::-1], 'viridis', 0, 1))
+    ax.text(-11.5, 0.06, 'π pulse: 125 ns at f_R = 4 MHz', 'sm', style='fill:#fff')
+    ax2 = Axes(600, 220, xlim=(0, 1.5), ylim=(-0.03, 1.03), xlabel='burst duration (µs)', ylabel='spin-up fraction', mt=18, yticks=[0, 0.5, 1])
+    tt = np.linspace(0, 1.5, 400)
+    ax2.line(tt, OFF_E + VIS_E * np.sin(np.pi * fr * tt) ** 2, 't1', 'on resonance')
+    ax2.line(tt, OFF_E + VIS_E * (fr ** 2 / (fr ** 2 + 36)) * np.sin(np.pi * np.sqrt(fr ** 2 + 36) * tt) ** 2, 't2', '6 MHz off resonance')
+    save('rabi-chevron', column(ax.svg(), ax2.svg(legend_pos='tr')))
+
+
+@fig
+def rabi_decay():
+    rng = np.random.default_rng(42)
+    fr, tau = 4.0, 40.0
+    out = []
+    for t0, title in [(0, 'first 2 µs'), (30, 'after 30 µs of driving')]:
+        t = np.linspace(t0, t0 + 2, 201)
+        P = 0.5 - 0.5 * np.exp(-t / tau) * np.cos(2 * np.pi * fr * t)
+        Pm = rng.binomial(200, OFF_E + VIS_E * P) / 200
+        ax = Axes(330, 260, xlim=(t0, t0 + 2), ylim=(-0.03, 1.03), xlabel='burst duration (µs)', ylabel='spin-up fraction', title=title, mr=12, yticks=[0, 0.5, 1])
+        ax.scatter(t, Pm, 'f1', r=2.2, opacity=0.8)
+        tt = np.linspace(t0, t0 + 2, 600)
+        ax.line(tt, OFF_E + VIS_E * (0.5 - 0.5 * np.exp(-tt / tau) * np.cos(2 * np.pi * fr * tt)), 't1')
+        out.append(ax.svg())
+    save('rabi-decay', row(*out))
+
+
+@fig
+def rabi_amplitude():
+    rng = np.random.default_rng(43)
+    A = np.linspace(0, 1.0, 11)              # normalized drive amplitude (fraction of max)
+    lin = 16.0 * A                           # MHz if perfectly linear
+    meas = lin * (1 - 0.18 * np.clip(A - 0.6, 0, None) ** 2 / 0.16)
+    meas = meas + rng.normal(0, 0.12, A.size)
+    meas[0] = 0
+    ax = Axes(600, 300, xlim=(0, 1.0), ylim=(0, 18), xlabel='microwave amplitude at the AWG (fraction of full scale)', ylabel='Rabi frequency f_R (MHz)', mt=18)
+    ax.line(A, lin, 'thin dash')
+    ax.scatter(A, meas, 'f1', r=4, opacity=0.95)
+    ax.line(np.linspace(0, 1, 100), 16 * np.linspace(0, 1, 100) * (1 - 0.18 * np.clip(np.linspace(0, 1, 100) - 0.6, 0, None) ** 2 / 0.16), 't1')
+    ax.vline(0.25, 'thin dash', 'operating point: 4 MHz', ly=16.5)
+    ax.text(0.62, 6.5, 'linear up to ≈ 10 MHz,', 'sm')
+    ax.text(0.62, 5.2, 'then falls below the line', 'sm')
+    ax.text(0.62, 15.0, 'dashed: linear extrapolation', 'sm')
+    save('rabi-amplitude', ax.svg())
+
+
+
+# ---------------------------------------------------------------- chapter 20: Ramsey and drift
+A_1F = 87.3      # kHz^2 : 1/f frequency-noise amplitude, S(f) = A/f  (gives T2* = 6 us for 100 s averaging)
+
+
+@fig
+def ramsey_fringes():
+    rng = np.random.default_rng(51)
+    tau = np.linspace(0, 15, 301)      # us
+    det, T2 = 1.0, 6.0                 # MHz, us
+    P = 0.5 + 0.5 * np.cos(2 * np.pi * det * tau) * np.exp(-(tau / T2) ** 2)
+    Pm = rng.binomial(200, OFF_E + VIS_E * P) / 200
+    tt = np.linspace(0, 15, 1500)
+    ax = Axes(860, 280, xlim=(0, 15), ylim=(-0.03, 1.03), xlabel='free evolution time τ (µs)', ylabel='spin-up fraction', mt=18, yticks=[0, 0.5, 1])
+    ax.scatter(tau, Pm, 'f1', r=2.2, opacity=0.8)
+    ax.line(tt, OFF_E + VIS_E * (0.5 + 0.5 * np.cos(2 * np.pi * det * tt) * np.exp(-(tt / T2) ** 2)), 't1')
+    ax.line(tt, OFF_E + VIS_E * (0.5 + 0.5 * np.exp(-(tt / T2) ** 2)), 'thin dash')
+    ax.line(tt, OFF_E + VIS_E * (0.5 - 0.5 * np.exp(-(tt / T2) ** 2)), 'thin dash')
+    ax.text(8.5, 0.9, 'fit: detuning 1.000 MHz, T₂* = 6.0 µs, Gaussian envelope', 'sm')
+    save('ramsey-fringes', ax.svg())
+
+
+@fig
+def t2star_averaging():
+    Tm = np.logspace(-2, 4.6, 200)       # s
+    fh = 1e5
+    sig = np.sqrt(A_1F * np.log(fh * Tm))            # kHz
+    T2 = np.sqrt(2) / (2 * np.pi * sig * 1e3) * 1e6  # us
+    ax = Axes(600, 300, xlim=(-2, 4.6), ylim=(4, 10), xlabel='total measurement time (log₁₀ s)', ylabel='T₂* (µs)', mt=18,
+              xticks=[-2, -1, 0, 1, 2, 3, 4], xfmt=lambda v: {-2: '10 ms', -1: '0.1 s', 0: '1 s', 1: '10 s', 2: '100 s', 3: '17 min', 4: '3 h'}.get(round(v), ''))
+    ax.line(np.log10(Tm), T2, 't1')
+    ax.vline(2, 'thin dash', 'our 6 µs: 100 s', ly=9.6)
+    ax.text(-1.8, 4.5, 'the slower the measurement, the more slow noise it averages over', 'sm')
+    save('t2star-averaging', ax.svg())
+
+
+@fig
+def frequency_drift():
+    rng = np.random.default_rng(52)
+    n, dt = 3600, 2.0                    # 2 h of Ramsey points every 2 s
+    f = np.fft.rfftfreq(n, dt)
+    amp = np.zeros_like(f)
+    amp[1:] = np.sqrt(A_1F / f[1:] / (2 * dt * n)) * n
+    ph = rng.uniform(0, 2 * np.pi, f.size)
+    x = np.fft.irfft(amp * np.exp(1j * ph), n)
+    t = np.arange(n) * dt / 60.0         # minutes
+    x = x - x.mean() - 1.5 * t / 60.0    # magnet drift, -1.5 kHz per hour
+    jump = np.where(t > 74, 45.0, 0.0)   # a two-level fluctuator switching once
+    x = x + jump
+    meas = x + rng.normal(0, 4.0, n)     # estimation noise per point
+    ax = Axes(380, 300, xlim=(0, 120), ylim=(-120, 140), xlabel='time (min)', ylabel='qubit-1 frequency offset (kHz)', mt=18, title='Ramsey-tracked frequency', mr=12)
+    ax.line(t, meas, 't1')
+    ax.text(40, 120, 'jump at 74 min: a charge trap switched', 'sm')
+    S = np.abs(np.fft.rfft(meas - meas.mean())) ** 2 * 2 * dt / n
+    ax2 = Axes(300, 300, xlim=(-3.6, -0.6), ylim=(0, 6), xlabel='log₁₀ frequency (Hz)', ylabel='log₁₀ S (kHz²/Hz)', mt=18, title='its spectrum', mr=12,
+               xticks=[-3, -2, -1])
+    fb = f[1:]
+    # bin logarithmically
+    edges = np.logspace(np.log10(fb[0]), np.log10(fb[-1]), 22)
+    cx, cy = [], []
+    for a, b in zip(edges[:-1], edges[1:]):
+        m = (fb >= a) & (fb < b)
+        if m.any():
+            cx.append(np.log10(np.sqrt(a * b))); cy.append(np.log10(S[1:][m].mean()))
+    ax2.scatter(np.array(cx), np.array(cy), 'f1', r=3.5, opacity=0.9)
+    ax2.line(np.array([-3.6, -0.6]), np.log10(A_1F) - np.array([-3.6, -0.6]), 'thin dash')
+    ax2.text(-2.0, 4.6, '∝ 1/f', 'sm')
+    save('frequency-drift', row(ax.svg(), ax2.svg()))
+
+
+
+# ---------------------------------------------------------------- chapter 21: echo, CPMG, noise spectroscopy
+def _chi_cpmg(t, N, A=A_1F * 1e6, fl=1e-2):
+    """Phase variance for CPMG-N (N=0: Ramsey) of total length t under S(f) = A/f (Hz^2/Hz).
+    Uses the closed-form CPMG filter function (Cywinski et al. 2008): |Y|^2 = 2F/w^2."""
+    grids = [np.logspace(np.log10(fl), 8, 20000)]
+    if N > 0:
+        f0 = N / (2 * t)
+        grids.append(np.linspace(max(f0 - 60 / t, fl), f0 + 60 / t, 6000))
+    f = np.unique(np.concatenate(grids))
+    w = 2 * np.pi * f
+    x = w * t
+    if N == 0:
+        Y2 = 4 * np.sin(x / 2) ** 2 / w ** 2
+    else:
+        sN = np.sin(x / 2) ** 2 if N % 2 == 0 else np.cos(x / 2) ** 2
+        Y2 = 16 * np.sin(x / (4 * N)) ** 4 * sN / (np.cos(x / (2 * N)) ** 2 + 1e-30) / w ** 2
+    return (2 * np.pi) ** 2 * np.trapezoid((A / f) * Y2, f)
+
+
+def _cpmg_curve(N, ts):
+    return np.exp(-np.array([_chi_cpmg(t, N) for t in ts]) / 2)
+
+
+@fig
+def echo_decays():
+    rng = np.random.default_rng(61)
+    ts = np.logspace(-6, -2, 70)
+    ax = Axes(600, 340, xlim=(0, 4), ylim=(-0.03, 1.5), xlabel='total evolution time (log₁₀ µs)', ylabel='remaining coherence', mt=18, yticks=[0, 0.25, 0.5, 0.75, 1],
+              xticks=[0, 1, 2, 3, 4], xfmt=lambda v: {0: '1', 1: '10', 2: '100', 3: '1000', 4: '10⁴'}.get(round(v), ''))
+    for N, cls, lab in [(1, 't1', 'Hahn echo (N = 1): T₂ = 30 µs'), (16, 't3', 'CPMG N = 16: 105 µs'), (256, 't2', 'CPMG N = 256: 420 µs'), (1024, 't4', 'CPMG N = 1024: 840 µs')]:
+        W = _cpmg_curve(N, ts)
+        ax.line(np.log10(ts * 1e6), W, cls, lab)
+        pts = ts[::4]
+        Wm = _cpmg_curve(N, pts) + rng.normal(0, 0.02, pts.size)
+        ax.scatter(np.log10(pts * 1e6), Wm, 'f' + cls[1], r=2.6, opacity=0.85)
+    tt = np.logspace(-6, -4.5, 60)
+    ax.line(np.log10(tt * 1e6), np.exp(-(tt / 6e-6) ** 2), 'thin dash')
+    ax.text(0.05, 0.12, 'Ramsey: 6 µs', 'sm')
+    save('echo-decays', ax.svg(legend_pos='tr'))
+
+
+@fig
+def t2_vs_n():
+    Ns = np.array([1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
+    T2s = []
+    for N in Ns:
+        ts = np.logspace(-5.5, -2, 50)
+        W = _cpmg_curve(N, ts)
+        T2s.append(np.interp(np.exp(-1), W[::-1], ts[::-1]))
+    T2s = np.array(T2s) * 1e6
+    p = np.polyfit(np.log10(Ns), np.log10(T2s), 1)
+    rng = np.random.default_rng(62)
+    ax = Axes(600, 300, xlim=(-0.1, 3.1), ylim=(1.2, 3.2), xlabel='number of π pulses N (log₁₀)', ylabel='T₂ (log₁₀ µs)', mt=18,
+              xticks=[0, 1, 2, 3], yticks=[1.5, 2, 2.5, 3], xfmt=lambda v: {0: '1', 1: '10', 2: '100', 3: '1000'}.get(round(v), ''),
+              yfmt=lambda v: {1.5: '30', 2: '100', 2.5: '300', 3: '1000'}.get(v, ''))
+    ax.scatter(np.log10(Ns), np.log10(T2s) + rng.normal(0, 0.02, Ns.size), 'f1', r=4, opacity=0.95)
+    xx = np.linspace(-0.1, 3.1, 10)
+    ax.line(xx, np.polyval(p, xx), 't1', f'fit: T₂ ∝ N^{p[0]:.2f}')
+    ax.text(1.6, 1.5, 'for 1/f noise, T₂ ∝ N^(1/2) (approximately)', 'sm')
+    save('t2-vs-n', ax.svg(legend_pos='tl'))
+
+
+@fig
+def noise_spectrum():
+    rng = np.random.default_rng(63)
+    A = A_1F * 1e6     # Hz^2
+    # CPMG reconstruction: S(f0) = -ln W / (8 t), f0 = N/(2t) (one-sided S in Hz^2/Hz), using points with W ~ 0.25-0.8
+    xs, ys = [], []
+    for N in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]:
+        for t in np.logspace(-5.5, -2.5, 14):
+            W = np.exp(-_chi_cpmg(t, N) / 2)
+            if 0.25 < W < 0.8:
+                f0 = N / (2 * t)
+                ys.append(np.log10(-np.log(W) / (8 * t)) + rng.normal(0, 0.04))
+                xs.append(np.log10(f0))
+    # Ramsey-tracking spectrum points
+    fl = np.logspace(-3.3, -0.8, 12)
+    yl = np.log10(A / fl) + rng.normal(0, 0.08, fl.size)
+    ax = Axes(600, 320, xlim=(-3.5, 6.5), ylim=(1, 11), xlabel='frequency (log₁₀ Hz)', ylabel='log₁₀ S_f (Hz²/Hz)', mt=18,
+              xticks=[-3, -2, -1, 0, 1, 2, 3, 4, 5, 6])
+    xx = np.linspace(-3.5, 6.5, 10)
+    ax.line(xx, np.log10(A) - xx, 'thin dash')
+    ax.scatter(np.log10(fl), yl, 'f2', r=4, opacity=0.95, label='Ramsey tracking (Chapter 20)')
+    ax.scatter(np.array(xs), np.array(ys), 'f1', r=3, opacity=0.8, label='CPMG filter reconstruction')
+    ax.text(-0.3, 9.6, 'S_f = A/f, A = 87 kHz²: nine decades of the same noise', 'sm')
+    ax.text(-0.5, 4.6, 'gap: neither method reaches 1 Hz–10 kHz here', 'sm')
+    save('noise-spectrum', ax.svg(legend_pos='bl'))
+
+
+
+# ---------------------------------------------------------------- chapter 22: calibration
+def _rot(axis_phase, theta, det_frac=0.0):
+    """SU(2) rotation by theta about an equatorial axis at angle axis_phase, with detuning det_frac (Delta/f_R)."""
+    nx, ny, nz = np.cos(axis_phase), np.sin(axis_phase), det_frac
+    nrm = np.sqrt(nx ** 2 + ny ** 2 + nz ** 2)
+    th = theta * nrm
+    nx, ny, nz = nx / nrm, ny / nrm, nz / nrm
+    c, s = np.cos(th / 2), np.sin(th / 2)
+    return np.array([[c - 1j * nz * s, (-1j * nx - ny) * s], [(-1j * nx + ny) * s, c + 1j * nz * s]])
+
+
+_ALLXY = [('I', 'I'), ('X', 'X'), ('Y', 'Y'), ('X', 'Y'), ('Y', 'X'),
+          ('x', 'I'), ('y', 'I'), ('x', 'y'), ('y', 'x'), ('x', 'Y'), ('y', 'X'), ('X', 'y'), ('Y', 'x'), ('x', 'X'), ('X', 'x'), ('y', 'Y'), ('Y', 'y'),
+          ('X', 'I'), ('Y', 'I'), ('x', 'x'), ('y', 'y')]
+
+
+def _allxy(amp=1.0, det=0.0, yphase=np.pi / 2):
+    out = []
+    for a, b in _ALLXY:
+        psi = np.array([1, 0], complex)
+        for g in (a, b):
+            if g == 'I':
+                continue
+            th = (np.pi if g.isupper() else np.pi / 2) * amp
+            ph = 0.0 if g.lower() == 'x' else yphase
+            psi = _rot(ph, th, det) @ psi
+        out.append(abs(psi[1]) ** 2)
+    return np.array(out)
+
+
+@fig
+def allxy():
+    ideal = _allxy()
+    ax = Axes(860, 300, xlim=(-0.7, 20.7), ylim=(-0.05, 1.1), xlabel='', ylabel='spin-up probability', mt=18, mb=62,
+              xticks=list(range(21)), xfmt=lambda v: '', yticks=[0, 0.5, 1])
+    xs = np.arange(21)
+    for i in range(21):
+        ax.line(np.array([i - 0.45, i + 0.45]), np.array([ideal[i], ideal[i]]), 'thin', extra='style="stroke:var(--ink-3);stroke-width:2"')
+    ax.scatter(xs - 0.15, _allxy(amp=1.05), 'f2', r=4, opacity=0.95, label='amplitude 5% too high')
+    ax.scatter(xs + 0.15, _allxy(det=0.08), 'f1', r=4, opacity=0.95, label='detuned by 0.08 f_R')
+    svg = ax.svg(legend_pos='tl')
+    # pulse-pair labels under the axis
+    labs = ''.join(f'<text class="sm" x="{float(ax.X(i)):.1f}" y="{ax.h - 40}" text-anchor="middle" style="font-size:9.5px">{a}{b}</text>' for i, (a, b) in enumerate(_ALLXY))
+    svg = svg.replace('</svg>', labs + f'<text class="sm" x="{ax.ml}" y="{ax.h - 14}">pulse pairs (X, Y: π; x, y: π/2; I: idle); grey bars: ideal 0, ½, 1</text></svg>')
+    save('allxy', svg)
+
+
+@fig
+def error_amp():
+    amps = np.linspace(0.94, 1.06, 241)
+    ax = Axes(600, 300, xlim=(0.94, 1.06), ylim=(-0.03, 1.05), xlabel='X90 amplitude relative to the Rabi estimate', ylabel='spin-up probability', mt=18)
+    for n, cls in [(2, 't3'), (10, 't1'), (42, 't2')]:
+        P = np.array([abs((np.linalg.matrix_power(_rot(0, np.pi / 2 * a), n) @ np.array([1, 0]))[1]) ** 2 for a in amps * 0.992])
+        ax.line(amps, OFF_E + VIS_E * P, cls, f'{n} × X90')
+    ax.vline(0.992 ** -1, 'thin dash', 'true optimum', ly=0.08)
+    ax.text(0.942, 0.62, 'more repetitions → sharper peak', 'sm')
+    ax.text(0.942, 0.55, '→ more precise amplitude', 'sm')
+    save('error-amp', ax.svg(legend_pos='tr'))
+
+
+@fig
+def heating_shift():
+    t = np.linspace(0, 2000, 400)      # us since the burst train started
+    shift = -120 * (1 - np.exp(-t / 300))     # kHz
+    rng = np.random.default_rng(71)
+    tm = np.arange(20, 2000, 80)
+    ax = Axes(600, 300, xlim=(0, 2000), ylim=(-150, 20), xlabel='time since the bursts started (µs)', ylabel='frequency shift of Q2 (kHz)', mt=18)
+    ax.hline(0, 'thin dash')
+    ax.line(t, shift, 't2', 'without prepulse')
+    ax.scatter(tm, -120 * (1 - np.exp(-tm / 300)) + rng.normal(0, 4, tm.size), 'f2', r=3.5, opacity=0.9)
+    ax.line(t, np.full_like(t, -120), 't1', 'after a 1 ms off-resonant prepulse')
+    ax.text(700, -95, 'settles in ~ 300 µs to −120 kHz', 'sm')
+    save('heating-shift', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- chapter 23: benchmarking
+@fig
+def rb_decay():
+    rng = np.random.default_rng(81)
+    ms = np.array([1, 2, 4, 8, 16, 32, 64, 100, 150, 200, 300, 400, 600, 800, 1000])
+    p_ref, p_int = 0.9970, 0.99556
+    A, B = 0.47, 0.50
+    ax = Axes(600, 320, xlim=(0, 1000), ylim=(0.45, 1.0), xlabel='number of Cliffords m', ylabel='probability of the expected outcome', mt=18)
+    for p, cls, fcls, lab in [(p_ref, 't1', 'f1', 'reference: F_C = 99.85%'), (p_int, 't2', 'f2', 'interleaved with X90')]:
+        for m in ms:
+            seqs = B + A * p ** m + rng.normal(0, 0.004 + 0.012 * (1 - p ** m), 20)
+            ax.scatter(np.full(20, m), np.clip(seqs, 0, 1), fcls, r=1.8, opacity=0.35)
+        mm = np.linspace(0, 1000, 300)
+        ax.line(mm, B + A * p ** mm, cls, lab)
+    ax.hline(0.5, 'thin dash', 'fully randomized', lx=420)
+    ax.text(20, 0.465, 'fit A p^m + B: A and B absorb SPAM, p measures the gates', 'sm')
+    save('rb-decay', ax.svg(legend_pos='tr'))
+
+
+@fig
+def gst_budget():
+    names = ['preparation', 'measurement', 'idle 125 ns', 'X90', 'Y90']
+    coh = np.array([0.02, 0.10, 0.02, 0.025, 0.03])      # % (coherent part)
+    inc = np.array([0.13, 1.30, 0.03, 0.045, 0.05])      # % (incoherent part)
+    ax = Axes(600, 300, xlim=(-0.6, 4.6), ylim=(-2.7, 0.5), xlabel='', ylabel='log₁₀ error (%)', mt=18, mb=40, xticks=[0, 1, 2, 3, 4],
+              xfmt=lambda v: names[int(round(v))] if 0 <= round(v) < 5 else '', yticks=[-2, -1, 0],
+              yfmt=lambda v: {-2: '0.01%', -1: '0.1%', 0: '1%'}.get(v, ''))
+    out = []
+    for i in range(5):
+        x0 = i - 0.3
+        tot = coh[i] + inc[i]
+        ax.area(np.array([x0, x0 + 0.28]), np.array([-2.7, -2.7]), np.array([np.log10(inc[i]), np.log10(inc[i])]), 'fa1')
+        ax.area(np.array([x0 + 0.32, x0 + 0.6]), np.array([-2.7, -2.7]), np.array([np.log10(coh[i]), np.log10(coh[i])]), 'fa2')
+        for xa, ya, c in [(x0, np.log10(inc[i]), 't1'), (x0 + 0.32, np.log10(coh[i]), 't2')]:
+            ax.line(np.array([xa, xa, xa + 0.28, xa + 0.28]), np.array([-2.7, ya, ya, -2.7]), c)
+        ax.text(i, np.log10(tot) + 0.12, f'{100 - tot:.2f}%', 'sm', anchor='middle')
+    ax.line(np.array([-1, -1]), np.array([0, 0]), 't1', 'incoherent (decoherence)')
+    ax.line(np.array([-1, -1]), np.array([0, 0]), 't2', 'coherent (calibration)')
+    save('gst-budget', ax.svg(legend_pos='tr'))
+
+
 # ================================================================ main
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)

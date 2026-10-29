@@ -1,0 +1,76 @@
+<!--meta {"id": "echo", "part": "Part F · One qubit", "title": "Echoes, decoupling and listening to the noise"}-->
+
+<p class="lede">Most of what dephases our qubit in a Ramsey experiment is slow: the frequency drifts during a measurement, but barely moves during a single shot. Slow errors can be undone. Turning the spin over halfway through its free evolution makes the phase it gained in the first half cancel against the phase it gains in the second. This chapter builds that idea into the Hahn echo and into long sequences of π pulses, and then turns it around: by choosing the pulse spacing, the qubit becomes a spectrum analyser for its own noise.</p>
+
+<h2>The Hahn echo</h2>
+<p>Insert a π pulse in the middle of a Ramsey experiment: π/2, wait τ/2, π, wait τ/2, π/2. If the qubit frequency is offset by δ during the whole sequence, the spin gains a phase 2πδτ/2 in the first half. The π pulse mirrors the spin about the rotation axis, which reverses the sign of that phase. The second half then adds the same amount again, which now brings the phase back to zero. Any frequency offset that is constant over the duration of one shot is cancelled exactly, however large it is <cite data-r="hanson2007"></cite>.</p>
+<p>What remains are fluctuations that change during the sequence. So the echo coherence time T<sub>2</sub><sup>H</sup> is set by the noise at frequencies of roughly 1/τ, not by the slow drifts that set T<sub>2</sub>*. For our qubit that raises the coherence time from 6 µs to about 30 µs (Figure 21.1). A ratio of about five is typical of 1/f noise: RIKEN measured T<sub>2</sub>* = 20 µs and T<sub>2</sub><sup>H</sup> = 99 µs, and QuTech's six qubits had T<sub>2</sub>* of 2.5–5.9 µs and Hahn echo times of 14–45 µs <cite data-r="yoneda2018,philips2022"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:echo-decays--></div>
+<figcaption>Coherence of qubit 1 versus total evolution time for Ramsey (dashed), Hahn echo, and CPMG sequences with 16, 256 and 1024 π pulses (simulated from the 1/f noise measured in Chapter 20). Each added layer of decoupling removes more of the slow noise and pushes the decay to later times, from 6 µs (Ramsey) and 30 µs (Hahn echo) to 840 µs with 1024 pulses.</figcaption>
+</figure>
+<p>There is a lesson about phases hidden in the echo. The final π/2 pulse projects the spin onto whatever axis it is applied about. To measure the remaining coherence rather than a phase that happens to have been picked up, the experiment is done twice, with the last π/2 pulse about +x and about −x, and the difference of the two outcomes is used. This "phase cycling" also removes the readout's offsets from the data.</p>
+
+<h2>More pulses: dynamical decoupling</h2>
+<p>If one π pulse removes noise slower than 1/τ, more pulses push the boundary higher. The Carr–Purcell–Meiboom–Gill (CPMG) sequence spaces N π pulses evenly, at intervals τ/N, all about the axis along which the first π/2 pulse leaves the spin, so that pulse errors do not accumulate for that state. With N pulses the sequence is insensitive to noise slower than about N/(2τ), so the coherence time grows with N (Figure 21.2). For 1/f noise it grows approximately as √N. RIKEN found T<sub>2</sub><sup>CPMG</sup> ∝ N<sup>0.53</sup>, reaching 3.1 ms with 1024 pulses <cite data-r="yoneda2018"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:t2-vs-n--></div>
+<figcaption>Coherence time versus the number of π pulses in a CPMG sequence for our qubit. On a log–log plot the points fall on a straight line with slope ≈ 0.5, the signature of 1/f noise. A different slope would point to a different noise spectrum: a steeper spectrum gives a larger slope.</figcaption>
+</figure>
+<p>Decoupling is not just a coherence record. Echo and CPMG pulses are built into real circuits: two-qubit gates in silicon are routinely echoed to remove slow single-qubit phases (Chapter 24), and in a quantum memory or an error-correction cycle the idle qubits are decoupled. The cost is more pulses, each with a small error. A thousand π pulses at 99.9% each would be no better than none, which is one reason pulse calibration matters so much (Chapter 22).</p>
+
+<h2>The filter picture</h2>
+<p>A clean way to think about all these sequences is as filters. During free evolution the phase is 2π∫δf(t) dt. Each π pulse flips the sign with which the frequency fluctuations δf(t) enter that integral. The sequence therefore multiplies the noise by a switching function y(t) = ±1, and the accumulated phase variance is the noise spectrum S<sub>f</sub>(f) weighted by the power spectrum of y(t), the sequence's <dfn data-def="The frequency response of a pulse sequence: how strongly noise at each frequency contributes to the qubit's dephasing during that sequence.">filter function</dfn> <cite data-r="cywinski2008"></cite>:</p>
+\[ \chi = (2\pi)^2 \int_0^\infty S_f(f)\,|Y(f)|^2\,df, \qquad W = e^{-\chi/2}. \]
+<p>For a Ramsey sequence, |Y(f)|² is large at low frequencies: it sees all the slow noise. For CPMG with N pulses, |Y(f)|² is small at low frequencies and has a sharp peak at f<sub>0</sub> = N/(2τ), with harmonics above. The echo is a band-pass filter, and the pulse spacing tunes its centre frequency.</p>
+
+<h2>Turning the qubit into a spectrum analyser</h2>
+<p>A narrow filter makes the decay measure the noise at one frequency. For CPMG with many pulses, most of the filter's weight is in its main peak, and the coherence after a total time τ is approximately</p>
+\[ -\ln W \approx 8\,S_f(f_0)\,\tau, \qquad f_0 = \frac{N}{2\tau}, \]
+<p>with S<sub>f</sub> the one-sided spectral density of the qubit's frequency fluctuations in Hz²/Hz. Measuring W for many combinations of N and τ gives S<sub>f</sub> point by point, at frequencies from about 10 kHz to 1 MHz in our device. Conventions for S differ between papers by factors of 2 and 2π, so check the definition before comparing numbers <cite data-r="bylander2011,yoneda2018"></cite>.</p>
+<p>Combined with Ramsey tracking at the low end (Chapter 20), this covers the noise over nine decades of frequency (Figure 21.3). In our device both methods fall on the same 1/f line, so a single mechanism produces the noise across the whole range: an ensemble of charge fluctuators with a broad range of switching rates, the standard explanation of 1/f charge noise <cite data-r="connors2019"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:noise-spectrum--></div>
+<figcaption>The frequency-noise spectrum of qubit 1 assembled from two methods (simulated): Ramsey tracking from 1 mHz to 0.2 Hz (Chapter 20) and CPMG filter reconstruction from 20 kHz to 1 MHz. Both follow S<sub>f</sub> = A/f with A = 87 kHz² (dashed). RIKEN assembled exactly such a spectrum, 1/f over seven decades, in their 99.9% qubit <cite data-r="yoneda2018"></cite>.</figcaption>
+</figure>
+<p>The spectrum is a diagnostic, not just a number. Peaks at particular frequencies point to specific sources: the pulse tube of the cryocooler near 1 Hz, mains pickup at 50 Hz and its harmonics, or a single strongly coupled fluctuator. A spectrum steeper than 1/f at the high end means the noise is running out at those frequencies, and more decoupling pulses will help more than √N suggests; a flat, white part means they will not. Comparing the spectra of two qubits, and their cross-correlation, tells you whether the noise is local or shared. RIKEN measured the full noise-correlation spectrum of a pair of qubits this way <cite data-r="yoneda2023"></cite>. The same idea works with exchange instead of single-spin precession, giving the charge noise directly; singlet–triplet qubits were used for this early on <cite data-r="dial2013,connors2022"></cite>.</p>
+
+<div class="box numbers"><span class="tag">Worked numbers: reading a point off the spectrum</span>
+<p>A CPMG sequence with N = 64 pulses and total time τ = 210 µs gives W = e<sup>−1</sup>. Its filter peak is at f<sub>0</sub> = 64/(2 × 210 µs) ≈ 152 kHz.</p>
+<p>From −ln W = 1 ≈ 8 S<sub>f</sub> τ: S<sub>f</sub>(152 kHz) ≈ 1/(8 × 210 µs) ≈ 600 Hz²/Hz.</p>
+<p>Check against 1/f: A/f<sub>0</sub> = 87 × 10<sup>6</sup> Hz²/152 × 10<sup>3</sup> Hz ≈ 570 Hz²/Hz. ✓</p>
+</div>
+
+<h2>What decoupling does not fix</h2>
+<p>Echoes remove dephasing, not relaxation: T<sub>1</sub>, 30 ms here, is untouched and sets an absolute ceiling of 2T<sub>1</sub> on any coherence time. Echoes cannot remove noise faster than the pulse spacing, and every pulse adds its own error. And they protect only idle qubits: during a gate, the qubit is driven, and its coherence is the driven coherence of Chapter 19, which depends on noise near the Rabi frequency. The best single-qubit gates in silicon are limited by exactly that, and RIKEN improved theirs to beyond 99.999% partly by identifying and removing what limited the driven coherence <cite data-r="takeda2026"></cite>.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> CPMG with many pulses gives a shorter coherence than with fewer pulses, or the coherence oscillates with τ.</p>
+<p><b>Likely causes:</b> pulse errors accumulating, because each π pulse is slightly off in amplitude or frequency. CPMG is robust to such errors only for the state along the pulse axis; for other states, or with the wrong phase convention, errors add up. Oscillations at specific spacings can also come from residual <sup>29</sup>Si nuclei: the filter's peak hitting the nuclear Larmor frequency shows up as a sharp dip in coherence.</p>
+<p><b>What to do:</b> calibrate the π pulse carefully (Chapter 22), and try a sequence with alternating pulse phases, such as XY-4 or XY-8, which is robust to amplitude errors for all states. A dip at a particular spacing that moves with the field is nuclear and can be avoided by choosing other spacings.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 17</span>
+<p>Hahn echo Q1: T2H = 29 µs, exponent ≈ 2. Q2: 31 µs.</p>
+<p>CPMG N = 1…1024: T2 ∝ N^0.49, 840 µs at N = 1024. No dips at the 29Si Larmor frequency (4.7 MHz in the 0.55 T total field) within resolution.</p>
+<p>Spectrum from CPMG 20 kHz–1 MHz on the same 1/f line as Ramsey tracking. A ≈ 87 kHz². No peaks.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 21</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Hahn echo T<sub>2</sub><sup>H</sup></td><td>29 µs (Q1), 31 µs (Q2)</td><td>Chapters 24, 32</td></tr>
+<tr><td>CPMG</td><td>T<sub>2</sub> ∝ N<sup>0.49</sup>; 840 µs at N = 1024</td><td>Chapter 32</td></tr>
+<tr><td>Noise spectrum</td><td>S<sub>f</sub> = A/f, A ≈ 87 kHz², from 1 mHz to 1 MHz</td><td>Chapters 22, 32</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A frequency offset that drifts linearly in time during a Hahn echo sequence: is it cancelled?</p>
+<details><summary>Show answer</summary><div>Not completely. A linear drift δ(t) = δ₀ + kt gives a phase in the first half that differs from the second half by an amount proportional to kτ². The constant part δ₀ cancels; the slope survives. This is why the echo removes noise slower than 1/τ but leaves the faster components.</div></details>
+<p>2. Doubling the number of CPMG pulses at fixed total time τ: which noise frequency does the sequence now probe?</p>
+<details><summary>Show answer</summary><div>The filter peak moves from N/(2τ) to 2N/(2τ), so twice the frequency. For 1/f noise, the noise there is half as strong, so the coherence at that τ improves.</div></details>
+<p>3. The Hahn echo decay of a qubit is exponential rather than Gaussian. What does that suggest about the noise?</p>
+<details><summary>Show answer</summary><div>An exponential decay means the phase variance grows linearly with time, as for white noise, or noise much faster than the sequence. 1/f noise gives an approximately Gaussian echo decay. So the qubit sees a significant white or fast noise component, for example from an instrument or from a fluctuator switching fast compared with 1/τ.</div></details>
+</div>

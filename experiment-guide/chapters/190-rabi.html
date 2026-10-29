@@ -1,0 +1,86 @@
+<!--meta {"id": "rabi", "part": "Part F · One qubit", "title": "Rabi oscillations: rotating the spin on purpose"}-->
+
+<p class="lede">A resonance shows that microwaves can flip the spin. A Rabi oscillation shows that they do it coherently: the spin rotates smoothly from down to up and back, at a rate set by the drive, as many times as you like. This is the moment the device becomes a qubit. This chapter explains what the oscillation and its two-dimensional version, the chevron, are telling you, how to turn them into calibrated π and π/2 pulses, and what limits how fast and how cleanly you can rotate.</p>
+
+<h2>The picture in the rotating frame</h2>
+<p>The spin precesses about the static field at the qubit frequency, 15.42 GHz. Seen from a frame that rotates at the drive frequency, the fast precession disappears. On resonance, what is left is the drive's field, which in this frame is static and points along an axis in the equatorial plane, x for example. The spin simply rotates about that axis, at the Rabi frequency f<sub>R</sub>. Off resonance by Δ, the frame rotates slightly too fast or too slow, so the spin also sees a field Δ along z. It then rotates about a tilted axis, faster, at the generalized Rabi frequency, and it never quite reaches spin-up <cite data-r="burkard2023"></cite>:</p>
+\[ P_\uparrow(t) = \frac{f_R^2}{f_R^2 + \Delta^2}\,\sin^2\!\left(\pi\sqrt{f_R^2+\Delta^2}\;t\right). \]
+<p>Two numbers describe the rotation completely: the rate f<sub>R</sub>, set by the drive amplitude, and the axis, set by the detuning and by the drive's phase. Every single-qubit gate is a choice of those two numbers and a duration.</p>
+
+<h2>The chevron</h2>
+<p>Measure P<sub>↑</sub> as a function of both the burst duration and the drive frequency, and the formula above draws the chevron (Figure 19.1). It is the single most informative single-qubit measurement.</p>
+<figure>
+<div class="figbody"><!--plot:rabi-chevron--></div>
+<figcaption>Rabi chevron of qubit 1 (simulated, 150 shots per point, including the readout's visibility of 97.3%). Top: spin-up fraction versus drive detuning and burst duration. On resonance the oscillation is slowest and reaches full contrast. Off resonance it becomes faster and shallower, bending the fringes into a chevron. Bottom: cuts on resonance and 6 MHz off resonance, where the amplitude falls to f<sub>R</sub>²/(f<sub>R</sub>² + Δ²) ≈ 0.3.</figcaption>
+</figure>
+<p>Read the chevron like this. Its axis of symmetry is the qubit frequency, more precisely than a spectroscopy line, because it uses the full oscillation. The period on resonance is 1/f<sub>R</sub>, giving the π-pulse time t<sub>π</sub> = 1/(2f<sub>R</sub>) = 125 ns at f<sub>R</sub> = 4 MHz. Asymmetry between the two sides indicates that the frequency changes during the burst, usually through heating, or that the pulse shape is distorted. The contrast on resonance is the readout visibility. QuTech's calibration routine for each qubit begins with a rough frequency scan fitted to exactly this formula <cite data-r="philips2022"></cite>.</p>
+
+<h2>From oscillation to gates</h2>
+<p>A burst of duration t<sub>π</sub> on resonance rotates the spin by 180°, from down to up: the π pulse, or X gate. Half that duration gives a π/2 pulse, which puts the spin on the equator, an equal superposition. Changing the phase of the microwave by 90° moves the rotation axis from x to y, so the same burst then makes a Y gate. Rotations about z need no pulse at all: they are implemented by shifting the phase of all subsequent pulses, a "virtual Z" gate (Chapter 22). With X(π/2), Y(π/2) and virtual Z, any single-qubit operation can be built. For our qubits:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Gate</th><th>Implementation (Q1)</th><th>Duration</th></tr></thead>
+<tbody>
+<tr><td>X(π), X(π/2)</td><td>resonant burst at 15.420 GHz, phase 0</td><td>125 ns, 62.5 ns</td></tr>
+<tr><td>Y(π), Y(π/2)</td><td>same, phase +90°</td><td>125 ns, 62.5 ns</td></tr>
+<tr><td>Z(θ)</td><td>shift the phase of all later pulses on Q1 by −θ</td><td>0 ns</td></tr>
+</tbody></table></div>
+<p>In practice the bursts are not square. A square burst has a sinc-shaped spectrum with side lobes far from the carrier. A shaped envelope, Gaussian or cosine, confines the spectrum, which matters when another qubit sits nearby in frequency.</p>
+<div class="box numbers"><span class="tag">Worked numbers: square bursts and the neighbouring qubit</span>
+<p>A 125 ns square burst at 15.42 GHz has spectral side lobes at the frequency of qubit 2, 300 MHz away, with a relative amplitude of about 1/(π × 300 MHz × 125 ns) ≈ 0.8%. A cosine envelope of the same area pushes this far below 10<sup>−4</sup>.</p>
+<p>Even a perfectly confined drive acts on the neighbour off resonance. It does not flip qubit 2, but it shifts its frequency by roughly f<sub>R</sub>²/(2Δ) = (4 MHz)²/(2 × 300 MHz) ≈ 27 kHz while the burst is on, a phase error that accumulates over a circuit. This AC Stark shift is calibrated and corrected with virtual Z gates (Chapter 22) <cite data-r="heinz2021,wu2025"></cite>.</p>
+</div>
+
+<h2>How fast? The Rabi frequency versus amplitude</h2>
+<p>The Rabi frequency should grow linearly with the microwave amplitude: twice the voltage shakes the electron twice as far. Checking this is the first test of the drive (Figure 19.2). In our device it is linear up to about 10 MHz and then falls below the line.</p>
+<figure>
+<div class="figbody"><!--plot:rabi-amplitude--></div>
+<figcaption>Rabi frequency of qubit 1 versus microwave amplitude (simulated measurement). It is linear up to about 10 MHz. Above that it falls below the linear extrapolation (dashed), a sign of non-linear effects such as heating, saturation in the microwave chain, or the electron's confinement becoming anharmonic. The operating point is at 4 MHz, well inside the linear range.</figcaption>
+</figure>
+<p>Linearity matters because calibrations assume it: if doubling the amplitude does not double the rotation, a π/2 pulse made by halving the amplitude of a π pulse is wrong. RIKEN found linear driving up to about 20 MHz, with extra damping beyond <cite data-r="yoneda2018"></cite>; QuTech drove their six qubits at 2–5 MHz in the linear regime <cite data-r="philips2022"></cite>.</p>
+<p>Why not drive as fast as the hardware allows? Faster gates spend less time exposed to the slow frequency fluctuations that cause dephasing, so in principle the error per gate falls. But faster driving needs more microwave power, which heats the device and shifts the qubit frequencies (Chapter 22), drives neighbouring qubits harder, and in the end leaks the electron out of the qubit subspace. RIKEN measured this trade-off directly and found an optimum around 5 MHz: below about 2 MHz dephasing dominated, above about 5 MHz the Rabi decay grew <cite data-r="noiri2022"></cite>. Our 4 MHz is a deliberate, conventional choice.</p>
+
+<h2>Why the oscillation decays</h2>
+<p>A long Rabi oscillation slowly loses contrast (Figure 19.3). The decay has nothing to do with T<sub>1</sub>, which is milliseconds, and it is much slower than the free dephasing T<sub>2</sub>* of 6 µs. While the drive is on, it protects the spin against slow frequency fluctuations: a small detuning Δ changes the generalized Rabi frequency only by about Δ²/(2f<sub>R</sub>), a second-order effect. What remains are fluctuations of the drive amplitude, fast frequency noise near the Rabi frequency, and heating during the burst.</p>
+<figure>
+<div class="figbody"><!--plot:rabi-decay--></div>
+<figcaption>Rabi oscillation of qubit 1 at 4 MHz, at the beginning of the drive and after 30 µs (simulated). The contrast decays with a time constant τ<sub>R</sub> ≈ 40 µs, which corresponds to a quality factor Q = 2f<sub>R</sub>τ<sub>R</sub> ≈ 320 π rotations.</figcaption>
+</figure>
+<p>A useful figure of merit is the number of π rotations within the decay time, Q = 2f<sub>R</sub>τ<sub>R</sub>. RIKEN's 3.9 MHz oscillation decaying in 113 µs gave Q ≈ 888 <cite data-r="yoneda2018"></cite>. Delft's early natural-silicon qubit showed a Rabi decay that required a spread of Rabi frequencies of about 0.25 MHz to explain, which they traced to instrumental noise in the drive <cite data-r="kawakami2014"></cite>. That points to something easily overlooked: the amplitude stability of the microwave chain is part of the qubit. The driven coherence also sets an ultimate limit on gate fidelity, studied systematically by RIKEN in their 99.999% experiments <cite data-r="takeda2026"></cite>.</p>
+
+<h2>The second qubit</h2>
+<p>Qubit 2 is driven the same way, through the same gate P1, at 15.720 GHz. Its Rabi frequency at the same amplitude is different, because the electron in dot 2 is farther from P1 and sits in a different part of the micromagnet's gradient: in our device it is 3.2 MHz, so its amplitude is set about 25% higher to reach 4 MHz. Each qubit gets its own chevron, its own calibrated amplitude and its own π time. In a larger array, the Rabi frequencies of all qubits on one drive line are chosen together, because each burst also drives the others slightly (Chapter 22) <cite data-r="heinz2021"></cite>.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the chevron is lopsided, with fringes bending more on one side, and the centre of the chevron moves when the burst gets longer.</p>
+<p><b>Likely cause:</b> the qubit frequency shifts during the burst, typically because the microwave power heats the device. Pulse distortion that changes the dot's position during the burst has a similar signature.</p>
+<p><b>What to do:</b> lower the power and check whether the asymmetry goes away. Compare chevrons taken with different waiting times before the burst. Chapter 22 shows how to measure and compensate the shift.</p>
+<p><b>What you see:</b> the Rabi frequency does not scale linearly with amplitude, even at low power.</p>
+<p><b>Likely cause:</b> saturation or compression in the microwave chain, often an amplifier or the IQ mixer driven too hard. <b>What to do:</b> measure the chain's output power versus programmed amplitude at room temperature, and keep the operating point in its linear range.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 15</span>
+<p>Chevron Q1: centre 15.4202 GHz (updated), f_R = 4.00 MHz at amplitude 0.25 → t_π = 125 ns. Contrast 0.97 = readout visibility.</p>
+<p>Q2: f_R = 3.2 MHz at 0.25; amplitude 0.31 → 4.0 MHz. Centre 15.7198 GHz.</p>
+<p>f_R vs amplitude: linear to ≈ 10 MHz. Rabi decay at 4 MHz: τ_R ≈ 40 µs (Q ≈ 320). Cosine envelopes, X/Y by phase.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 19</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Rabi frequency</td><td>4.0 MHz for both qubits (amplitudes 0.25, 0.31)</td><td>Chapters 20–23</td></tr>
+<tr><td>π, π/2 times</td><td>125 ns, 62.5 ns, cosine envelope</td><td>Chapters 20–23</td></tr>
+<tr><td>Linear range</td><td>f<sub>R</sub> ≲ 10 MHz</td><td>Chapter 22</td></tr>
+<tr><td>Rabi decay</td><td>τ<sub>R</sub> ≈ 40 µs (Q ≈ 320)</td><td>Chapter 32</td></tr>
+<tr><td>Refined frequencies</td><td>Q1 15.4202 GHz, Q2 15.7198 GHz</td><td>Chapter 20</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A burst 3 MHz off resonance, with f<sub>R</sub> = 4 MHz, lasts exactly one on-resonance π time. What is the spin-up probability at the end?</p>
+<details><summary>Show answer</summary><div>The generalized frequency is √(4² + 3²) = 5 MHz and the amplitude is 16/25 = 0.64. After 125 ns, P = 0.64 × sin²(π × 5 MHz × 125 ns) = 0.64 × sin²(0.625π) ≈ 0.64 × 0.854 ≈ 0.55.</div></details>
+<p>2. Why does the Rabi oscillation last much longer than T<sub>2</sub>*?</p>
+<details><summary>Show answer</summary><div>T<sub>2</sub>* is set by slow fluctuations of the qubit frequency. During driving, a small frequency offset Δ only changes the rotation rate by about Δ²/(2f<sub>R</sub>), which for Δ = 38 kHz and f<sub>R</sub> = 4 MHz is about 0.2 kHz, negligible. The drive acts like a continuous dynamical decoupling of slow noise.</div></details>
+<p>3. You need a 1 µs π pulse for a low-power spectroscopy experiment. What Rabi frequency and amplitude does that require, if 4 MHz needs amplitude 0.25?</p>
+<details><summary>Show answer</summary><div>t<sub>π</sub> = 1/(2f<sub>R</sub>), so f<sub>R</sub> = 0.5 MHz, one eighth of 4 MHz. In the linear regime the amplitude is 0.25/8 ≈ 0.031.</div></details>
+</div>

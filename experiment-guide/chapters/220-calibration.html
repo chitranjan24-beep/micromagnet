@@ -1,0 +1,82 @@
+<!--meta {"id": "calibration", "part": "Part F · One qubit", "title": "Calibrating gates: from about right to exactly right"}-->
+
+<p class="lede">The Rabi chevron gives a π pulse that is right to about a percent. A percent sounds small, but a gate with a 1% rotation error has an error probability of about 2.5 × 10<sup>−4</sup> per gate, and those errors add coherently: after 50 gates the accumulated error angle is 90°, and the outcome is a coin toss. Getting from "about right" to "exactly right" is the job of calibration. This chapter describes the experiments that amplify small errors until they can be measured, the diagnostics that tell different errors apart, and the slow effects, heating and crosstalk, that shift a calibration while you are using it.</p>
+
+<h2>What there is to calibrate</h2>
+<p>For each qubit, a single-qubit gate set has a handful of parameters: the qubit frequency, the amplitude of the π/2 pulse, the phase that defines the x axis, the pulse shape, and the timing relative to the other channels. In a multi-qubit device, each pulse on one qubit also shifts the phases of the others, adding a matrix of crosstalk phases. QuTech's six-qubit processor had 108 calibrated parameters; their single-qubit part alone included six fine frequencies, six X90 amplitudes and thirty phase-crosstalk terms <cite data-r="philips2022"></cite>. A good calibration procedure measures each parameter with an experiment that is maximally sensitive to it and as insensitive as possible to the others, and does them in the order of their dependencies: frequency before amplitude, amplitude before phases.</p>
+
+<h2>Amplifying small errors</h2>
+<p>A single π/2 pulse with a 1% amplitude error leaves the spin 0.9° off the equator, which changes the measured probability by about 0.8%. That is the shot noise of about 4000 repetitions, a slow way to measure anything. Repeating the pulse multiplies the error instead. N pulses of X90 with amplitude error ε rotate by N(1+ε)π/2, so the error angle grows N-fold while the measurement noise stays the same (Figure 22.1).</p>
+<figure>
+<div class="figbody"><!--plot:error-amp--></div>
+<figcaption>Error amplification for the X90 amplitude. The pulse is repeated 2, 10 or 42 times (each an odd multiple of π in total), and the spin-up probability is measured versus the pulse amplitude. With more repetitions the peak becomes sharper, so its centre, the correct amplitude, is located more precisely. Here the Rabi estimate was 0.8% too low. With many repetitions, other peaks appear at multiples of the period, so a coarse calibration must come first.</figcaption>
+</figure>
+<p>The same trick works for the frequency: a long train of pulses accumulates a phase error from a small detuning, and scanning the frequency around the current estimate locates the resonance to better than a kilohertz. QuTech calibrated amplitude and frequency this way with 18 repetitions of X90, and pointed out a second advantage. A long sequence of pulses, like a real circuit, includes effects such as heating that a single pulse misses, so calibrating with many pulses tunes the gate for the conditions it will actually be used in <cite data-r="philips2022"></cite>.</p>
+
+<h2>One plot, many errors: AllXY</h2>
+<p>A quick diagnostic for all the basic errors at once is the AllXY experiment. It applies 21 pairs of gates, chosen from X and Y rotations by π and π/2 and the identity, and measures each. Ideally the outcomes form a staircase: five pairs give 0, twelve give ½ and four give 1. Each kind of error breaks the staircase in a recognizable pattern (Figure 22.2). An amplitude error shifts specific pairs up or down in a sawtooth, a detuning error tilts pairs that involve a π/2 pulse followed by a π pulse in opposite directions, and an error in the 90° phase between X and Y pulses produces yet another pattern.</p>
+<figure class="wide">
+<div class="figbody"><!--plot:allxy--></div>
+<figcaption>AllXY for qubit 1 (simulated), comparing a 5% amplitude error (orange) and a detuning of 8% of the Rabi frequency (blue) with the ideal staircase (grey bars). The two errors move different pairs in different directions, so a single AllXY run shows which parameter to fix.</figcaption>
+</figure>
+<p>AllXY is a diagnostic, not a precision measurement. Its value is speed: one run of 21 points, a few seconds of data, tells you whether the gate set is healthy and, if not, what kind of error to look for. It is worth running at the start of every session and after any recalibration.</p>
+
+<h2>Z rotations without pulses</h2>
+<p>Rotations about the z axis are not done with pulses at all. A Z(θ) gate is equivalent to rotating the reference frame: shift the phase of every later pulse on that qubit by −θ, and the rest of the circuit behaves as if the qubit had been rotated by θ. This <dfn data-def="A rotation about the z axis implemented by advancing the phase of all subsequent drive pulses on that qubit, with no physical pulse, so it is instantaneous and error-free.">virtual Z</dfn> gate takes no time and has no error, and it is used throughout. It also solves a practical problem. Any unwanted, but known, phase that a qubit picks up, for example because another qubit was driven, or because the barrier pulse of a two-qubit gate moved the dot in the gradient (Chapter 24), can be undone by a virtual Z correction folded into the next pulses.</p>
+<p>Those unwanted phases must be measured. A Ramsey-type sequence on the target qubit, with a burst on another qubit in between, measures how much each burst shifts its phase. QuTech called these "X90 phase crosstalk" terms and calibrated thirty of them for six qubits <cite data-r="philips2022"></cite>. Part of each shift is the AC Stark shift of Chapter 19, the off-resonant drive pushing the target qubit's frequency. RIKEN found these drive-induced shifts to be the dominant degradation of simultaneous single-qubit gates, and after calibrating pairwise phase corrections and tailoring the pulses reached fidelities above 99.99% for up to three simultaneously driven qubits <cite data-r="wu2025"></cite>.</p>
+
+<h2>Shaping pulses</h2>
+<p>Pulse shape matters for three reasons in spin qubits. A smooth envelope keeps the spectrum away from neighbouring qubits (Chapter 19). The drive itself shifts the qubit's frequency during the pulse, by the AC Stark effect and by moving the electron in the gradient, which a small correction on the other quadrature can compensate. RIKEN added a derivative-of-Gaussian component on the second quadrature for exactly this "control-induced frequency shift", the same idea as the DRAG pulses used for superconducting qubits <cite data-r="yoneda2018"></cite>. And when several qubits share a drive line, the Rabi frequencies and pulse lengths can be chosen so that the off-resonant qubits complete whole rotations during each pulse and return to where they started, a "synchronization" condition <cite data-r="heinz2021,noiri2022"></cite>. QuTech chose the Rabi frequencies of their six qubits to satisfy this <cite data-r="philips2022"></cite>.</p>
+
+<h2>The heating effect</h2>
+<p>A calibration made with one sequence may not hold in another, and one reason has been found in almost every silicon spin-qubit lab. Microwave bursts, and to a lesser extent baseband pulses, shift the qubit frequencies, by tens of kilohertz up to about a megahertz, with a delay of hundreds of microseconds (Figure 22.3). The shift depends on the duty cycle of the preceding pulses, not on the qubit's state. QuTech traced it to heating, and found something surprising: the qubit frequency depends non-monotonically on the temperature of the mixing chamber, and at 200 mK the effect is strongly suppressed, without loss of coherence or single-qubit fidelity <cite data-r="undseth2023"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:heating-shift--></div>
+<figcaption>Frequency shift of qubit 2 during a train of microwave bursts on qubit 1, measured with short Ramsey sequences (simulated). The shift builds up over about 300 µs to −120 kHz, three times the qubit's frequency noise. With a 1 ms off-resonant prepulse before every sequence, the device is already in its steady state and the frequency stays constant, at the shifted value.</figcaption>
+</figure>
+<p>The mitigations follow from the cause. Bring the device to a steady state before the experiment, with an off-resonant prepulse that deposits the same average power. Keep the duty cycle of every sequence the same, by padding short sequences with off-resonant bursts. Wait several hundred microseconds before sensitive steps such as readout, which QuTech's six-qubit device did. Calibrate frequencies under the same conditions they are used in. Operate warmer, at 100–200 mK, if the readout allows it <cite data-r="undseth2023,philips2022"></cite>. Or avoid microwaves altogether: baseband "hopping" gates, which rotate the spin by moving it between dots with different quantization axes, were developed partly to avoid this pulse-induced shift <cite data-r="unseld2024,wang2024hop"></cite>.</p>
+
+<h2>A calibration sequence for one qubit</h2>
+<p>Putting it together, a typical calibration of one qubit runs like this, each step using the result of the previous one:</p>
+<ol>
+<li>Sensor and readout point (Chapters 9, 15, 16): a few seconds.</li>
+<li>Rough frequency: a short chevron or spectroscopy scan around the saved value (Chapter 19); QuTech took about 17 s.</li>
+<li>Fine frequency: a Ramsey measurement, or error amplification in frequency.</li>
+<li>Amplitude: error amplification with repeated X90.</li>
+<li>Phase crosstalk: Ramsey with bursts on each other qubit.</li>
+<li>Check: AllXY, and from time to time randomized benchmarking (Chapter 23).</li>
+</ol>
+<p>The whole procedure takes a minute or two per qubit and is run, in part or in full, many times a day. Chapter 31 describes how to organize it automatically as a graph of dependent calibrations.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> each calibration converges, but a gate sequence built from the calibrated gates performs worse than expected, and worse for longer sequences.</p>
+<p><b>Likely cause:</b> the calibration and the experiment run under different conditions, typically a different microwave duty cycle, so heating shifts the frequency between them. Phase crosstalk that was not included in the calibration does the same.</p>
+<p><b>What to do:</b> calibrate with sequences that resemble the experiment: long trains of the actual gates, at the same repetition rate. Measure the frequency during and right after a long burst train to see whether a heating shift is present (Figure 22.3).</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 18</span>
+<p>X90 amplitude by error amplification (42 × X90): Q1 +0.8% vs Rabi estimate; Q2 −0.5%. Fine frequency by Ramsey: within 1 kHz.</p>
+<p>AllXY Q1, Q2: staircase within ±1.5% after calibration.</p>
+<p>Heating: bursts on Q1 shift Q2 by −120 kHz (τ ≈ 300 µs). 1 ms off-resonant prepulse (15.10 GHz) added to every sequence; all frequencies recalibrated with the prepulse on. AC Stark: Q1 burst shifts Q2 by +27 kHz during the pulse → virtual Z on Q2 after each Q1 gate (calibrated: +1.2° per X90).</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 22</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>X90 amplitudes</td><td>Q1 0.2520, Q2 0.3085 (calibrated)</td><td>Chapter 23</td></tr>
+<tr><td>Prepulse</td><td>1 ms off-resonant at 15.10 GHz before every sequence</td><td>everywhere</td></tr>
+<tr><td>Heating shift</td><td>−120 kHz on Q2 at steady state; absorbed in calibration</td><td>Chapters 23, 32</td></tr>
+<tr><td>Phase crosstalk</td><td>Q1 X90 → Q2: +1.2°; Q2 X90 → Q1: +0.9°</td><td>Chapters 23, 26</td></tr>
+<tr><td>Calibration time</td><td>≈ 2 min per qubit</td><td>Chapter 31</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why is a virtual Z gate error-free, while an X gate is not?</p>
+<details><summary>Show answer</summary><div>A virtual Z is a bookkeeping change: it shifts the phase reference of all later pulses on that qubit, which the AWG does exactly in software. Nothing physical happens to the qubit, so there is nothing to go wrong, provided every later pulse on that qubit is shifted consistently. An X gate is a physical pulse whose amplitude, frequency and timing all carry errors.</div></details>
+<p>2. An X90 amplitude error of 0.5%. After how many X90 pulses has the accumulated rotation error reached 10°?</p>
+<details><summary>Show answer</summary><div>Each X90 rotates by 90° × 1.005, an error of 0.45°. 10°/0.45° ≈ 22 pulses. This is why error amplification with about 20 to 40 repetitions is the natural tool for amplitude errors of this size.</div></details>
+<p>3. A qubit's frequency measured with a single Ramsey sequence differs by 100 kHz from that measured with 40 repeated X90 pulses. Which should you use, and why?</p>
+<details><summary>Show answer</summary><div>Probably the one measured under conditions closest to how the gates will be used, which for circuits is usually the long pulse train. A difference of this size is a sign of heating or drive-induced shifts, so the best fix is to make the conditions equal with a prepulse, then recalibrate both ways and check that they agree.</div></details>
+</div>
