@@ -1,0 +1,101 @@
+<!--meta {"id": "spins", "part": "Part E · From charge to spin", "title": "Spins in a field: Zeeman, valleys and the micromagnet"}-->
+
+<p class="lede">Everything up to now has been about charge: where the electrons are and how fast they move. The qubit, though, is the electron's spin, and a spin only becomes a usable two-level system once a magnetic field splits its two states. This chapter turns on the field. It explains how strong it should be and why, what silicon's valleys do to the picture, why the spin relaxes and how that depends on the field, and what the micromagnet adds and costs. By the end you will know what to expect when you first look for a spin signal, and why the numbers in the device passport are what they are.</p>
+
+<h2>The Zeeman splitting and the energy scale it must beat</h2>
+<p>In a magnetic field B, the two spin states of an electron differ in energy by</p>
+\[ E_Z = g\,\mu_B\,|\mathbf{B}|, \qquad \frac{E_Z}{h} = \frac{g}{2}\times 27.99\ \text{GHz/T}. \]
+<p>For electrons in silicon, g is very close to 2, so the splitting is 28 GHz per tesla, 116 µeV per tesla. In GaAs, g ≈ −0.44 and the splitting is only 6.2 GHz per tesla; the negative sign means the spin-up state is the lower one there <cite data-r="hanson2007"></cite>. The field our electron sees is the sum of the external field from the superconducting magnet, 0.40 T, and the stray field of the micromagnet, about 0.15 T, so the qubit in dot 1 sits at 15.42 GHz, and its two states are 64 µeV apart.</p>
+<p>That number has to be compared with the other energies in the device, because each comparison decides something:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Energy</th><th>Our device</th><th>What the comparison with E<sub>Z</sub> = 64 µeV decides</th></tr></thead>
+<tbody>
+<tr><td>Thermal energy k<sub>B</sub>T<sub>e</sub> (50 mK)</td><td>4.3 µeV</td><td>E<sub>Z</sub> must be ≳ 13 k<sub>B</sub>T<sub>e</sub> for 99% Elzerman readout: the reservoir must clearly tell the two spin states apart (Chapter 15) <cite data-r="keith2019b,mills2022ro"></cite>. Here the ratio is 15.</td></tr>
+<tr><td>Valley splitting E<sub>VS</sub></td><td>180 µeV (D1), 120 µeV (D2)</td><td>E<sub>Z</sub> must stay clearly below E<sub>VS</sub>, or the spin relaxes rapidly at the spin–valley hotspot (this chapter).</td></tr>
+<tr><td>Orbital spacing</td><td>3 meV</td><td>Far above; orbital effects enter only through small admixtures, which set how efficiently electric fields can drive the spin.</td></tr>
+<tr><td>Charging energy</td><td>6.5 meV</td><td>Far above; the spin cannot change the charge state on its own, which is why spin readout needs a trick (Chapters 15–16).</td></tr>
+</tbody></table></div>
+<p>The field is chosen inside a window. Too low, and readout through the reservoir fails thermally; groups that read out by Pauli blockade instead can go lower (Chapter 16). Too high, and the spin relaxes faster, eventually running into the valley hotspot; the microwave electronics also get harder above 20 GHz. Most micromagnet devices in silicon therefore work at 0.3–0.6 T of total field, qubit frequencies of about 10–20 GHz: Princeton's readout work used 0.41 T and 19.1 GHz, RIKEN's CROT experiments 0.41 T, QuTech's six-qubit device about 15.6–16 GHz, and QuTech's two-qubit GST work about 12 GHz <cite data-r="mills2022ro,noiri2022,philips2022,xue2022"></cite>. GaAs, with its small g-factor, needed several tesla for the same E<sub>Z</sub>/k<sub>B</sub>T: Elzerman's single-shot readout used 10 T <cite data-r="elzerman2004"></cite>.</p>
+
+<h2>Valleys: the extra degree of freedom in silicon</h2>
+<p>An electron in the conduction band of bulk silicon can sit in any of six equivalent energy minima, the <dfn data-def="One of the equivalent conduction-band minima of silicon; in a strained Si quantum well two remain low in energy, and the interface splits them by the valley splitting E_VS.">valleys</dfn>. The tensile strain of the quantum well lifts four of them, leaving two. The sharp interface of the well then mixes and splits those two by the <dfn data-def="The energy separating the two lowest valley states of an electron in a silicon quantum dot, set by the interfaces and the alloy disorder; typically tens to a few hundred µeV in Si/SiGe.">valley splitting</dfn> E<sub>VS</sub>. Each orbital state of the dot therefore comes as a valley pair, and the lowest four levels for a single electron are the two valley states, each split by the Zeeman energy (Figure 14.1).</p>
+<figure>
+<div class="figbody"><!--plot:spin-valley-levels--></div>
+<figcaption>The four lowest levels of a single electron in dot 2 (E<sub>VS</sub> = 120 µeV) versus the total field. The qubit is the lower valley's spin pair (blue and orange). Where the Zeeman energy reaches the valley splitting, at 1.04 T, the spin-up state of the lower valley meets the spin-down state of the upper valley. A small spin–valley coupling, exaggerated here for visibility, mixes them into an anticrossing: the relaxation hotspot. Our operating point at 0.56 T is well below it.</figcaption>
+</figure>
+<p>E<sub>VS</sub> is the number in a Si/SiGe device that varies most, and it matters a lot. In Si/SiGe it is typically tens to a few hundred µeV, and it can differ by a factor of several between neighbouring dots on the same chip. The reason is partly the atomic-scale disorder of the SiGe alloy at the interface: each dot samples a different random arrangement of Ge atoms <cite data-r="wuetz2022"></cite>. Silicon MOS devices, with an abrupt Si/SiO<sub>2</sub> interface and strong vertical fields, usually have larger and gate-tunable splittings, up to several hundred µeV <cite data-r="yang2013"></cite>. A small E<sub>VS</sub> causes three distinct problems:</p>
+<ul>
+<li><b>Thermal occupation.</b> If E<sub>VS</sub> is only a few k<sub>B</sub>T, the electron is sometimes loaded into the upper valley, which behaves like a different qubit with a slightly different g-factor. Delft's first micromagnet qubit in silicon showed two EDSR lines a few megahertz apart for exactly this reason <cite data-r="kawakami2014"></cite>.</li>
+<li><b>Pauli-blockade readout.</b> The singlet–triplet energy gap in the doubly occupied dot is set by E<sub>VS</sub> when it is small. A small gap makes the blockade weak or absent (Chapter 16).</li>
+<li><b>Spin relaxation.</b> Near E<sub>Z</sub> = E<sub>VS</sub>, the spin relaxes through the upper valley, the hotspot of Figure 14.1.</li>
+</ul>
+<p>So E<sub>VS</sub> is measured early, for every dot. Pulsed-gate spectroscopy and photon-assisted tunnelling (Chapter 12) show it as an excited-state line. Measuring T<sub>1</sub> versus field locates the hotspot, which gives E<sub>VS</sub> = gµ<sub>B</sub>B<sub>hotspot</sub> with high precision; this is how Jülich found valley splittings above 200 µeV in a Si/SiGe dot <cite data-r="hollmann2020"></cite>. A rule of thumb from the table above: E<sub>VS</sub> should be at least about 1.5 times E<sub>Z</sub> and many times k<sub>B</sub>T<sub>e</sub>. Our dot 2, with 120 µeV, is adequate; a dot with 30 µeV would not be.</p>
+
+<h2>Spin relaxation and how it depends on the field</h2>
+<p>A spin-up electron eventually relaxes to spin-down, releasing E<sub>Z</sub> as a phonon. A bare spin cannot couple to the lattice vibrations, because phonons are electric (strain) fields. The coupling comes from small admixtures: spin–orbit interaction, which mixes a little orbital character into the spin states, and in our device also the micromagnet's gradient, which does the same thing artificially. The relaxation time is therefore long, but it falls steeply as the field rises. The phonon density of states and the coupling both grow with energy, giving rates that rise as B<sup>5</sup> to B<sup>7</sup> depending on the mechanism <cite data-r="hollmann2020"></cite>. At the valley hotspot the admixture becomes large and T<sub>1</sub> collapses by orders of magnitude (Figure 14.2). At very low fields, T<sub>1</sub> levels off, limited by electrical noise rather than phonons.</p>
+<figure>
+<div class="figbody"><!--plot:t1-field--></div>
+<figcaption>Spin relaxation time of dot 2 versus total field (simulated with the mechanisms described in the text). Above the low-field plateau, T<sub>1</sub> falls steeply with the field; the sharp dip at 1.04 T is the spin–valley hotspot, where E<sub>Z</sub> = E<sub>VS</sub>. At our operating point T<sub>1</sub> ≈ 30 ms, more than enough: spin readout takes under a millisecond, and a qubit operation a few hundred nanoseconds.</figcaption>
+</figure>
+<p>T<sub>1</sub> at the operating point is one of the first spin numbers you will measure, in Chapter 15, and it sets two things. It bounds the readout error, because a spin-up electron that relaxes before it can tunnel out is read as spin-down. Princeton's 31.5 ms at 0.41 T contributed about 0.2% to their readout error <cite data-r="mills2022ro"></cite>. It is also a quick health check. A T<sub>1</sub> much shorter than expected usually means E<sub>VS</sub> is smaller than you thought, or that electrical noise reaches the dot.</p>
+
+<h2>Nuclear spins: why isotope purification matters</h2>
+<p>The electron also feels the magnetic moments of the nuclei it overlaps with. Natural silicon contains 4.7% of the isotope <sup>29</sup>Si, which has a nuclear spin; <sup>28</sup>Si has none. The few thousand <sup>29</sup>Si nuclei inside the electron's wavefunction add a small, slowly fluctuating effective field, the Overhauser field. Its random part, about 10 µT in a natural-silicon dot, makes the qubit frequency wander by a few hundred kilohertz and limits the dephasing time T<sub>2</sub>* to about a microsecond <cite data-r="kawakami2014"></cite>. Purified silicon with 800 ppm of <sup>29</sup>Si, as in our device, reduces this by a factor of about eight in field, and T<sub>2</sub>* rises to tens of microseconds, at which point charge noise takes over as the limit <cite data-r="yoneda2018"></cite>. In GaAs every nucleus has a spin, the Overhauser field is millitesla, and T<sub>2</sub>* is about 10 ns. That difference is the main reason the field moved from GaAs to silicon, and it shapes how GaAs qubits are operated (Chapter 27). Chapter 20 returns to dephasing in detail.</p>
+
+<h2>The micromagnet: what it gives and what it costs</h2>
+<p>A spin does not respond to an electric field. But a spin that moves through a spatially varying magnetic field sees a changing field. The cobalt micromagnet on top of our device creates exactly such a variation, and it does three jobs <cite data-r="tokura2006,pioro2008"></cite>:</p>
+<ol>
+<li><b>Driving.</b> A microwave voltage on a gate shakes the electron back and forth by a tiny amount. In the transverse gradient b<sub>trans</sub> = ∂B<sub>⊥</sub>/∂x, of about 0.3–1 mT/nm, this motion becomes an oscillating transverse magnetic field at the qubit frequency, which rotates the spin: electric-dipole spin resonance, or EDSR (Chapter 18) <cite data-r="yoneda2015"></cite>.</li>
+<li><b>Addressing.</b> The longitudinal field differs between the two dots, so their qubit frequencies differ, here by 300 MHz. A microwave tone at one frequency drives one qubit and leaves the other alone. The same frequency difference makes the exchange interaction act as a controlled phase gate (Chapter 24).</li>
+<li><b>Setting the operating field.</b> The magnet adds about 0.15 T, which lets the external field be smaller. But this only works if the magnet is fully magnetized along the field direction, which requires an external field of a few tenths of a tesla.</li>
+</ol>
+<p>The cost is that the gradient also turns electric noise into magnetic noise. Charge fluctuations in the device move the electron by tiny amounts, and in the longitudinal gradient b<sub>long</sub> = ∂B<sub>∥</sub>/∂x every movement shifts the qubit frequency.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how far does the electron move?</span>
+<p>Our design has b<sub>long</sub> ≈ 0.2 mT/nm. A displacement of 10 pm, a twentieth of the Si–Si bond length, changes the field by 0.2 mT/nm × 0.01 nm = 2 µT, and the qubit frequency by 28 GHz/T × 2 µT = 56 kHz.</p>
+<p>With T<sub>2</sub>* = 6 µs, the qubit's frequency fluctuates by about √2/(2π T<sub>2</sub>*) ≈ 37 kHz rms. If charge noise were the only cause, the electron's position would be wandering by only about 7 pm rms.</p>
+<p>Delft's natural-silicon device had a similar gradient and T<sub>2</sub>* = 0.84 µs, which bounded the electron's motion at about 50 pm rms <cite data-r="kawakami2014"></cite>. RIKEN's design kept b<sub>long</sub> at about 0.2 mT/nm while raising b<sub>trans</sub> to about 1 mT/nm, and estimated that b<sub>long</sub> must stay well below 3 mT/nm for their orbital energy and charge noise <cite data-r="yoneda2018"></cite>.</p>
+</div>
+<p>Good micromagnet design is therefore a trade-off. The transverse gradient should be large for fast driving, the longitudinal gradient at the dot small for coherence, the difference in longitudinal field between the dots large for addressing, and all of this robust to a misalignment of the magnet by tens of nanometres. Designs that place each dot at a point where the longitudinal gradient is flat achieve this <cite data-r="yoneda2015,dumoulin2021"></cite>.</p>
+
+<h2>Measuring the field your qubit actually sees</h2>
+<p>The design simulation in Chapter 2 predicted the stray field to within some tens of percent, and it predicted a frequency difference of about 0.5 GHz between the dots, where we will measure 300 MHz. The real numbers come from the qubits themselves. Once the resonance has been found (Chapter 18), measure the qubit frequency of each dot at a few external fields (Figure 14.3). Above the field where the magnet saturates, the frequency rises linearly. The slope gives g, and the intercept at zero external field gives the micromagnet's longitudinal field at that dot.</p>
+<figure>
+<div class="figbody"><!--plot:field-sweep--></div>
+<figcaption>Qubit frequency of both dots versus external field (simulated measurement). Above about 0.2 T the micromagnet is saturated, the frequencies rise at 27.99 GHz/T, the slope for g = 2.000, and the straight-line extrapolations (dashed) give the magnet's longitudinal contribution at each dot: 151 and 162 mT. Below saturation the magnet's field depends on the field history.</figcaption>
+</figure>
+<p>Two practical consequences follow. Change the field only in one direction once the qubits are tuned, and always arrive at the operating field the same way, because below saturation, and to some extent above it, the magnet's field depends on its history. And keep the superconducting magnet in persistent mode, where the field is very stable but still drifts slowly. RIKEN recalibrated the qubit frequency regularly using Ramsey measurements for this reason <cite data-r="yoneda2018"></cite>. A drift of one part per million at 0.4 T is 0.4 µT, or 11 kHz, which is a noticeable fraction of the 37 kHz frequency noise we just estimated.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> T<sub>1</sub> is only a few hundred microseconds at a field where you expected tens of milliseconds, and it gets dramatically worse as the field is raised.</p>
+<p><b>Likely cause:</b> a small valley splitting, so that the operating field sits near the hotspot.</p>
+<p><b>What to do:</b> measure T<sub>1</sub> at several fields to find the hotspot, then E<sub>VS</sub> = gµ<sub>B</sub>B<sub>hotspot</sub>. Lower the field, or move the dot slightly with the gates: E<sub>VS</sub> can change by tens of percent as the dot moves over a different patch of interface <cite data-r="hollmann2020"></cite>. If E<sub>VS</sub> is below about 50 µeV, consider using a different dot.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 10</span>
+<p>Magnet ramped 0 → 1.0 T → 0.40 T at 0.1 T/min (saturate micromagnet, arrive from above). Persistent mode.</p>
+<p>Valley splittings by pulsed-gate spectroscopy: D1 ≈ 180 µeV, D2 ≈ 120 µeV. E_Z at 0.56 T ≈ 65 µeV: E_VS/E_Z = 2.8 (D1), 1.85 (D2). OK.</p>
+<p>Expect f1 ≈ 15.4 GHz, f2 ≈ 15.7 GHz from the field sweep after EDSR is found (Ch 18); the sim predicted a 0.5 GHz split.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 14</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>External field</td><td>0.40 T in plane, reached from above after 1.0 T</td><td>everywhere</td></tr>
+<tr><td>Micromagnet field (longitudinal)</td><td>151 mT (D1), 162 mT (D2), from the field sweep</td><td>Chapters 18, 24</td></tr>
+<tr><td>g-factor</td><td>2.000 (slope 27.99 GHz/T)</td><td>Chapter 18</td></tr>
+<tr><td>Qubit frequencies</td><td>15.420 GHz (D1), 15.720 GHz (D2); ΔE<sub>Z</sub>/h = 300 MHz</td><td>Chapters 18–26</td></tr>
+<tr><td>E<sub>Z</sub>/k<sub>B</sub>T<sub>e</sub></td><td>≈ 15</td><td>Chapter 15</td></tr>
+<tr><td>Valley splittings</td><td>180 µeV (D1), 120 µeV (D2); hotspot of D2 at 1.04 T</td><td>Chapters 15, 16</td></tr>
+<tr><td>T<sub>1</sub> (D2, operating point)</td><td>≈ 30 ms</td><td>Chapters 15, 17</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A GaAs dot at T<sub>e</sub> = 100 mK needs E<sub>Z</sub> ≥ 13 k<sub>B</sub>T<sub>e</sub> for good Elzerman readout. What field is that?</p>
+<details><summary>Show answer</summary><div>13 × 8.6 µeV = 112 µeV. With |g| = 0.44, E<sub>Z</sub> = 0.44 × 57.9 µeV/T × B = 25.5 µeV/T × B, so B ≈ 4.4 T. This is why GaAs Elzerman readout was done at several tesla.</div></details>
+<p>2. A dot shows a T<sub>1</sub> hotspot at 0.62 T of total field. What is its valley splitting, and is a qubit at 15 GHz a good idea in this dot?</p>
+<details><summary>Show answer</summary><div>E<sub>VS</sub> = 115.8 µeV/T × 0.62 T ≈ 72 µeV. A 15 GHz qubit has E<sub>Z</sub> = 62 µeV, only 14% below the hotspot, so T<sub>1</sub> would be short. Lower the field to about 0.35 T (10 GHz, 41 µeV), if readout still allows it, or retune the dot's position to change E<sub>VS</sub>.</div></details>
+<p>3. Why does increasing the transverse gradient help, while increasing the longitudinal gradient at the dot hurts?</p>
+<details><summary>Show answer</summary><div>The transverse gradient converts the electron's driven motion into a field perpendicular to the quantization axis, which rotates the spin: more gradient, faster gates for the same electric drive. The longitudinal gradient converts unwanted motion, from charge noise, into changes of the field along the quantization axis, which changes the qubit frequency and dephases it.</div></details>
+</div>

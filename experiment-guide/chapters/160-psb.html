@@ -1,0 +1,86 @@
+<!--meta {"id": "psb", "part": "Part E · From charge to spin", "title": "Reading spin pairs: Pauli spin blockade"}-->
+
+<p class="lede">Energy-selective readout needs a reservoir beside every qubit and a large Zeeman energy, and it takes most of a millisecond. A second way of turning spin into charge needs neither a reservoir nor a large field, and it is faster. It uses the second electron instead: whether two electrons can share one dot depends on their spins, because of the Pauli exclusion principle. This chapter builds that readout, Pauli spin blockade, explains its two flavours, shows how it also initializes two qubits at once, and finds the operating point in our device.</p>
+
+<h2>Two electrons, one dot</h2>
+<p>Bring the double dot to the boundary between (1,1), one electron in each dot, and (0,2), both electrons in dot 2. In (0,2), the two electrons share the same orbital, and Pauli exclusion then forces their spins into the antisymmetric combination, the singlet S(0,2). A triplet in (0,2) needs one electron in a higher orbital or, in silicon, in the higher valley, which costs an energy E<sub>ST</sub>. In (1,1), the electrons are in different dots, and singlet and triplets have almost the same energy. So as the detuning ε pushes the system towards (0,2), the singlet can tunnel into dot 2 as soon as ε &gt; 0, but the three triplets cannot, until ε exceeds E<sub>ST</sub> (Figure 16.1) <cite data-r="ono2002,johnson2005,hanson2007"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:psb-levels--></div>
+<figcaption>Two-electron energy levels of our double dot near the (1,1)–(0,2) transition (t<sub>c</sub> = 20 µeV, E<sub>Z</sub> = 64 µeV, E<sub>ST</sub> = 120 µeV). The singlet branch (blue) moves smoothly from S(1,1) into S(0,2) through the tunnel-coupled anticrossing. The (1,1) triplets (orange) stay flat, split by the Zeeman energy, until the (0,2) triplet states (purple) become available at ε = E<sub>ST</sub>. In the shaded window, a singlet ends up in (0,2) and a triplet stays in (1,1): spin has become charge.</figcaption>
+</figure>
+<p>That is the whole mechanism. Prepare the two spins in (1,1), pulse into the window, and measure the charge state. If the sensor sees (0,2), the pair was a singlet; if it still sees (1,1), it was blocked, hence a triplet. Two features make this attractive for arrays. The readout involves only the two dots and the sensor, with no reservoir. And the field does not need to beat the temperature: the energy that protects the readout is E<sub>ST</sub>, not E<sub>Z</sub>. That is why groups using spin blockade operate comfortably at lower fields, and in some cases at temperatures above 1 K <cite data-r="yang2020,petit2020"></cite>.</p>
+
+<h2>Where silicon makes it harder: E<sub>ST</sub></h2>
+<p>In GaAs, the (0,2) triplet needs the next orbital, about a meV away, so the window is wide. In silicon, the triplet can instead use the other valley, so E<sub>ST</sub> is set by the smaller of the orbital spacing and the valley splitting of dot 2. For our dot 2 that is the 120 µeV valley splitting, which is still about 28 k<sub>B</sub>T<sub>e</sub> and gives a window 1.2 mV wide along the detuning axis. A dot with a 30 µeV valley splitting would have a window of only 0.3 mV and a thermally weakened blockade. This is one more reason why valley splittings must be measured early (Chapter 14), and why the doubly occupied dot of a readout pair is chosen among the dots with the largest splitting. HRL's exchange-only qubits, which depend entirely on blockade readout, specifically require high valley splittings for this reason <cite data-r="blumoff2022"></cite>.</p>
+
+<h2>Finding the window</h2>
+<p>The window is found in the charge stability diagram. Prepare a mixture that contains triplets, for example by loading two electrons with random spins from the reservoirs, or by letting a singlet mix in (1,1) for a while. Then pulse to a grid of readout points in the (0,2) region near the interdot line, and compare the sensor signal with that of a pure singlet, which you get by simply waiting in (0,2) (Figure 16.2).</p>
+<figure>
+<div class="figbody"><!--plot:psb-csd--></div>
+<figcaption>Finding the readout window (simulated). Left: the charge stability diagram near the (1,1)–(0,2) transition after preparing a singlet: the charge state everywhere is the ground state. Right: the difference between preparing a triplet and a singlet. Inside the (0,2) region, along the interdot line, a strip appears where a triplet remains in (1,1): the spin-blockade window. Its width along the detuning direction is E<sub>ST</sub>/α = 1.2 mV.</figcaption>
+</figure>
+<p>The readout point goes inside the strip, a little away from both edges: not too close to the interdot line, where the singlet tunnels slowly and thermally activated processes blur the distinction, and not too close to the far edge, where triplets begin to leak into (0,2). In our device that is ε ≈ 0.6 mV beyond the interdot line, in the middle of the strip. Where the strip meets the reservoir transition lines, exchange of electrons with the reservoirs lifts the blockade, which bounds the window on the other sides. Experiments that keep the electrons isolated from the reservoirs avoid this altogether <cite data-r="philips2022"></cite>.</p>
+
+<h2>Singlet–triplet readout or parity readout?</h2>
+<p>So far "triplet" has meant all three triplets. But the micromagnet gives the two dots different Zeeman energies, ΔE<sub>Z</sub>/h = 300 MHz in our device, and this changes what the blockade measures. The difference in field mixes the singlet S(1,1) with the unpolarized triplet T<sub>0</sub>(1,1); in a large gradient the eigenstates in (1,1) are simply the product states ↑↓ and ↓↑. The polarized triplets T<sub>+</sub> = ↑↑ and T<sub>−</sub> = ↓↓ are unaffected. At the readout point, T<sub>0</sub> therefore leaks into the singlet and then into (0,2), at a rate that grows with ΔE<sub>Z</sub><sup>2</sup>, while T<sub>+</sub> and T<sub>−</sub> stay blocked until a spin flips, which takes milliseconds (Figure 16.3) <cite data-r="seedhouse2021"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:psb-decay--></div>
+<figcaption>How long each two-spin state stays blocked at the readout point. The singlet enters (0,2) within nanoseconds. The polarized triplets ↑↑ and ↓↓ need a spin flip and stay blocked for milliseconds. The T<sub>0</sub>-like antiparallel state leaks into the singlet at a rate set by the Zeeman energy difference: about a microsecond in our device with ΔE<sub>Z</sub>/h = 300 MHz, but hundreds of microseconds with only 20 MHz. A measurement integrating for 3–30 µs (shaded) therefore sees odd parity (antiparallel) as (0,2) and even parity (parallel) as blocked in our device.</figcaption>
+</figure>
+<p>Which flavour you get depends on where the integration window falls among these time scales:</p>
+<ul>
+<li><b>Singlet–triplet readout.</b> If the measurement finishes before T<sub>0</sub> leaks, the blockade separates the singlet from all three triplets. This needs a small ΔE<sub>Z</sub>, as in devices without a micromagnet, or a fast sensor. It is the natural readout for singlet–triplet qubits (Chapter 27).</li>
+<li><b>Parity readout.</b> If T<sub>0</sub> has leaked into (0,2) long before the measurement ends, the blockade separates antiparallel spins (↑↓, ↓↑: odd parity, not blocked) from parallel spins (↑↑, ↓↓: even parity, blocked). With a micromagnet this is usually the only option. QuTech's six-qubit processor read its outer pairs in this mode, with a 10 µs window <cite data-r="philips2022"></cite>.</li>
+</ul>
+<p>Parity readout is not a limitation once you see how to use it. If one spin of the pair is in a known state, say ↓, the parity is the state of the other spin: odd means ↑, even means ↓. This is how a single qubit is read with a partner, and how the inner qubits of an array are read: a conditional rotation first copies the inner qubit's state onto an outer one (Chapter 25), which is then measured by parity with its partner. QuTech read the two inner qubits of their six-qubit device this way, repeating the mapping three times to suppress errors <cite data-r="philips2022"></cite>.</p>
+
+<h2>Initialization for free</h2>
+<p>Spin blockade also initializes. Waiting in (0,2) relaxes the pair to the singlet S(0,2), because E<sub>ST</sub> is many k<sub>B</sub>T<sub>e</sub>: this works without a reservoir, which is why it is the method of choice in isolated arrays. Then the pair is moved back to (1,1). How that pulse is shaped decides which (1,1) state the singlet becomes, and Figure 16.1 shows what has to happen on the way.</p>
+<ul>
+<li>The pulse first passes the point where the singlet branch crosses T<sub>−</sub>(1,1). A small coupling there, from the transverse field gradient, could transfer the singlet into ↓↓. Passing quickly, in nanoseconds, avoids that.</li>
+<li>Then the pulse enters the region where the exchange splitting between singlet and T<sub>0</sub> falls below ΔE<sub>Z</sub>. If this part is slow compared to h/ΔE<sub>Z</sub>, a few nanoseconds for 300 MHz, so in practice a ramp of a microsecond, the singlet turns smoothly into the lower of the two product states, say ↑↓. That is a fully initialized two-qubit state <cite data-r="philips2022"></cite>.</li>
+</ul>
+<p>The reverse ramp maps ↑↓ back onto S(0,2), which makes the readout of the antiparallel states clean. QuTech's six-qubit device used exactly this, with about 95% success for the initialization <cite data-r="philips2022"></cite>.</p>
+
+<h2>The signal problem, and latching</h2>
+<p>A blockade readout distinguishes (1,1) from (0,2): one electron moves by one dot pitch, about 90 nm. The sensor sees the difference between an electron in dot 1 and the same electron in dot 2, which is smaller than the signal of adding or removing an electron.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how much smaller the blockade signal is</span>
+<p>In our device, one electron in dot 2 shifts the sensor by 0.16 mV of SP-equivalent voltage and one in dot 1 by 0.10 mV (Chapter 9). Moving an electron from dot 1 to dot 2 therefore shifts it by only 0.06 mV, about 40% of the full single-electron signal.</p>
+<p>With reflectometry, a full electron gives SNR 6 in 2 µs (Chapter 10). The blockade signal gives 0.4 × 6 ≈ 2.3 in 2 µs, and since SNR grows with the square root of the integration time, it needs about (6/2.3)² × 2 µs ≈ 14 µs to reach the same SNR. We integrate for 20 µs, an SNR of about 7. A longer integration costs little here, because the blocked states live for milliseconds (Chapter 17).</p>
+</div>
+<p>Two remedies are widely used. The first is to place the sensor so that it sees the two dots very differently, for example at the end of the pair, as in most linear arrays. The second is <dfn data-def="Converting the short-lived spin-blockade signal into a long-lived charge state that differs by a whole electron, using asymmetric tunnel rates to a reservoir, to increase readout signal and fidelity.">latching</dfn>. After the spin blockade has done its job, the pair is moved to a point where the blocked (1,1) state can quickly exchange an electron with a reservoir, becoming, say, (1,2), while the (0,2) state cannot, because its tunnelling path is slow. The charge states then differ by a whole electron and stay put for a long time, so the sensor can integrate at leisure. Sandia reached readout fidelities above 99.86% in 65 µs this way <cite data-r="harveycollard2018"></cite>. A latched configuration is also a useful diagnostic, because it freezes the outcome of the blockade for inspection <cite data-r="seedhouse2021"></cite>.</p>
+
+<h2>Reading the blockade with the gate itself</h2>
+<p>There is also a way to read the blockade without a sensor dot. At the readout point, a singlet can tunnel back and forth across the interdot anticrossing in response to a small radio-frequency voltage on a gate. This makes the double dot behave like an extra capacitance, the quantum capacitance, which shifts the resonance of a tank circuit attached to that gate. A blocked triplet cannot tunnel and has no such capacitance. Several groups reached single-shot readout this way, with no sensor dot at all, and the fastest reached an average fidelity of about 98% in a few microseconds using a superconducting on-chip resonator <cite data-r="west2019,zheng2019,urdampilleta2019,pakkiam2018"></cite>. It saves space in a dense array, at the cost of smaller signals.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> no blockade strip, although the interdot transition looks normal.</p>
+<p><b>Likely causes:</b> E<sub>ST</sub> is very small, because dot 2 has a small valley splitting; the readout point lies outside the narrow strip; the triplets are lost in the pulse, for example through the S–T<sub>−</sub> crossing; or the integration is far longer than the blockade lifetime.</p>
+<p><b>What to do:</b> measure the valley splitting of the doubly occupied dot; if it is small, try the other dot as the doubly occupied one, or move to the (1,3)–(0,4) transition, where a filled lower valley shell can give a larger effective E<sub>ST</sub>, as UNSW did with a (1,3)–(0,4) configuration <cite data-r="seedhouse2021"></cite>. Scan the readout point finely across the expected strip and shorten the integration time.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 12</span>
+<p>PSB at (1,1)–(0,2), D2 doubly occupied: strip found, width 1.2 mV along ε → E_ST ≈ 120 µeV, matches D2 valley splitting. Readout point ε_R = 0.6 mV into the strip.</p>
+<p>Blockade lifetime at ε_R: parallel spins 3 ms, antiparallel (T0-like) ≈ 1 µs → parity mode. Integration 20 µs, SNR ≈ 7.</p>
+<p>Init: wait 5 µs in (0,2), fast step across S–T− crossing (2 ns), then 1 µs ramp to (1,1) → ↑↓. Check: parity readout immediately after init gives odd in 96% of shots.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 16</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Blockade window</td><td>(1,1)–(0,2), width 1.2 mV (E<sub>ST</sub> ≈ 120 µeV)</td><td>Chapters 17, 24–26</td></tr>
+<tr><td>Readout point and mode</td><td>ε<sub>R</sub> = 0.6 mV; parity mode; 20 µs integration</td><td>Chapters 17, 26</td></tr>
+<tr><td>Blockade lifetimes</td><td>parallel 3 ms; antiparallel ≈ 1 µs</td><td>Chapter 17</td></tr>
+<tr><td>Pair initialization</td><td>S(0,2) → ↑↓ by fast-then-slow ramp, 96%</td><td>Chapters 24–26</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does spin blockade not need E<sub>Z</sub> ≫ k<sub>B</sub>T<sub>e</sub>, while energy-selective readout does?</p>
+<details><summary>Show answer</summary><div>Energy-selective readout separates the spin states by the energy at which they can leave to the reservoir, so the Fermi distribution must change sharply across E<sub>Z</sub>. Spin blockade separates singlet from triplets by whether they can enter (0,2), which is protected by E<sub>ST</sub>, the singlet–triplet splitting in the doubly occupied dot, typically 100 µeV or more. The Zeeman energy plays no role in that energy barrier.</div></details>
+<p>2. In parity mode, you want to read qubit 1 alone. What must you do with qubit 2 first, and what does "even" then mean?</p>
+<details><summary>Show answer</summary><div>Put qubit 2 in a known state, for example ↓, by initialization or by a previous measurement and correction. Then even parity means both spins are the same, so qubit 1 is ↓; odd parity means qubit 1 is ↑.</div></details>
+<p>3. A device without a micromagnet shows a blockade lifetime of 200 µs for T<sub>0</sub> and 5 ms for T<sub>±</sub>. Which readout mode do you get with a 20 µs integration time, and with 1 ms?</p>
+<details><summary>Show answer</summary><div>With 20 µs, T<sub>0</sub> is still blocked during the measurement, so all three triplets look blocked and only the singlet enters (0,2): singlet–triplet readout. With 1 ms, T<sub>0</sub> has mostly decayed into (0,2), while T<sub>±</sub> mostly remain blocked: parity readout, but with a large error from T<sub>±</sub> decaying during the window. These are the rates UNSW measured in a SiMOS device <cite data-r="seedhouse2021"></cite>.</div></details>
+</div>

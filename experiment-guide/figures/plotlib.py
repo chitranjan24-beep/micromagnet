@@ -167,3 +167,9 @@ def row(*svgs, gap=10):
     """Place several complete <svg> strings side by side in one flex row (wraps on phones)."""
     inner = ''.join(f'<div style="flex:1 1 260px;min-width:0">{s}</div>' for s in svgs)
     return f'<div style="display:flex;flex-wrap:wrap;gap:{gap}px;align-items:flex-start">{inner}</div>'
+
+
+def column(*svgs, gap=4):
+    """Stack several complete <svg> strings vertically."""
+    inner = ''.join(f'<div>{s}</div>' for s in svgs)
+    return f'<div style="display:flex;flex-direction:column;gap:{gap}px">{inner}</div>'

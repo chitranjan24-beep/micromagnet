@@ -1,0 +1,89 @@
+<!--meta {"id": "readout-fidelity", "part": "Part E · From charge to spin", "title": "How good is the readout? Fidelity, SPAM and repetition"}-->
+
+<p class="lede">Every number measured from here on, whether a Rabi oscillation, a coherence time or a gate fidelity, is first a list of single-shot readout outcomes. How often those outcomes are wrong sets the contrast of every plot, how many repetitions each data point needs, and in the end whether the qubit is useful for error correction. This chapter defines the readout fidelities properly, shows how they come about from the noisy, decaying signal, and separates them from the errors of preparing the state in the first place.</p>
+
+<h2>What "readout fidelity" means</h2>
+<p>A readout takes a qubit in state |0⟩ or |1⟩ and returns an outcome, 0 or 1. Four probabilities describe it, of which two are independent:</p>
+\[ F_0 = P(\text{outcome } 0 \mid \text{state } 0), \qquad F_1 = P(\text{outcome } 1 \mid \text{state } 1). \]
+<p>From these come the two summary numbers in common use: the average readout fidelity F<sub>M</sub> = (F<sub>0</sub> + F<sub>1</sub>)/2 and the <dfn data-def="The readout contrast V = F₀ + F₁ − 1: the difference in measured outcome probability between the two qubit states; 1 for a perfect readout, 0 for a useless one.">visibility</dfn> V = F<sub>0</sub> + F<sub>1</sub> − 1. A perfect readout has V = 1; one that ignores the qubit has V = 0. The visibility is what you see directly in experiments: a Rabi oscillation that should swing between probabilities 0 and 1 swings between 1 − F<sub>0</sub> and F<sub>1</sub>, an amplitude of V.</p>
+<p>The individual fidelities matter, not just their average, because the errors are usually very asymmetric. In energy-selective readout, a spin-down electron is misread only if it escapes thermally, which can be made very rare; a spin-up electron is misread if its blip is missed or it relaxes first, which is harder to suppress. Princeton's record readout had F<sub>↓</sub> = 99.86% but F<sub>↑</sub> = 99.26% <cite data-r="mills2022ro"></cite>. Knowing which state is misread tells you which mechanism to attack.</p>
+
+<h2>From signal to outcome: the histogram</h2>
+<p>Each single shot produces one number: the sensor signal integrated over the readout window, or its maximum within the window for Elzerman readout. Collected over many shots, these numbers form a histogram with two peaks, one per state, and a threshold between the peaks turns each number into an outcome (Figure 17.1).</p>
+<figure class="wide">
+<div class="figbody"><!--plot:readout-histograms--></div>
+<figcaption>Histograms of the integrated blockade signal for parity readout in our device, for states prepared as odd (antiparallel, not blocked) and even (parallel, blocked), at three integration times (simulated, 40 000 shots each). Short integration: the peaks overlap because of noise. 20 µs: well separated, average fidelity about 99.8%. 1 ms: the peaks are narrow, but blocked states that decay during the window spread into a tail between them. The dashed line is the optimum threshold.</figcaption>
+</figure>
+<p>Two different mechanisms limit the separation, and they pull the integration time in opposite directions. The noise of the sensor and amplifier makes each peak a Gaussian whose width falls as one over the square root of the integration time. The decay of the signal-carrying state during the window adds counts between the peaks: a blocked pair that relaxes halfway through integrates to a value halfway between them. This decay tail grows with the integration time, in proportion to t/τ for a window t much shorter than the lifetime τ. The best fidelity sits where the two errors balance (Figure 17.2) <cite data-r="barthel2009,keith2019b"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:readout-fid-time--></div>
+<figcaption>Readout fidelity versus integration time for parity readout in our device (simulated; SNR 2.3 at 2 µs, blocked lifetime 3 ms). Below about 10 µs, noise dominates and the fidelity rises steeply with time. Above about 100 µs, decay during the window takes over and the fidelity of the even states slowly falls. Our 20 µs lies in the broad optimum.</figcaption>
+</figure>
+<p>The general lesson goes beyond this device. The ratio of the signal lifetime to the time needed for a unit SNR sets the achievable fidelity. Sandia's analysis put it plainly: an error of 10<sup>−3</sup> needs a measurement about a thousand times shorter than the signal lifetime <cite data-r="harveycollard2018"></cite>. Hence the effort to make sensors faster (Chapter 10) and signal states longer-lived (latching, Chapter 16). For energy-selective readout the same balance appears in a different form, between missed blips and thermal escapes (Chapter 15).</p>
+
+<div class="box numbers"><span class="tag">Worked numbers: our two readouts</span>
+<div class="tablewrap"><table>
+<thead><tr><th></th><th>Elzerman (single spin)</th><th>Parity (spin pair)</th></tr></thead>
+<tbody>
+<tr><td>Integration / window</td><td>500 µs</td><td>20 µs</td></tr>
+<tr><td>Fidelities (model)</td><td>F<sub>↓</sub> 99.86%, F<sub>↑</sub> 98.4%</td><td>F<sub>odd</sub> 99.9%, F<sub>even</sub> 99.6%</td></tr>
+<tr><td>Main error</td><td>missed short blips (≈ 1.5%)</td><td>blocked pairs decaying in the window (≈ 0.4%)</td></tr>
+<tr><td>What would improve it</td><td>faster sensor; slower tunnel-in</td><td>longer-lived blockade, latching, higher SNR</td></tr>
+</tbody></table></div>
+<p>These are models. Measured fidelities also include the errors of preparing the state, which the next section separates.</p>
+</div>
+
+<h2>Choosing the threshold</h2>
+<p>The threshold is chosen to maximize the visibility, or the average fidelity, measured on known states. With Gaussian peaks of equal width it lies halfway between them; with a decay tail or unequal widths, it moves towards the narrower peak. Princeton optimized threshold and window together on their data and found, for example, that a threshold set too low turned noise into false spin-up counts while one set too high missed short blips <cite data-r="mills2022ro"></cite>. Two practical habits help. First, rotate the IQ data of reflectometry onto the axis that separates the two states before histogramming (Chapter 10), so that all the signal is in one number. Second, recalibrate the threshold together with the readout point, because the peak positions drift with the sensor's operating point (Chapter 9). QuTech re-derives the threshold as part of the sensor-dot calibration in their calibration routine <cite data-r="philips2022"></cite>.</p>
+<p>A threshold throws away information: a shot just above it and one far above it count the same. Using the whole analog value, or the full time trace, does better when noise is the main error. QuTech showed that such "soft decoding" reduced the number of repeated measurements needed for a given fidelity <cite data-r="xue2020"></cite>.</p>
+
+<h2>Preparation errors versus measurement errors</h2>
+<p>To measure F<sub>0</sub> and F<sub>1</sub>, you prepare |0⟩ and |1⟩ many times and count the outcomes. But preparation is not perfect either. If initialization leaves 1% of the shots in |1⟩, the measured F<sub>0</sub> is lower by about 1% although the readout itself is fine. And preparing |1⟩ usually needs a π pulse (Chapter 19), which has its own error. What you measure this way is the combined <dfn data-def="State preparation and measurement errors: the combined error of initializing a qubit and reading it out, which together limit the contrast of every experiment.">SPAM</dfn> error, state preparation and measurement together.</p>
+<p>Separating the two takes extra information. Some is easy to get. The thermal part of the initialization error of energy-selective readout follows from the Fermi function. A reversed pulse that never loads spin-up measures the dark counts directly, as Elzerman did <cite data-r="elzerman2004"></cite>. The most complete separation comes from gate set tomography, which fits preparation, measurement and gates together (Chapter 23). Princeton's GST gave a preparation fidelity of 99.76% and a measurement fidelity of 99.35% for their qubit <cite data-r="mills2022ro"></cite>.</p>
+<p>For many purposes the separation is not needed. Randomized benchmarking is designed to be insensitive to SPAM (Chapter 23). Coherence times come from the shape of a decay, not its amplitude. Where absolute probabilities matter, as in Bell-state fidelities (Chapter 26), they are often corrected for readout errors by inverting the assignment matrix. That correction is valid only if the readout errors are well characterized and independent of what happened before, and papers usually report both raw and corrected values. QuTech's six-qubit device, for example, showed Bell fidelities of 78–91% raw and 88–96% after removing SPAM errors <cite data-r="philips2022"></cite>.</p>
+
+<h2>Measuring again: repetition and QND readout</h2>
+<p>Elzerman readout and spin blockade both destroy the measured state: after the readout, the spin has been replaced or moved. But a measurement can also be made <dfn data-def="Quantum non-demolition: a measurement that leaves the measured observable unchanged, so it can be repeated and gives the same answer each time.">quantum non-demolition</dfn> (QND) by measuring a second qubit, an ancilla, instead. A two-qubit gate first copies the state of the data qubit onto the ancilla, and then the ancilla is read out and reinitialized. The data qubit is left untouched, so the whole procedure can be repeated, and a majority vote over several rounds suppresses readout errors. QuTech raised a qubit's readout fidelity from 75.5% to 94.5% with 15 repetitions this way, and used three rounds with post-selection to read the inner qubits of their six-qubit device <cite data-r="xue2020,philips2022"></cite>. RIKEN demonstrated QND readout of an electron spin in silicon with the same idea <cite data-r="yoneda2020"></cite>. Repeated mid-circuit measurements like these are what quantum error correction is built on.</p>
+<p>Measurement also allows initialization without a reservoir and without waiting: measure, and if the result is wrong, flip the qubit with a π pulse. This needs fast feedback, from the digitizer through a decision to the microwave source, in a fraction of the qubit's coherence time. QuTech's six-qubit processor did exactly this, with a feedback latency of 660 ns <cite data-r="philips2022"></cite>.</p>
+
+<h2>How many shots?</h2>
+<p>Each single shot is a coin toss with probability p. The uncertainty in an estimated probability after N shots is</p>
+\[ \sigma_p = \sqrt{\frac{p(1-p)}{N}}. \]
+<div class="box numbers"><span class="tag">Worked numbers: shots per data point</span>
+<p>To see a Rabi oscillation clearly, ±3% per point is enough: with p ≈ 0.5, N = 0.25/0.03² ≈ 280 shots. At a cycle time of about 3 ms for Elzerman readout, that is about 1 s per point.</p>
+<p>To measure a readout error of 1% to ±0.1%: N = 0.01 × 0.99/0.001² ≈ 10 000 shots. Princeton used 10 000 interleaved preparations of each state for their fidelity measurement <cite data-r="mills2022ro"></cite>.</p>
+<p>A 51-point Rabi chevron with 51 frequencies and 300 shots per point takes 51 × 51 × 300 × 3 ms ≈ 39 minutes with Elzerman readout, but only about 1 minute with 100 µs parity-readout cycles. Readout speed is measurement throughput.</p>
+</div>
+<p>Interleave the preparations you compare: alternating |0⟩ and |1⟩ shot by shot, rather than taking all |0⟩ shots first, makes slow drifts affect both equally.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the visibility drops from 98% to 85% over an afternoon, although nothing was changed.</p>
+<p><b>Likely causes:</b> the sensor has drifted off its operating point, so the peaks have moved relative to the fixed threshold; or the readout level (Elzerman) or readout point (blockade) has drifted with a slow charge rearrangement.</p>
+<p><b>What to do:</b> look at the histogram, not only the fidelity. Peaks that are still separated but shifted mean the threshold or the sensor point needs recalibration; peaks that have merged mean the readout point itself has moved. Automate both checks (Chapter 31).</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 13</span>
+<p>Elzerman D2, 10 000 interleaved ↓ / ↑ (↑ by π pulse, Ch 19): measured F↓ = 99.7%, F↑ = 97.6% → V = 97.3%. Model readout alone: 99.86 / 98.4 → remaining ≈ 0.15% / 0.8% attributed to init (thermal) and π-pulse error.</p>
+<p>Parity readout, 20 µs: odd after init 96.2%, even (after π on Q1) 95.0%. Init (adiabatic ramp) dominates; readout model 99.9 / 99.6.</p>
+<p>IQ rotation angle stored per sensor; threshold recalibrated with sensor point every 30 min.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 17</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Elzerman SPAM (D2)</td><td>F<sub>↓</sub> 99.7%, F<sub>↑</sub> 97.6%, V = 97.3% (measured)</td><td>Chapters 18–23</td></tr>
+<tr><td>Parity SPAM (pair)</td><td>odd 96.2%, even 95.0% (measured, incl. init)</td><td>Chapters 24–26</td></tr>
+<tr><td>Readout model limit</td><td>Elzerman 98.3% visibility; parity 99.5% visibility</td><td>Chapter 32</td></tr>
+<tr><td>Cycle times</td><td>Elzerman ≈ 3 ms; parity ≈ 100 µs</td><td>Chapters 19–23</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A Rabi oscillation swings between 0.04 and 0.93. What are F<sub>0</sub>, F<sub>1</sub> and V, assuming perfect gates?</p>
+<details><summary>Show answer</summary><div>At the minimum the qubit is in |0⟩ and the outcome 1 appears with probability 1 − F<sub>0</sub> = 0.04, so F<sub>0</sub> = 0.96. At the maximum the qubit is in |1⟩ and F<sub>1</sub> = 0.93. V = 0.96 + 0.93 − 1 = 0.89, the swing of the oscillation.</div></details>
+<p>2. Why does integrating longer eventually make the readout worse?</p>
+<details><summary>Show answer</summary><div>The state that carries the signal (a blocked pair, or an electron that has tunnelled out) decays during the window. The longer the window, the more shots contain a decay partway through, which puts their integrated value between the two peaks and eventually on the wrong side of the threshold. Noise improves with time, decay gets worse, so there is an optimum.</div></details>
+<p>3. Your measured F<sub>↓</sub> is 98.5%, but the thermal model of your readout predicts 99.9%. Name two places the missing 1.4% might come from.</p>
+<details><summary>Show answer</summary><div>Initialization: if the ↓ state is prepared by holding at the read level, some shots still hold a spin-up electron, for example because the initialization stage was too short for every spin-up electron to tunnel out. Or the electron temperature is higher than assumed, so thermal escapes of spin-down are more frequent than modelled. A third possibility is spikes of noise or charge jumps crossing the threshold.</div></details>
+</div>

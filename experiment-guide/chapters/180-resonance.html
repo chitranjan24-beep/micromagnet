@@ -1,0 +1,81 @@
+<!--meta {"id": "resonance", "part": "Part F · One qubit", "title": "Finding the resonance: the first spin flip"}-->
+
+<p class="lede">The device can now prepare a spin-down electron and tell spin-down from spin-up in a single shot. What is missing is control: a way to turn one into the other on demand. That takes a microwave tone at exactly the qubit frequency, and the first job is to find that frequency, somewhere within a few hundred megahertz of the estimate, with a resonance whose width might be well under a megahertz. This chapter explains how the electric microwave drive flips a spin, how to search efficiently, how to tell real resonances from impostors, and what the first lines already reveal about the qubit.</p>
+
+<h2>How an electric field flips a spin</h2>
+<p>The microwave voltage goes to a gate, here P1. It cannot act on the spin directly. It pushes the electron's wavefunction back and forth inside the dot. In the micromagnet's transverse gradient, the moving electron sees a transverse magnetic field that oscillates at the drive frequency. When that frequency matches the Zeeman splitting, the oscillating field drives spin resonance, exactly as in a conventional ESR experiment but generated locally, by motion, with no microwave magnetic field from a coil <cite data-r="tokura2006,pioro2008"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how far the electron moves</span>
+<p>A spin driven by an oscillating transverse field of amplitude B<sub>1</sub> rotates at the Rabi frequency f<sub>R</sub> = gµ<sub>B</sub>B<sub>1</sub>/(2h), because only half of a linearly oscillating field co-rotates with the spin. For f<sub>R</sub> = 4 MHz, B<sub>1</sub> = 2 × 4 MHz / (28 GHz/T) ≈ 0.29 mT.</p>
+<p>With a transverse gradient of b<sub>trans</sub> ≈ 0.6 mT/nm, that needs an oscillation amplitude of 0.29/0.6 ≈ 0.5 nm, about 1% of the dot's size.</p>
+<p>The dot's orbital energy of 3 meV acts as a spring. Moving the electron by 0.5 nm against that spring needs an electric field at the dot of about 10 kV/m, a 0.1 mV drop over 10 nm, which a gate a few tens of nanometres away provides with millivolt-scale microwave amplitudes. A stiffer dot, with a larger orbital energy, moves less for the same field: there is a trade-off between fast driving and a well-confined electron.</p>
+</div>
+<p>The resonance condition is the qubit frequency f<sub>Q</sub> = E<sub>Z</sub>/h. From the field and the magnet simulation (Chapter 14), we expect about 15.3–15.8 GHz for both dots, an uncertainty of several hundred megahertz. The microwave chain is set up with a local oscillator at 15.50 GHz and IQ modulation of ±300 MHz (Chapter 5), so the search covers that whole range without retuning the LO.</p>
+
+<h2>Searching: make the line wide first</h2>
+<p>A resonance from a weak, short pulse is narrow, down to the inverse of the coherence time: about 90 kHz wide for T<sub>2</sub>* = 6 µs. Stepping a narrow probe through 600 MHz in 30 kHz steps would take 20 000 points. The search therefore starts with the line deliberately broadened. A strong, long burst drives the spin rapidly and for much longer than it stays coherent, so on resonance the spin ends up randomized, spin-up half of the time. The resonance is then power-broadened to a width of about twice the Rabi frequency (Figure 18.3). With f<sub>R</sub> ≈ 5 MHz, steps of 2 MHz are safe, and the whole range takes 300 points.</p>
+<p>Each point of the search is: initialize spin-down at the read level, move deep into blockade, apply a 1 ms microwave burst, read. A spin-up fraction above the background marks a resonance (Figure 18.1).</p>
+<figure>
+<div class="figbody"><!--plot:resonance-search--></div>
+<figcaption>Search for the qubit resonances (simulated): spin-up fraction after a strong 1 ms burst, versus programmed frequency, 2 MHz steps, 200 shots per point. The two broad lines are the qubits, at 15.420 and 15.720 GHz. The two narrow lines are their images, produced by the imperfect suppression of the unwanted sideband of the IQ mixer. They appear at 2 × LO − f<sub>Q</sub>, mirrored about the LO frequency, and they are narrow because the image tone is about 30 dB weaker.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: how long the search takes</span>
+<p>Each shot takes about 3 ms (initialize 1 ms, burst 1 ms, read 0.5 ms, compensation and margins). 300 frequencies × 200 shots × 3 ms = 180 s, three minutes. With a weaker drive you would need finer steps, and the same search could take hours.</p>
+</div>
+<p>Long, strong bursts have a cost: they heat the device. QuTech found that microwave bursts shift the qubit frequency by up to about a megahertz through heating, an effect that builds up over hundreds of microseconds <cite data-r="undseth2023"></cite>. During a search this hardly matters, because the lines are broad, but it is why the burst length and power are reduced as soon as the lines are found. The heating effect returns in Chapter 22.</p>
+
+<h2>Telling real lines from impostors</h2>
+<p>A broad search turns up more lines than there are qubits. Some are artefacts of the electronics, some are real physics of a different kind, and each has a test.</p>
+<ul>
+<li><b>IQ mixer images.</b> The mixer suppresses the unwanted sideband by 20–40 dB, not completely. When you program the frequency 2 × LO − f<sub>Q</sub>, the weak image falls on f<sub>Q</sub> and drives the qubit. The test: change the LO frequency or the field. A real line stays at its frequency when the LO changes; an image moves by twice the LO shift. When the field changes, a real line moves up at +28 GHz/T, and its image moves the opposite way (Figure 18.2). The fix is to calibrate the mixer's amplitude and phase imbalance, which suppresses the image further.</li>
+<li><b>The LO itself.</b> Leakage of the LO through the mixer gives a constant tone at 15.50 GHz. If a qubit happened to sit there, it would be driven all the time. Keep the qubits at least a few megahertz from the LO, and null the leakage with DC offsets on I and Q.</li>
+<li><b>Multi-photon lines.</b> At high power, a drive at f<sub>Q</sub>/2 can flip the spin by absorbing two photons. These lines are narrow and appear at half (or a third of) the frequency, outside our search range but common at high power in a wide search.</li>
+<li><b>The other valley.</b> If the dot's excited valley is thermally populated, its slightly different g-factor gives a second line a few megahertz from the first. Delft saw two lines 2–4 MHz apart in natural silicon for this reason <cite data-r="kawakami2014"></cite>. The test is temperature or valley splitting: the second line weakens as the excited valley population falls.</li>
+<li><b>The other qubit.</b> Microwaves on P1 also move the electron in dot 2, somewhat less, so both qubits respond to the same gate. That is useful: our search finds both lines with a single gate. Which line belongs to which dot follows from reading the dots separately (Chapter 15).</li>
+</ul>
+<figure>
+<div class="figbody"><!--plot:line-field--></div>
+<figcaption>Identifying lines by changing the external field. The qubit lines move up at +28 GHz/T (solid, slope for g = 2). Their images, at 2 × LO − f<sub>Q</sub> with the LO fixed, move down at the same rate (dashed). A line whose position does not change with the field at all comes from the electronics, not from a spin.</figcaption>
+</figure>
+
+<h2>Narrowing the line</h2>
+<p>Once a line is found, lower the power and lengthen the burst to measure its natural width (Figure 18.3). The width falls with the power, until it reaches a floor set by how much the qubit frequency itself fluctuates during the measurement, its inhomogeneous linewidth.</p>
+<figure>
+<div class="figbody"><!--plot:line-power--></div>
+<figcaption>The resonance of qubit 1 at decreasing drive power (simulated). At f<sub>R</sub> = 1 MHz the line is power-broadened to about 2 MHz full width. At 250 kHz it is about 0.5 MHz wide. At 20 kHz, with a 5 ms burst, the width reaches about 90 kHz, set by the slow fluctuations of the qubit frequency. That floor corresponds to T<sub>2</sub>* ≈ 6 µs.</figcaption>
+</figure>
+<p>The low-power linewidth is the first measurement of the qubit's frequency noise. For a Gaussian distribution of frequencies with standard deviation σ<sub>f</sub>, the full width at half maximum is 2.35 σ<sub>f</sub>, and the dephasing time is T<sub>2</sub>* = √2/(2πσ<sub>f</sub>) (Chapter 20). Our 90 kHz width gives σ<sub>f</sub> ≈ 38 kHz and T<sub>2</sub>* ≈ 6 µs. Delft's natural-silicon qubit had a 0.6 MHz line and T<sub>2</sub>* ≈ 0.84 µs; RIKEN's purified-silicon qubit had a 21 kHz line measured with a 3 ms Gaussian burst <cite data-r="kawakami2014,yoneda2018"></cite>. Ramsey experiments measure the same quantity more precisely, but the line already tells you whether the qubit is in the expected range.</p>
+
+<h2>Recording what you found</h2>
+<p>A line position is useful only with the conditions it was measured under. The qubit frequency depends on the external field, on the dot's position in the micromagnet's gradient, and hence on the gate voltages, and on the microwave power, through heating. Record all of them together, and from now on track the frequency of each qubit as a calibrated parameter that will be updated many times a day (Chapter 31). QuTech's calibration routine includes a rough frequency search near the saved value, taking about 17 seconds, before any finer calibration <cite data-r="philips2022"></cite>.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> no resonance anywhere in the search range.</p>
+<p><b>Likely causes:</b> the microwaves do not reach the gate; the qubit frequency is outside the range, because the micromagnet field differs more from the simulation than expected or the magnet is not saturated; the burst arrives while the dot is not in the manipulation configuration (a timing error, Chapter 13); or the readout is not working and would not see a flip anyway.</p>
+<p><b>What to do:</b> confirm microwave delivery by photon-assisted tunnelling on the same gate (Chapter 12). Confirm the readout by measuring T<sub>1</sub>, which needs no microwaves (Chapter 15). Widen the search, or change the field to move the qubit through the range. Slide the burst in time relative to the pulse.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 14</span>
+<p>Search 15.20–15.90 GHz, 2 MHz steps, 1 ms bursts at high power, LO 15.50 GHz: lines at 15.420 (D1) and 15.720 (D2). Narrow lines at 15.580 and 15.280 → images (move the wrong way with B, shift 2× with LO). IQ imbalance calibrated: image now −42 dBc.</p>
+<p>Low power, 5 ms burst: D1 FWHM 90 kHz → T2* ≈ 6 µs. D2 FWHM 85 kHz.</p>
+<p>Field steps 0.395–0.405 T: both lines +27.99 GHz/T. Back to 0.400 T from above.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 18</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Qubit frequencies</td><td>Q1 15.420 GHz, Q2 15.720 GHz (IF −80 / +220 MHz on LO 15.50)</td><td>Chapters 19–26</td></tr>
+<tr><td>Low-power linewidth</td><td>90 kHz (Q1), 85 kHz (Q2) → T<sub>2</sub>* ≈ 6 µs</td><td>Chapter 20</td></tr>
+<tr><td>Mixer image suppression</td><td>−42 dBc after calibration</td><td>Chapter 22</td></tr>
+<tr><td>Drive gate</td><td>P1 drives both qubits</td><td>Chapters 19, 22</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does a long, strong burst give a spin-up fraction of about one half on resonance, rather than one?</p>
+<details><summary>Show answer</summary><div>The burst lasts far longer than one Rabi period and far longer than the qubit stays coherent. The spin rotates many times, and dephasing and the spread of frequencies average the final state over all angles, so the spin ends up spin-up with probability one half.</div></details>
+<p>2. With LO = 15.50 GHz, a narrow line appears at a programmed 15.65 GHz. Where would the real qubit be if this is an image, and how do you check?</p>
+<details><summary>Show answer</summary><div>An image at 15.65 GHz means the real qubit is at 2 × 15.50 − 15.65 = 15.35 GHz. Check by moving the LO by 10 MHz: the image moves by 20 MHz in programmed frequency, the real line not at all. Or step the field: the image moves the wrong way.</div></details>
+<p>3. A qubit's low-power linewidth is 300 kHz FWHM. What T<sub>2</sub>* do you expect?</p>
+<details><summary>Show answer</summary><div>σ<sub>f</sub> = 300/2.35 ≈ 128 kHz, so T<sub>2</sub>* = √2/(2π × 128 kHz) ≈ 1.8 µs.</div></details>
+</div>

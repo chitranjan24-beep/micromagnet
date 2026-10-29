@@ -1,0 +1,127 @@
+<!--meta {"id": "elzerman", "part": "Part E · From charge to spin", "title": "Reading a single spin: energy-selective tunnelling"}-->
+
+<p class="lede">The sensor can see a single electron, but it cannot see which way that electron's spin points: spin-up and spin-down electrons have exactly the same charge. Every spin readout therefore converts spin into charge first, by arranging the energies so that the electron can move only if its spin is in one particular state. This chapter builds the first and most intuitive version, energy-selective tunnelling to a reservoir, invented in GaAs by Elzerman and colleagues and still used in many silicon experiments <cite data-r="elzerman2004"></cite>. Along the way it measures the first genuinely spin-dependent number of the device, T<sub>1</sub>.</p>
+
+<h2>The idea: let only spin-up leave</h2>
+<p>Dot 2 holds one electron, and the reservoir next to it is filled with electrons up to its Fermi energy E<sub>F</sub>. The electron's two spin states, split by E<sub>Z</sub> = 64 µeV, are two energy levels of the dot. A plunger pulse moves both levels up and down together. Three positions matter (Figure 15.1):</p>
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 260" width="860" role="img" aria-label="Energy diagrams for Elzerman readout">
+  <defs><marker id="ez-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink"/></marker></defs>
+  <g>
+    <text class="ttl" x="20" y="22">(a) manipulate: deep in blockade</text>
+    <rect x="20" y="120" width="90" height="100" class="fa1"/>
+    <line x1="20" y1="120" x2="110" y2="120" class="thin" stroke-dasharray="4 3"/><text class="sm" x="24" y="114">E_F</text>
+    <rect x="110" y="40" width="14" height="180" class="boxl"/>
+    <line x1="150" y1="160" x2="230" y2="160" class="t2"/><text class="sm" x="236" y="164">↑</text>
+    <line x1="150" y1="190" x2="230" y2="190" class="t1"/><text class="sm" x="236" y="194">↓</text>
+    <circle cx="190" cy="190" r="6" class="fillink"/>
+    <text class="sm" x="20" y="244">both levels far below E_F: the electron</text>
+    <text class="sm" x="20" y="258">stays, and no second one can enter</text>
+  </g>
+  <g transform="translate(290,0)">
+    <text class="ttl" x="20" y="22">(b) read: E_F between the levels</text>
+    <rect x="20" y="120" width="90" height="100" class="fa1"/>
+    <line x1="20" y1="120" x2="110" y2="120" class="thin" stroke-dasharray="4 3"/><text class="sm" x="24" y="114">E_F</text>
+    <rect x="110" y="40" width="14" height="180" class="boxl"/>
+    <line x1="150" y1="92" x2="230" y2="92" class="t2"/><text class="sm" x="236" y="96">↑ (above E_F)</text>
+    <line x1="150" y1="140" x2="230" y2="140" class="t1"/><text class="sm" x="236" y="144">↓ (below E_F)</text>
+    <circle cx="190" cy="92" r="6" class="fillink"/>
+    <path d="M178,92 C150,92 110,92 80,104" class="thin" style="stroke-width:1.4" marker-end="url(#ez-ar)"/>
+    <text class="sm" x="20" y="244">spin-up: tunnels out, dot is empty,</text>
+    <text class="sm" x="20" y="258">sensor signal changes</text>
+  </g>
+  <g transform="translate(580,0)">
+    <text class="ttl" x="20" y="22">(c) a spin-down electron returns</text>
+    <rect x="20" y="120" width="90" height="100" class="fa1"/>
+    <line x1="20" y1="120" x2="110" y2="120" class="thin" stroke-dasharray="4 3"/><text class="sm" x="24" y="114">E_F</text>
+    <rect x="110" y="40" width="14" height="180" class="boxl"/>
+    <line x1="150" y1="92" x2="230" y2="92" class="t2"/><text class="sm" x="236" y="96">↑</text>
+    <line x1="150" y1="140" x2="230" y2="140" class="t1"/><text class="sm" x="236" y="144">↓</text>
+    <circle cx="190" cy="140" r="6" class="fillink"/>
+    <path d="M70,134 C100,140 140,140 178,140" class="thin" style="stroke-width:1.4" marker-end="url(#ez-ar)"/>
+    <text class="sm" x="20" y="244">signal returns: the "blip" lasted</text>
+    <text class="sm" x="20" y="258">~1/Γ_in; the dot is now spin-down</text>
+  </g>
+</svg>
+</div>
+<figcaption>Energy-selective spin readout. (a) During manipulation, both spin levels are far below the reservoir's Fermi energy, so the electron cannot leave. (b) For readout, the levels are pulsed so that E<sub>F</sub> lies between them. A spin-up electron has an empty state in the reservoir at its energy and tunnels out, and the sensor registers an empty dot. A spin-down electron has no empty state to go to and stays. (c) After a spin-up electron has left, the dot refills with a spin-down electron, because only the spin-down level lies below E<sub>F</sub>. The short excursion of the sensor signal is the signature of spin-up, and the dot ends up initialized in spin-down.</figcaption>
+</figure>
+<p>The logic is simple, but notice what it relies on. A spin-up electron can leave only because there are empty states in the reservoir at its energy, and a spin-down electron stays only because there are none at its energy. The reservoir's occupation changes from full to empty over a few k<sub>B</sub>T<sub>e</sub> around E<sub>F</sub>, so the two levels must be many k<sub>B</sub>T<sub>e</sub> apart. That is where the E<sub>Z</sub> ≳ 13 k<sub>B</sub>T<sub>e</sub> criterion of Chapter 14 comes from <cite data-r="keith2019b"></cite>. It also explains why the readout initializes the spin for free: whatever the spin was, after the read stage the dot holds a spin-down electron.</p>
+
+<h2>Finding the read level</h2>
+<p>The read level must put E<sub>F</sub> between the spin levels, a window only 64 µeV wide, or 0.64 mV on the plunger. To find it, run the cycle with a random spin state in the dot, which is easy: load an electron with both levels below E<sub>F</sub>, where either spin can enter. Then step the read level in small increments and record the averaged sensor signal during the read stage (Figure 15.2). Three regions appear, plus the one you want <cite data-r="elzerman2004"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:elzerman-map--></div>
+<figcaption>Averaged probability that dot 2 is empty during the read stage, for a random spin state at its start, versus the position of the levels (simulated; Γ = 30 kHz, T<sub>e</sub> = 50 mK). Below Δ = 0, both levels are above E<sub>F</sub> and the dot empties for good. Above Δ = E<sub>Z</sub>, both are below E<sub>F</sub> and nothing happens. In between, spin-up electrons leave within a few tens of microseconds and are replaced by spin-down ones, leaving a transient "spin bump". Its height is set by the fraction of spin-up electrons and its duration by the tunnel rates.</figcaption>
+</figure>
+<p>The spin bump is the first signal in the experiment that depends on spin, and it is worth a moment of satisfaction. It also confirms three things at once. The Zeeman splitting is as expected, because the window's width in plunger voltage, times the lever arm, is E<sub>Z</sub>. The electron temperature is low enough, because otherwise the window's edges would blur into each other. And the tunnel rates are in the right range, because otherwise the bump would be either too fast to see or too slow to finish within the read stage.</p>
+
+<h2>Single shots</h2>
+<p>Averages are for tuning. The point of this readout is to determine the spin in a <em>single</em> shot: one cycle, one answer. With the read level in the window, each read stage gives one sensor trace, and a spin-up electron shows up as a step of the sensor signal that lasts until a spin-down electron comes back (Figure 15.3).</p>
+<figure>
+<div class="figbody"><!--plot:elzerman-traces--></div>
+<figcaption>Single-shot traces during the read stage (simulated, 2 µs per point, SNR 6). A spin-up electron gives a "blip": the signal steps up when the electron leaves and back down when a spin-down electron enters. The spin is declared up if the trace crosses the threshold anywhere in the window. The last trace shows the main error for spin-up: a blip shorter than the time the sensor needs to resolve it.</figcaption>
+</figure>
+<p>The decision rule is a threshold: if the signal crosses it at any time during the read window, call the spin up, otherwise down. Two subtleties are worth knowing. First, the timing of the blip carries no information about the spin; only its presence does. Second, the threshold is a compromise. Set it too low, and noise spikes on spin-down traces cross it; set it too high, and short blips are missed. Princeton optimized their threshold and read window directly on data, and found an optimum read window of 670 µs <cite data-r="mills2022ro"></cite>. Chapter 17 turns this into a full fidelity analysis.</p>
+
+<h2>Choosing the read level and window</h2>
+<p>Each error in this readout has a physical cause, and each knob trades one error against another (Figure 15.4).</p>
+<ul>
+<li><b>Spin-down read as spin-up.</b> The spin-down level is only Δ below E<sub>F</sub>, so a spin-down electron occasionally escapes thermally, with probability that falls like e<sup>−Δ/k<sub>B</sub>T<sub>e</sub></sup>. Larger Δ and shorter windows help.</li>
+<li><b>Spin-up read as spin-down, because the blip was too short.</b> After the spin-up electron leaves, the dot refills at the tunnel-in rate. A short refill time is a short blip. Slower tunnelling and a faster sensor help.</li>
+<li><b>Spin-up read as spin-down, because the spin relaxed first.</b> If the spin flips before it tunnels out, it is read as down. With T<sub>1</sub> = 30 ms and a tunnel-out time of 33 µs, this happens in about 0.1% of shots. The criterion is T<sub>1</sub> ≳ 100 × the tunnel-out time <cite data-r="keith2019b"></cite>.</li>
+<li><b>Spin-up read as spin-down, because the window closed too early.</b> The window must be several tunnel-out times long. If the spin-up level is close to E<sub>F</sub>, tunnelling out is slower and the window must be longer.</li>
+</ul>
+<figure>
+<div class="figbody"><!--plot:readout-tradeoff--></div>
+<figcaption>Fidelities of the Elzerman readout in our device, from the error model in the text (Γ = 30 kHz, T<sub>e</sub> = 50 mK, E<sub>Z</sub> = 64 µeV, T<sub>1</sub> = 30 ms, 0.5 µs resolution time). Left: versus the read level Δ for a 500 µs window. Below about 35 µeV the spin-down electron escapes thermally; above about 60 µeV the spin-up level approaches E<sub>F</sub> and can no longer be relied on to tunnel out. Right: versus the window length at Δ* = 40 µeV. Short windows miss slow spin-up electrons; long windows collect thermal errors.</figcaption>
+</figure>
+<p>For our device the model gives F<sub>↓</sub> = 99.86% and F<sub>↑</sub> = 98.4% at Δ* = 40 µeV and a 500 µs window, a visibility F<sub>↑</sub> + F<sub>↓</sub> − 1 of 98.3%. Most of the remaining spin-up error comes from blips too short to resolve. Princeton's optimized readout reached F<sub>↓</sub> = 99.86% and F<sub>↑</sub> = 99.26%, a visibility of 99.12%, at a larger E<sub>Z</sub> of 79 µeV and T<sub>e</sub> ≈ 45 mK. They chose Δ* ≈ 30 µeV, where tunnelling out of spin-up and tunnelling in of spin-down both occurred at about 20 kHz <cite data-r="mills2022ro"></cite>. Their error budget for spin-up was about 0.2% from relaxation, 0.5% from missed blips, and 0.1% from drift of the read level.</p>
+<p>That last item is a reminder that Δ* is not set once. A drift of the dot's potential by 10 µeV, from slow charge noise or a slightly drifting gate, moves the read level a quarter of the way across the useful window. Princeton recalibrated it about every 30 minutes during long runs, and RIKEN recalibrated the read point and threshold roughly hourly <cite data-r="mills2022ro,yoneda2018"></cite>. The calibration is quick: a short version of the scan in Figure 15.2, centred on the current setting.</p>
+
+<h2>The first spin measurement: T<sub>1</sub></h2>
+<p>With single-shot readout working, the first spin property to measure is how long a spin-up electron stays up. Load a random spin with both levels below E<sub>F</sub>, half of the shots spin-up on average. Wait a time τ deep in blockade, then read. The spin-up fraction decays exponentially with τ, with time constant T<sub>1</sub> (Figure 15.5). This is exactly Elzerman's original measurement, which found T<sub>1</sub> = 0.55 ms at 10 T in GaAs <cite data-r="elzerman2004"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:t1-decay--></div>
+<figcaption>Measuring T<sub>1</sub>: load a random spin, wait, read (simulated, 2000 shots per point). The spin-up fraction decays from about one half to zero with T<sub>1</sub> = 30 ms. The start value is slightly below 0.5 because of the readout's finite visibility, which does not affect the time constant.</figcaption>
+</figure>
+<p>No microwaves are needed for this, and the result already tells you a lot. A long T<sub>1</sub> confirms that the valley splitting is not too close to E<sub>Z</sub> and that no strong electrical noise is present at the qubit frequency (Chapter 14). Comparing the spin-up fraction just after loading with its expected value of one half also tests the readout's visibility.</p>
+
+<h2>Strengths and limits</h2>
+<p>Energy-selective readout needs only one dot, one reservoir and a charge sensor, and it is conceptually clean: the answer is a charge that moves or does not. It initializes the spin as a side effect. It reached 99% visibility in silicon, and it is the readout behind several record single-qubit experiments <cite data-r="mills2022ro,yoneda2018"></cite>.</p>
+<p>Its limits come from the reservoir. Every qubit read this way needs a reservoir next to it, which is hard to provide in the middle of a dense array. The readout is slow, tens of microseconds to a millisecond, because the tunnel rate must be slow enough for the sensor to see each event. It needs a large E<sub>Z</sub>/k<sub>B</sub>T<sub>e</sub>, which forces a relatively high field. And the read level is a narrow window that drifts. Two-qubit experiments with Elzerman readout therefore read their qubits one after another: Princeton measured and emptied the left dot, then the right one, and RIKEN used the left dot as an extension of the reservoir for each qubit in turn <cite data-r="zajac2018,noiri2022"></cite>. For arrays, the more common choice is Pauli spin blockade, the subject of the next chapter.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> no spin bump in the read-level scan, only the sharp step between "always empty" and "never empty".</p>
+<p><b>Likely causes:</b> the electron temperature is too high for this E<sub>Z</sub>, so the window is washed out; the tunnel rates are too fast, so the bump lasts less than the sensor can resolve, or too slow, so it does not finish within the read stage; or the read pulse is not the amplitude you think (Chapter 13).</p>
+<p><b>What to do:</b> check T<sub>e</sub> on the same transition (Chapter 8). Measure the tunnel rate at the read level and adjust the outer barrier (Chapter 12). Raise the field if T<sub>e</sub> cannot be lowered. And check the sensor's excitation: Princeton found that raising the sensor excitation above 85 µV peak-to-peak heated the electrons <cite data-r="mills2022ro"></cite>.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 11</span>
+<p>Spin bump found on D2 at 0.40 T, window 0.63 mV wide on vP2 → E_Z = 63 µeV (expected 64). Read level set Δ* = 40 µeV (0.40 mV below the ↓ edge). Γ ≈ 30 kHz both ways at the read point.</p>
+<p>Threshold halfway between the levels, read window 500 µs, cycle: empty 0.5 ms / init (at read level) 1 ms / wait / read 0.5 ms / compensate.</p>
+<p>T1 (D2) = 30 ± 2 ms. Visibility from 5000 shots after random loading ≈ 98%. Recalibrate Δ* every 30 min (automatic).</p>
+<p>D1 read the same way via the left reservoir: E_Z window OK, T1 = 34 ms.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 15</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Readout method</td><td>energy-selective tunnelling, each dot to its reservoir</td><td>Chapters 17–23</td></tr>
+<tr><td>Read level</td><td>Δ* = 40 µeV; window 500 µs; recalibrated every 30 min</td><td>Chapters 17, 31</td></tr>
+<tr><td>Readout fidelities (model)</td><td>F<sub>↓</sub> 99.86%, F<sub>↑</sub> 98.4%, visibility 98.3%</td><td>Chapter 17</td></tr>
+<tr><td>Initialization</td><td>spin-down, by holding at the read level for 1 ms</td><td>Chapter 17</td></tr>
+<tr><td>T<sub>1</sub></td><td>30 ms (D2), 34 ms (D1)</td><td>Chapters 17, 32</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does the dot end up spin-down after the read stage, whatever the initial spin?</p>
+<details><summary>Show answer</summary><div>At the read level only the spin-down level lies below E<sub>F</sub>. A spin-up electron leaves, and the electron that replaces it can only enter the level below E<sub>F</sub>, the spin-down one. A spin-down electron simply stays. Either way, the dot holds a spin-down electron at the end, apart from a small thermal error.</div></details>
+<p>2. You double the tunnel rate to read faster. Which error grows, and what would you need to keep it in check?</p>
+<details><summary>Show answer</summary><div>Blips get shorter, on average 1/Γ<sub>in</sub>, so more of them are missed by the sensor. To keep this error constant, the sensor must resolve events twice as fast, which at fixed noise requires twice the signal power: the SNR grows as the signal amplitude times the square root of the integration time. The thermal error on spin-down also grows in proportion to the rate for a given window, but the window can be halved.</div></details>
+<p>3. In a T<sub>1</sub> measurement the spin-up fraction at τ → 0 is 0.42 rather than 0.5. Name two possible reasons.</p>
+<details><summary>Show answer</summary><div>The readout's visibility is below one: missed blips and relaxation during readout make some spin-up shots look like spin-down. Or the loading is not perfectly random: if the level positions during loading are not deep enough below E<sub>F</sub>, spin-down loads somewhat faster than spin-up and is favoured.</div></details>
+</div>

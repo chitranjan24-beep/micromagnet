@@ -5,7 +5,7 @@ All simulated data use the book's running-example device numbers (see chapter 2)
 import os, sys, math
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from plotlib import Axes, colormap, row
+from plotlib import Axes, colormap, row, column
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out')
 os.makedirs(OUT, exist_ok=True)
@@ -694,6 +694,400 @@ def pulse_amplitude_map():
     ax.text(441, 26, 'pulse top at the', 'sm', style='fill:#fff')
     ax.text(441, 23.5, 'transition', 'sm', style='fill:#fff')
     save('pulse-amplitude-map', ax.svg())
+
+
+
+# ---------------------------------------------------------------- chapter 14: spins in a field
+GMUB = 2 * MUB_UEV    # ueV/T for g = 2 (115.8)
+
+
+@fig
+def spin_valley_levels():
+    B = np.linspace(0, 1.5, 600)
+    Evs, D = 120.0, 2.5        # valley splitting of dot 2, spin-valley coupling (exaggerated)
+    Ez = GMUB * B
+    a = -Ez / 2                # v-, down
+    b0 = Ez / 2                # v-, up
+    c0 = Evs - Ez / 2          # v+, down
+    d = Evs + Ez / 2           # v+, up
+    mid = (b0 + c0) / 2
+    half = np.sqrt(((b0 - c0) / 2) ** 2 + D ** 2)
+    lo, hi = mid - half, mid + half
+    ax = Axes(600, 340, xlim=(0, 1.5), ylim=(-100, 220), xlabel='total magnetic field at the dot (T)', ylabel='energy (µeV)', mt=18)
+    ax.line(B, a, 't1')
+    ax.line(B, lo, 't2')
+    ax.line(B, hi, 't3')
+    ax.line(B, d, 't4')
+    ax.vline(0.56, 'thin dash', 'operating point', ly=200)
+    ax.vline(Evs / GMUB, 'thin dash', 'hotspot E_Z = E_VS', ly=200)
+    ax.text(0.03, -50, 'valley −, spin ↓ (ground state)', 'sm')
+    ax.text(0.03, 42, 'valley −, spin ↑ (qubit)', 'sm')
+    ax.text(0.03, 72, 'valley +, spin ↓', 'sm')
+    ax.text(0.03, 160, 'valley +, spin ↑', 'sm')
+    ax.text(1.12, 30, 'states swap', 'sm')
+    ax.text(1.12, 16, 'character here', 'sm')
+    save('spin-valley-levels', ax.svg())
+
+
+@fig
+def t1_field():
+    B = np.linspace(0.15, 2.0, 800)
+    Ez = GMUB * B
+    Evs, D = 120.0, 0.5
+    dlt = Ez - Evs
+    mix = 0.5 * (1 - np.abs(dlt) / np.sqrt(dlt ** 2 + D ** 2))
+    rate = 1.0 + 560 * B ** 5 + 20 * B ** 7 + 1e6 * mix * (Ez / Evs) ** 5
+    ax = Axes(600, 320, xlim=(0.15, 2.0), ylim=(-5, 1), xlabel='total magnetic field at the dot (T)', ylabel='log₁₀ T₁ (s)', mt=18,
+              yticks=[-5, -4, -3, -2, -1, 0, 1])
+    ax.line(B, -np.log10(rate), 't1', 'model: phonons + spin–valley mixing')
+    Bm = np.array([0.25, 0.35, 0.45, 0.56, 0.7, 0.85, 0.95, 1.0, 1.02, 1.04, 1.06, 1.1, 1.2, 1.4, 1.6, 1.8])
+    Ezm = GMUB * Bm
+    dm = Ezm - Evs
+    mm = 0.5 * (1 - np.abs(dm) / np.sqrt(dm ** 2 + D ** 2))
+    rm = 1.0 + 560 * Bm ** 5 + 20 * Bm ** 7 + 1e6 * mm * (Ezm / Evs) ** 5
+    ax.scatter(Bm, -np.log10(rm) + RNG.normal(0, 0.08, Bm.size), 'f1', r=3.5, opacity=0.9, label='measured')
+    ax.vline(0.56, 'thin dash', 'operating point: 30 ms', ly=0.6)
+    ax.text(1.1, -4.6, 'hotspot (E_Z = E_VS)', 'sm')
+    ax.text(1.45, -2.7, '∝ B⁻⁵ … B⁻⁷', 'sm')
+    save('t1-field', ax.svg(legend_pos='tr'))
+
+
+@fig
+def field_sweep():
+    Bx = np.linspace(0, 1.0, 400)
+    gmu = 27.99      # GHz/T for g = 2
+    out = []
+    for Bm, cls, name in [(0.1509, 't1', 'dot 1'), (0.1616, 't2', 'dot 2')]:
+        Bmm = Bm * np.tanh(Bx / 0.08)        # magnet saturates above ~0.2 T
+        out.append((gmu * (Bx + Bmm), cls, name, Bm))
+    ax = Axes(600, 320, xlim=(0, 1.0), ylim=(0, 35), xlabel='external field B_ext (T)', ylabel='qubit frequency (GHz)', mt=18)
+    for f, cls, name, Bm in out:
+        ax.line(Bx, f, cls, name)
+        ax.line(Bx, gmu * (Bx + Bm), 'thin dash')
+    bpts = np.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    ax.scatter(bpts, gmu * (bpts + 0.1509), 'f1', r=3.5, opacity=0.9)
+    ax.scatter(bpts, gmu * (bpts + 0.1616), 'f2', r=3.5, opacity=0.9)
+    ax.text(0.55, 9.5, 'intercepts: magnet adds', 'sm')
+    ax.text(0.55, 7.3, '151 mT (dot 1), 162 mT (dot 2)', 'sm')
+    ax.text(0.55, 3.5, 'slope 27.99 GHz/T → g = 2.000', 'sm')
+    ax.text(0.1, 1.5, '← magnet not yet saturated', 'sm')
+    save('field-sweep', ax.svg(legend_pos='tl'))
+
+
+
+# ---------------------------------------------------------------- chapter 15: Elzerman readout
+EZ_UEV, KT_UEV, G0_RO = 64.0, KB_UEV * 0.05, 30e3     # Zeeman energy, kT at 50 mK, bare tunnel rate (Hz)
+
+
+def _ro_fid(D, tR, tmin=0.5e-6, T1=30e-3, Ez=EZ_UEV, kT=KT_UEV, G0=G0_RO):
+    f = lambda E: 1 / (1 + np.exp(E / kT))
+    Gu = G0 * (1 - f(Ez - D))
+    Gin = G0 * f(-D)
+    Fu = Gu / (Gu + 1 / T1) * (1 - np.exp(-(Gu + 1 / T1) * tR)) * np.exp(-Gin * tmin)
+    Fd = np.exp(-G0 * tR * f(D))
+    return Fu, Fd
+
+
+@fig
+def elzerman_map():
+    from scipy.linalg import expm
+    t = np.linspace(0, 300e-6, 200)
+    Ds = np.linspace(-30, 100, 160)
+    f = lambda E: 1 / (1 + np.exp(E / KT_UEV))
+    Z = np.zeros((Ds.size, t.size))
+    for i, D in enumerate(Ds):
+        Eu, Ed = EZ_UEV - D, -D
+        # states: down, up, empty
+        Q = np.zeros((3, 3))
+        Q[2, 0] = G0_RO * (1 - f(Ed)); Q[0, 2] = G0_RO * f(Ed)
+        Q[2, 1] = G0_RO * (1 - f(Eu)); Q[1, 2] = G0_RO * f(Eu)
+        Q -= np.diag(Q.sum(axis=0))
+        p0 = np.array([0.5, 0.5, 0.0])
+        dt = t[1] - t[0]
+        M = expm(Q * dt)
+        p = p0.copy()
+        for j in range(t.size):
+            Z[i, j] = p[2]
+            p = M @ p
+    ax = Axes(560, 360, xlim=(0, 300), ylim=(-30, 100), xlabel='time in the read stage (µs)', ylabel='spin-down level below E_F, Δ (µeV)',
+              grid=False, mt=18, ml=62)
+    ax.image(colormap(Z[::-1], 'magma', 0, 0.35))
+    ax.hline(0, 'thin dash')
+    ax.hline(EZ_UEV, 'thin dash')
+    ax.text(60, -18, 'both levels above E_F: the dot empties and stays empty', 'sm', style='fill:#000')
+    ax.text(60, 85, 'both levels below E_F: nothing leaves', 'sm', style='fill:#fff')
+    ax.text(60, 36, 'spin-up electrons leave, a spin-down one enters', 'sm', style='fill:#fff')
+    ax.text(60, 26, '→ a transient "spin signal" only in this window', 'sm', style='fill:#fff')
+    save('elzerman-map', ax.svg())
+
+
+@fig
+def elzerman_traces():
+    rng = np.random.default_rng(5)
+    t = np.arange(0, 600, 2.0)       # us, 2 us integration per point (SNR 6)
+    sig = 1 / 6.0
+    def trace(blips):
+        y = np.zeros_like(t)
+        for a, b in blips:
+            y[(t >= a) & (t < b)] = 1.0
+        return y + rng.normal(0, sig, t.size)
+    rows = [([(34, 82)], 't2', 'spin up: tunnels out at 34 µs, a spin-down electron returns at 82 µs'),
+            ([], 't1', 'spin down: no event'),
+            ([(262, 276)], 't2', 'spin up, late and short event: still above threshold'),
+            ([(120, 121.6)], 't3', 'spin up, event too short for the bandwidth: read as down')]
+    out = []
+    for k, (bl, cls, title) in enumerate(rows):
+        y = trace(bl)
+        if k == 3:
+            y = np.zeros_like(t) + rng.normal(0, sig, t.size)
+            y[np.argmin(abs(t - 120))] += 0.45
+        ax = Axes(860, 136 if k == 3 else 120, xlim=(0, 600), ylim=(-0.6, 1.6), xlabel='time in the read stage (µs)' if k == 3 else '', ylabel='', title=title,
+                  yticks=[0, 1], mt=22, mb=48 if k == 3 else 14, ml=58, xticks=[0, 100, 200, 300, 400, 500, 600] if k == 3 else [])
+        ax.line(t, y, cls)
+        ax.hline(0.5, 'thin dash', 'threshold', lx=560)
+        out.append(ax.svg())
+
+    save('elzerman-traces', column(*out))
+
+
+@fig
+def readout_tradeoff():
+    D = np.linspace(10, 70, 300)
+    Fu, Fd = _ro_fid(D, 500e-6)
+    ax = Axes(330, 300, xlim=(10, 70), ylim=(80, 100), xlabel='spin-down level below E_F, Δ (µeV)', ylabel='fidelity (%)',
+              title='choosing the read level', mr=12)
+    ax.line(D, 100 * Fd, 't1', 'F↓')
+    ax.line(D, 100 * Fu, 't2', 'F↑')
+    ax.line(D, 100 * (Fu + Fd - 1), 't3', 'visibility')
+    ax.vline(40, 'thin dash', 'Δ* = 40 µeV', ly=91)
+    tR = np.linspace(20e-6, 3e-3, 300)
+    Fu2, Fd2 = _ro_fid(40, tR)
+    ax2 = Axes(330, 300, xlim=(0, 3000), ylim=(80, 100), xlabel='read window t_R (µs)', ylabel='fidelity (%)',
+               title='choosing the read window', mr=12, xticks=[0, 1000, 2000])
+    ax2.line(tR * 1e6, 100 * Fd2, 't1', 'F↓')
+    ax2.line(tR * 1e6, 100 * Fu2, 't2', 'F↑')
+    ax2.line(tR * 1e6, 100 * (Fu2 + Fd2 - 1), 't3', 'visibility')
+    ax2.vline(500, 'thin dash', '500 µs', ly=82)
+    save('readout-tradeoff', row(ax.svg(legend_pos='br'), ax2.svg(legend_pos='br')))
+
+
+@fig
+def t1_decay():
+    tw = np.array([0.1, 1, 2, 5, 10, 15, 20, 30, 40, 60, 80, 100, 130])   # ms
+    V, a = 0.986, 0.003
+    T1 = 30.0
+    rng = np.random.default_rng(3)
+    n = 2000
+    P = a + 0.5 * V * np.exp(-tw / T1)
+    Pm = rng.binomial(n, P) / n
+    tt = np.linspace(0, 140, 300)
+    ax = Axes(600, 300, xlim=(0, 140), ylim=(0, 0.55), xlabel='wait time before readout (ms)', ylabel='spin-up fraction', mt=18)
+    ax.line(tt, a + 0.5 * V * np.exp(-tt / T1), 't1', 'fit: T₁ = 30 ± 2 ms')
+    ax.scatter(tw, Pm, 'f1', r=3.5, opacity=0.9)
+    ax.text(70, 0.30, 'random spin loaded (½ up), then wait, then read', 'sm')
+    save('t1-decay', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- chapter 16: Pauli spin blockade
+@fig
+def psb_levels():
+    eps = np.linspace(-150, 250, 800)     # ueV, positive towards (0,2)
+    tc, Ez, Est = 20.0, 64.0, 120.0
+    # singlet branch: S(1,1) at 0, S(0,2) at -eps, coupled by sqrt(2) tc
+    mid = -eps / 2
+    half = np.sqrt((eps / 2) ** 2 + 2 * tc ** 2)
+    Slo, Shi = mid - half, mid + half
+    ax = Axes(600, 340, xlim=(-150, 250), ylim=(-260, 160), xlabel='detuning ε (µeV), towards (0,2) →', ylabel='energy (µeV)', mt=18)
+    ax.area(np.array([0, Est]), np.array([-260, -260]), np.array([160, 160]), 'fa3')
+    ax.line(eps, Slo, 't1', 'singlet branch')
+    ax.line(eps, Shi, 'thin dash')
+    for E, lab in [(Ez, 'T₊(1,1) = ↑↑'), (0.0, 'T₀(1,1)'), (-Ez, 'T₋(1,1) = ↓↓')]:
+        ax.line(eps, np.full_like(eps, E), 't2')
+        ax.text(-145, E + 6, lab, 'sm')
+    ax.line(eps, -eps + Est, 't4', 'triplets (0,2)')
+    ax.text(8, 146, 'readout window', 'sm')
+    ax.text(8, 124, '0 < ε < E_ST', 'sm')
+    ax.text(150, -215, 'S(0,2)', 'sm')
+    ax.text(-145, -20, 'S(1,1)', 'sm')
+    save('psb-levels', ax.svg(legend_pos='bl'))
+
+
+@fig
+def psb_csd():
+    x = np.linspace(-6, 14, 400)   # vP1 (mV, relative)
+    y = np.linspace(-6, 16, 440)   # vP2
+    X, Y = np.meshgrid(x, y)
+    s, E, w = 9.0, 1.2, 0.12
+    sg = lambda z: 1 / (1 + np.exp(-z / w))
+    eps = Y - X                                   # >0 towards (0,2)
+    inner = sg(eps) * sg(Y) * sg(s - X)           # in the (0,2) region next to the segment
+    # charge-state map (approximate): base levels for each region
+    n02 = sg(eps) * sg(Y) * sg(s - X)
+    n01 = sg(-Y) * sg(-X) * sg(Y - X + 50)
+    n12 = sg(X - s) * sg(Y - s)
+    n11 = 1 - np.clip(n02 + n01 + n12, 0, 1)
+    sig_S = 0.8 * n02 + 0.3 * n01 + 1.0 * n12 + 0.5 * n11
+    strip = n02 * sg(E - eps)
+    sig_T = sig_S - 0.3 * strip                   # blockaded triplets keep the (1,1) signal in the strip
+    ax = Axes(330, 340, xlim=(-6, 14), ylim=(-6, 16), xlabel='vP1 (mV, relative)', ylabel='vP2 (mV, relative)', title='after preparing a singlet', grid=False, mr=12)
+    ax.image(colormap(sig_S[::-1], 'viridis', 0.2, 1.05))
+    ax.text(-5, 12, '(0,2)', 'sm', style='fill:#fff'); ax.text(8, -4, '(1,1)', 'sm', style='fill:#fff')
+    ax.text(-5, -4, '(0,1)', 'sm', style='fill:#fff'); ax.text(10.5, 13, '(1,2)', 'sm', style='fill:#000')
+    ax2 = Axes(330, 340, xlim=(-6, 14), ylim=(-6, 16), xlabel='vP1 (mV, relative)', ylabel='vP2 (mV, relative)', title='triplet minus singlet', grid=False, mr=12)
+    ax2.image(colormap((sig_S - sig_T)[::-1], 'magma', 0, 0.32))
+    for xs, ys in [([-6, 0], [0, 0]), ([0, 0], [-6, 0]), ([0, s], [0, s]), ([s, s], [s, 16]), ([s, 14], [s, s])]:
+        ax2.line(np.array(xs), np.array(ys), 'thin', extra='style="stroke:#999"')
+    ax2.text(-5, 12, '(0,2)', 'sm', style='fill:#fff'); ax2.text(8, -4, '(1,1)', 'sm', style='fill:#fff')
+    ax2.text(-5, -4, '(0,1)', 'sm', style='fill:#fff'); ax2.text(10.5, 13, '(1,2)', 'sm', style='fill:#fff')
+    ax2.text(-3.5, 6.5, 'blockade strip,', 'sm', style='fill:#fff')
+    ax2.text(-3.5, 5.2, '1.2 mV wide', 'sm', style='fill:#fff')
+    save('psb-csd', row(ax.svg(), ax2.svg()))
+
+
+@fig
+def psb_decay():
+    t = np.logspace(-8, -1, 500)    # s
+    ax = Axes(600, 320, xlim=(-8, -1), ylim=(-0.03, 1.05), xlabel='time at the readout point (log₁₀ s)', ylabel='probability still blockaded in (1,1)', mt=18,
+              xticks=[-8, -7, -6, -5, -4, -3, -2, -1])
+    lt = np.log10(t)
+    ax.area(np.log10(np.array([3e-6, 30e-6])), np.array([-0.03, -0.03]), np.array([1.05, 1.05]), 'fa3')
+    ax.line(lt, np.exp(-t / 3e-3), 't2', '↑↑ and ↓↓ (T₊, T₋): spin flip needed, τ ≈ 3 ms')
+    ax.line(lt, np.exp(-t / 1e-6), 't1', 'antiparallel, T₀-like, ΔE_Z/h = 300 MHz: τ ≈ 1 µs')
+    ax.line(lt, np.exp(-t / 2e-4), 't4', 'antiparallel, T₀-like, ΔE_Z/h = 20 MHz: τ ≈ 200 µs')
+    ax.line(lt, np.exp(-t / 2e-8), 't3', 'singlet: tunnels to (0,2) within ~10 ns')
+    ax.text(-5.45, 0.52, 'integration', 'sm')
+    ax.text(-5.45, 0.45, 'window', 'sm')
+    save('psb-decay', ax.svg(legend_pos='bl'))
+
+
+
+# ---------------------------------------------------------------- chapter 17: readout fidelity
+def _psb_shots(n, t_int, rng, tau_even=3e-3, tau_odd=1e-6, snr2=2.3):
+    """Integrated blockade signal (1 = blocked) for n even and n odd shots."""
+    sig = 1.0 / (snr2 * np.sqrt(t_int / 2e-6))
+    out = []
+    for tau in (tau_even, tau_odd):
+        td = rng.exponential(tau, n)
+        frac = np.minimum(td, t_int) / t_int
+        out.append(frac + rng.normal(0, sig, n))
+    return out
+
+
+def _best_threshold(ev, od):
+    th = np.linspace(-0.5, 1.5, 801)
+    Fe = (ev[None, :] > th[:, None]).mean(axis=1)
+    Fo = (od[None, :] <= th[:, None]).mean(axis=1)
+    k = np.argmax(Fe + Fo)
+    return th[k], Fe[k], Fo[k]
+
+
+@fig
+def readout_histograms():
+    rng = np.random.default_rng(21)
+    svgs = []
+    for t_int, title in [(2e-6, '2 µs: noise dominates'), (20e-6, '20 µs: our choice'), (1e-3, '1 ms: decay tail grows')]:
+        ev, od = _psb_shots(40000, t_int, rng)
+        bins = np.linspace(-0.8, 1.8, 90)
+        he, _ = np.histogram(ev, bins, density=True)
+        ho, _ = np.histogram(od, bins, density=True)
+        c = 0.5 * (bins[1:] + bins[:-1])
+        th, Fe, Fo = _best_threshold(ev, od)
+        ymax = max(he.max(), ho.max()) * 1.15
+        ax = Axes(280, 260, xlim=(-0.8, 1.8), ylim=(0, ymax), xlabel='integrated signal', ylabel='probability density' if t_int < 3e-6 else '',
+                  title=title, mr=10, ml=46 if t_int < 3e-6 else 22, yticks=[], xticks=[0, 1])
+        ax.area(c, np.zeros_like(c), ho, 'fa1')
+        ax.line(c, ho, 't1', 'odd (not blocked)' if t_int > 5e-4 else None)
+        ax.area(c, np.zeros_like(c), he, 'fa2')
+        ax.line(c, he, 't2', 'even (blocked)' if t_int > 5e-4 else None)
+        ax.vline(th, 'thin dash')
+        ax.text(1.75, ymax * 0.9, f'F = {100 * (Fe + Fo) / 2:.1f}%', 'sm', anchor='end')
+        svgs.append(ax.svg(legend_pos='tl' if t_int > 5e-4 else 'tr'))
+    save('readout-histograms', row(*svgs, gap=4))
+
+
+@fig
+def readout_fid_time():
+    rng = np.random.default_rng(22)
+    ts = np.logspace(np.log10(0.5e-6), np.log10(1e-3), 26)
+    Fm, Fe_l, Fo_l = [], [], []
+    for t in ts:
+        ev, od = _psb_shots(30000, t, rng)
+        th, Fe, Fo = _best_threshold(ev, od)
+        Fm.append((Fe + Fo) / 2); Fe_l.append(Fe); Fo_l.append(Fo)
+    lt = np.log10(ts * 1e6)
+    ax = Axes(600, 320, xlim=(np.log10(0.5), 3), ylim=(80, 100), xlabel='integration time (log₁₀ µs)', ylabel='fidelity (%)', mt=18,
+              xticks=[0, 1, 2, 3], xfmt=lambda v: {0: '1', 1: '10', 2: '100', 3: '1000'}.get(round(v), ''))
+    ax.line(lt, 100 * np.array(Fo_l), 't1', 'odd (antiparallel) states')
+    ax.line(lt, 100 * np.array(Fe_l), 't2', 'even (parallel) states')
+    ax.line(lt, 100 * np.array(Fm), 't3', 'average')
+    ax.vline(np.log10(20), 'thin dash', '20 µs', ly=81.5)
+    ax.text(0.0, 97.3, 'noise-limited', 'sm')
+    ax.text(2.2, 97.3, 'decay-limited', 'sm')
+    save('readout-fid-time', ax.svg(legend_pos='br'))
+
+
+
+# ---------------------------------------------------------------- chapter 18: finding the resonance
+F1_GHZ, F2_GHZ, LO_GHZ = 15.420, 15.720, 15.500
+
+
+def _burst_resp(f, f0, fr):
+    """Time-averaged spin flip probability after a long burst (MHz units for fr, GHz for f)."""
+    d = (f - f0) * 1e3
+    return 0.5 * fr ** 2 / (fr ** 2 + d ** 2)
+
+
+@fig
+def resonance_search():
+    rng = np.random.default_rng(31)
+    f = np.arange(15.20, 15.90, 0.002)
+    P = _burst_resp(f, F1_GHZ, 5.0) + _burst_resp(f, F2_GHZ, 4.0)
+    P += _burst_resp(f, 2 * LO_GHZ - F1_GHZ, 0.18) + _burst_resp(f, 2 * LO_GHZ - F2_GHZ, 0.14)
+    Pm = 0.003 + 0.973 * np.clip(P, 0, 0.5)
+    Pm = rng.binomial(200, Pm) / 200
+    ax = Axes(600, 320, xlim=(15.2, 15.9), ylim=(-0.02, 0.6), xlabel='programmed microwave frequency (GHz)', ylabel='spin-up fraction after a 1 ms burst', mt=18)
+    ax.line(f, Pm, 't1')
+    ax.text(F1_GHZ - 0.07, 0.53, 'qubit 1', 'sm'); ax.text(F2_GHZ + 0.012, 0.53, 'qubit 2', 'sm')
+    ax.text(2 * LO_GHZ - F1_GHZ + 0.008, 0.2, 'image of qubit 1', 'sm')
+    ax.text(2 * LO_GHZ - F2_GHZ + 0.008, 0.2, 'image of qubit 2', 'sm')
+    ax.vline(LO_GHZ, 'thin dash', 'LO', ly=0.57)
+    save('resonance-search', ax.svg())
+
+
+@fig
+def line_power():
+    rng = np.random.default_rng(32)
+    d = np.linspace(-1.5, 1.5, 301)     # MHz detuning
+    ax = Axes(600, 300, xlim=(-1.5, 1.5), ylim=(-0.02, 0.8), xlabel='detuning from qubit 1 (MHz)', ylabel='spin-up fraction', mt=18)
+    sf = np.sqrt(2) / (2 * np.pi * 6.0)   # MHz, Gaussian sigma for T2* = 6 us
+    for fr, cls, lab in [(1.0, 't2', 'f_R = 1 MHz: power broadened'), (0.25, 't3', 'f_R = 250 kHz'), (0.02, 't1', 'f_R = 20 kHz, 5 ms burst: T₂*-limited')]:
+        # average over quasi-static detuning noise
+        dd = d[:, None] + rng.normal(0, sf, (1, 4000))
+        P = (0.5 * fr ** 2 / (fr ** 2 + dd ** 2)).mean(axis=1)
+        if fr < 0.05:
+            P = P / P.max() * 0.5
+        Pm = 0.003 + 0.973 * P
+        Pm = rng.binomial(400, Pm) / 400
+        ax.line(d, Pm, cls, lab)
+    save('line-power', ax.svg(legend_pos='tr'))
+
+
+@fig
+def line_field():
+    B = np.linspace(0.390, 0.410, 50)
+    gmu = 27.99
+    q1 = F1_GHZ + gmu * (B - 0.4)
+    q2 = F2_GHZ + gmu * (B - 0.4)
+    ax = Axes(600, 300, xlim=(0.390, 0.410), ylim=(15.0, 16.0), xlabel='external field (T)', ylabel='programmed frequency of the line (GHz)', mt=18,
+              xticks=[0.390, 0.395, 0.400, 0.405, 0.410])
+    ax.line(B, q1, 't1', 'qubit 1: +28 GHz/T')
+    ax.line(B, q2, 't2', 'qubit 2: +28 GHz/T')
+    ax.line(B, 2 * LO_GHZ - q1, 't1', None, extra='stroke-dasharray="5 4"')
+    ax.line(B, 2 * LO_GHZ - q2, 't2', None, extra='stroke-dasharray="5 4"')
+    ax.text(0.3905, 15.95, 'dashed, images: move the wrong way (−28 GHz/T)', 'sm')
+    ax.hline(LO_GHZ, 'thin dash', 'LO (fixed)', lx=0.3955)
+    save('line-field', ax.svg(legend_pos='br'))
 
 
 # ================================================================ main
