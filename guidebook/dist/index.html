@@ -251,6 +251,8 @@ dl.gloss dd { margin: 2px 0 0 0; color: var(--ink-2); }
 }
 @media (max-width: 700px) {
   .figbody > svg { max-width: none; min-width: 580px; }
+  /* wide tables scroll sideways instead of squeezing into very tall rows */
+  .tablewrap table:has(th:nth-child(4)) { min-width: 760px; }
 }
 @media (prefers-reduced-motion: reduce) { .rail { transition: none; } }
 
@@ -3375,11 +3377,46 @@ dl.gloss dd { margin: 2px 0 0 0; color: var(--ink-2); }
 <p>The 4x2's QICK readouts provide, per channel, an accumulated buffer of 16 384 entries (one per shot or per sweep point) and a decimated buffer of 4096 samples (7.4 µs at 552.96 MSPS). A 1.07-billion-sample DDR4 buffer (1.94 s) can record long continuous traces, useful for watching tunnelling events, and a multi-rate buffer captures raw 8192-sample stretches <cite class="r">[<a href="#ref-qickrepo" title="QICK GitHub repository">3</a>]</cite>. These numbers come from the firmware's configuration printout; print <code>soc</code> to see your own firmware's values.</p>
 </div>
 
+<h2 id="demod-what-the-4x2-can-demodulate"><span class="sn">23.9</span>What the 4x2 can demodulate</h2>
+<p>Demodulation on the 4x2 is just arithmetic in the FPGA, so the board can demodulate any signal that reaches its ADC cleanly. What decides that is the analog path in front of the ADC. Each ADC input passes through two 100 nF capacitors and a balun rated for 10 MHz to 10 GHz (Chapter 29) <cite class="r">[<a href="#ref-rd4x2manual" title="Real Digital RFSoC 4x2 Reference Manual">2</a>]</cite>. The ADC then samples at 4423.68 MSPS in the standard QICK firmware, so the first Nyquist zone ends at 2211.84 MHz <cite class="r">[<a href="#ref-qickrepo" title="QICK GitHub repository">3</a>]</cite>.</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Signal</th><th>Typical frequency</th><th>Unmodified 4x2?</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>RF reflectometry carrier (SET or QPC sensor)</td><td>100 MHz – 1 GHz</td><td>Yes</td><td>The intended use. One DAC makes the carrier and one ADC reads it back (Chapter 39).</td></tr>
+<tr><td>Gate-based (dispersive) sensing</td><td>100 MHz – 1 GHz</td><td>Yes</td><td>The same chain. The charge signal shows up mostly as a phase shift instead of an amplitude change.</td></tr>
+<tr><td>Any carrier in the first Nyquist zone</td><td>10 MHz – 2.2 GHz</td><td>Yes, directly</td><td>Put a low-pass filter at the ADC input to stop higher zones folding in.</td></tr>
+<tr><td>Carriers above the first zone</td><td>2.2 GHz and up</td><td>Possible</td><td>RF sampling in a higher Nyquist zone with a band-pass filter. The signal folds to a known alias (Chapter 19). Check the ADC's analog input bandwidth in DS926 <cite class="r">[<a href="#ref-ds926" title="AMD DS926 data sheet">45</a>]</cite>.</td></tr>
+<tr><td>The qubit's own microwave (EDSR at 10–20 GHz)</td><td>10 – 20 GHz</td><td>Not needed</td><td>Spin qubits are read through the charge sensor, not by listening to the drive. To check the drive chain, mix it down externally first.</td></tr>
+<tr><td>Lock-in excitation through the sensor</td><td>kHz – a few MHz</td><td>No</td><td>Below the balun's 10 MHz rating. A few MHz is strongly attenuated; kHz does not get through.</td></tr>
+<tr><td>DC transport current</td><td>DC</td><td>No</td><td>The coupling capacitors block DC completely.</td></tr>
+</tbody></table></div>
+
+<p><b>Why there is a lower limit.</b> A balun is a small transformer. At low frequency its winding inductance has a low impedance and shorts the signal, so the transformer stops coupling energy across. The series capacitors add a second high-pass corner and block DC entirely. Together they set the 10 MHz floor. This is the same reason the board cannot output DC gate pulses (Chapter 29).</p>
+
+<p><b>What to do with low-frequency signals:</b></p>
+<ul>
+<li><b>Keep a lock-in amplifier</b> for DC and kHz transport during the first cooldowns (Coulomb diamonds, pinch-offs). Most groups do this anyway.</li>
+<li><b>Move to RF reflectometry.</b> It gives the same charge information at a carrier of hundreds of MHz and is much faster (Chapter 9).</li>
+<li><b>Modify the ADC input</b> to make it DC-coupled, as the QICK-DAWG team did with an LMH5401 amplifier <cite class="r">[<a href="#ref-qickdawg" title="QICK-DAWG (2023)">41</a>]</cite>. Then the same demodulation chain works as a digital lock-in at kHz–MHz.</li>
+</ul>
+
+<p><b>Other limits to know.</b></p>
+<ul>
+<li><b>Number of tones.</b> The standard firmware has two readout channels, each on its own ADC input, and each demodulates one frequency at a time. The frequency can change between shots. Reading several sensors on one line by frequency multiplexing needs multiplexed firmware or a second readout channel (Chapters 9 and 33).</li>
+<li><b>Signal level.</b> The reflected signal from a tank circuit is tiny. It needs cryogenic and room-temperature amplification to sit well above the ADC's noise floor (Chapter 22).</li>
+<li><b>Bandwidth is not a limit.</b> After decimation the demodulated signal has 552.96 MSPS, so it can follow changes on nanosecond scales. The tank circuit, with a bandwidth of a few MHz, is always the slower part.</li>
+</ul>
+
 <div class="box check"><span class="tag">Check yourself</span>
 <p>1. Your two IQ clouds are centred at (100, 20) and (40, 100). By what angle should you rotate so that the separation lies along +I?</p>
 <details><summary>Show answer</summary><div>The separation vector is (40 − 100, 100 − 20) = (−60, 80), at angle atan2(80, −60) ≈ 126.9°. Rotating by −126.9° puts it along +I (or by 53.1° to put it along −I; either works if the threshold is placed accordingly).</div></details>
 <p>2. Why does integration time stop improving fidelity beyond a certain point?</p>
 <details><summary>Show answer</summary><div>During longer windows more excited states relax (or the charge state changes for other reasons), so the classes overlap more. Slow drifts and 1/f noise also stop averaging down as \(\sqrt T\).</div></details>
+<p>3. Your lab measures the sensor dot with a 77 Hz lock-in excitation. Can you connect that signal to a 4x2 ADC input and demodulate it there?</p>
+<details><summary>Show answer</summary><div>No. 77 Hz is far below the 10 MHz lower limit of the ADC input's balun and capacitors, so the signal does not reach the converter. Keep the lock-in for this measurement, or measure the same sensor with RF reflectometry at hundreds of MHz, which the 4x2 handles directly.</div></details>
+<p>4. A colleague's tank circuit resonates at 3.0 GHz. Can the 4x2 demodulate it, and at what frequency does the signal appear after sampling at 4423.68 MSPS?</p>
+<details><summary>Show answer</summary><div>Yes, by RF sampling in the second Nyquist zone (2211.84–4423.68 MHz) with a band-pass filter around 3 GHz. The signal folds to 4423.68 − 3000 = 1423.68 MHz. In the second zone the spectrum is reversed, so the IQ plane is mirrored (Q changes sign) and phase shifts appear with the opposite sign. Thresholding still works; just account for the sign when you interpret phases. The DAC can generate 3.0 GHz directly because it is inside the DAC's first zone (up to 4915.2 MHz).</div></details>
 </div>
 
 <div class="box key"><span class="tag">Summary</span>
@@ -3389,6 +3426,7 @@ dl.gloss dd { margin: 2px 0 0 0; color: var(--ink-2); }
 <li>SNR grows as \(\sqrt T\) for white noise; matched (weighted) filters do better when the signal decays.</li>
 <li>Single-shot thresholding gives bits and enables feedback; averaging gives probabilities with calibration.</li>
 <li>QICK does mixing, decimation and accumulation in the FPGA, with buffers for shots, traces and long records.</li>
+<li>The 4x2 demodulates any carrier from about 10 MHz to 2.2 GHz directly, and higher ones with band-pass filtering. kHz lock-in signals and DC are blocked by the AC-coupled input unless the input is modified.</li>
 </ul>
 </div>
 
