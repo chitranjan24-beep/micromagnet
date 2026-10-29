@@ -1,0 +1,77 @@
+<!--meta {"id": "two-qubit-gates", "part": "Part G · Two qubits", "title": "Two-qubit gates: CZ, CROT and SWAP"}-->
+
+<p class="lede">With exchange measured and under control, it can be shaped into gates. There are three natural ones for spins: a controlled phase made by pulsing J, a controlled rotation made by driving one of the split resonance lines, and a SWAP made by letting exchange exchange the spins. Which one a group uses depends on the ratio of J to the Zeeman energy difference, on the readout, and on taste. This chapter builds each of them for our device, with the calibrations they need and the errors that limit them.</p>
+
+<h2>The controlled-phase gate</h2>
+<p>In our device J ≪ ΔE<sub>Z</sub>, so exchange acts as an Ising coupling: while it is on, the antiparallel states gain a phase relative to the parallel ones. After a pulse with ∫J dt = ½ (J in hertz), the conditional phase is exactly π, and the pulse is a controlled-Z gate, CZ, up to single-qubit phases <cite data-r="burkard2023,russ2018"></cite>. In words: the state |11⟩ gets a minus sign, nothing else changes. Combined with single-qubit rotations, CZ gives a CNOT or any other two-qubit gate.</p>
+<p>Two requirements shape the pulse. First, it must be adiabatic with respect to the Zeeman difference: J must change slowly compared to ΔE<sub>Z</sub>/h, or the antiparallel states will partly swap, an error that leaves the computational basis. With ΔE<sub>Z</sub>/h = 300 MHz, ramps of a few tens of nanoseconds suffice. Second, J should be smooth, so that the gate's spectrum is narrow and its errors predictable. Groups use a cosine window or a Tukey window, a flat top with cosine ramps <cite data-r="xue2022,philips2022,rimbach2023"></cite>. Because J depends exponentially on the barrier, the barrier pulse that produces a cosine in J is not itself a cosine: it is the logarithm of the desired J(t) (Figure 25.1). QuTech defined their pulses in energy and converted them to voltage through the measured J(V) <cite data-r="philips2022,xue2022"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:cz-pulse--></div>
+<figcaption>Our CZ gate. Left: the target exchange, a cosine window with peak J = 5 MHz, whose integral is ½ after 200 ns. Right: the barrier pulse that produces it, obtained by inverting J = 69 MHz × exp(vB2/5 mV). It rises steeply from the off setting at −40 mV and is rounded at the top.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: the CZ pulse</span>
+<p>For a cosine window J(t) = J<sub>max</sub>[1 − cos(2πt/T)]/2, the integral is J<sub>max</sub>T/2. Setting it to ½ gives T = 1/J<sub>max</sub>: with J<sub>max</sub> = 5 MHz, T = 200 ns.</p>
+<p>A 15 MHz peak would give a 67 ns gate, but with three times the sensitivity to charge noise on J, and more heating from larger barrier pulses.</p>
+</div>
+
+<h2>Calibrating the CZ</h2>
+<p>Three things must be right after the pulse, and each has its own measurement.</p>
+<ol>
+<li><b>The conditional phase.</b> A Ramsey measurement on qubit 1 with qubit 2 in |0⟩ and then in |1⟩ measures the phase difference the pulse produces. Adjust the pulse amplitude (or duration) until it is π. QuTech fine-tuned the CZ duration with exactly such a decoupled Ramsey measurement <cite data-r="philips2022"></cite>.</li>
+<li><b>The single-qubit phases.</b> The barrier pulse moves both electrons in the gradient (Chapter 24), and each picks up a phase independent of the other. Measure each with a Ramsey sequence and cancel it with a virtual Z gate after the CZ. In arrays the pulse also shifts the phases of spectator qubits; QuTech calibrated thirty such "CZ phase crosstalk" terms for six qubits <cite data-r="philips2022"></cite>.</li>
+<li><b>Population leakage.</b> If the ramps are too fast, some population of ↑↓ and ↓↑ swaps. Measure the probability of finding the partner flipped after a CZ, and lengthen the ramps if it is significant.</li>
+</ol>
+<p>Alternatively, the single-qubit phases can be cancelled physically by splitting the CZ into two halves with π pulses on both qubits in between, a "decoupled CZ". This also echoes out slow single-qubit noise during the gate, at the cost of two extra pulses. Delft's first programmable two-qubit processor used decoupled CZ gates <cite data-r="watson2018"></cite>.</p>
+
+<h2>What limits the CZ</h2>
+<p>A conditional phase error δφ gives a gate infidelity of about 0.15 δφ² for a two-qubit gate. The main source of δφ is noise on J. Slow charge noise on the barrier, equivalent to a few tenths of a millivolt, changes J by several percent, so a gate calibrated to π overshoots or undershoots by a few percent of π from shot to shot <cite data-r="xue2022"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: our CZ error budget</span>
+<p>Slow noise equivalent to 0.35 mV on vB2 changes J by 0.35/5 = 7%, so δφ ≈ 0.07π ≈ 0.22 rad rms, an infidelity of 0.15 × 0.22² ≈ 0.7%.</p>
+<p>Dephasing of both qubits during 200 ns, with T<sub>2</sub>* = 6 µs: about 2 × ½(0.2/6)² ≈ 0.1%, less with an echo.</p>
+<p>Total about 0.8%, close to the 99.3% we will measure in Chapter 26. The CZ is limited by charge noise on the exchange.</p>
+</div>
+<p>The best results show what is possible. QuTech's CZ, made with a cosine-window barrier pulse at the symmetry point, reached 99.65% by GST, and its residual errors were mostly incoherent <cite data-r="xue2022"></cite>. Princeton's processor exceeded 99% for its operations, and UNSW's benchmarks of two-qubit gates in SiMOS showed the same trends with their own platform <cite data-r="mills2022,huang2019"></cite>.</p>
+
+<h2>The controlled rotation</h2>
+<p>The second route uses the split spectrum of Chapter 24 directly. With J switched on, qubit 1 has two resonance lines, one for each state of qubit 2. A microwave π pulse on only one of them flips qubit 1 if and only if qubit 2 is in the corresponding state. That is a controlled rotation, CROT, equivalent to a CNOT up to phases <cite data-r="zajac2018,noiri2022"></cite>.</p>
+<p>The difficulty is the other line, only J away. A pulse aimed at one line also drives the other, off resonance. That unwanted rotation vanishes if, during the π pulse, the off-resonant transition happens to complete a whole number of full turns. For a square pulse this happens when J/f<sub>R</sub> = √3, √15, √35, … (Figure 25.2). RIKEN chose J/f<sub>R</sub> = √15, with J = 18.85 MHz and f<sub>R</sub> = 4.867 MHz, giving a 103 ns CNOT with 99.51% fidelity by interleaved RB <cite data-r="noiri2022"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:crot-sync--></div>
+<figcaption>Unwanted rotation of the off-resonant transition during a CROT π pulse, versus the ratio of J to the Rabi frequency. It vanishes at J/f<sub>R</sub> = √(4n² − 1), when the off-resonant transition completes n full turns during the π pulse.</figcaption>
+</figure>
+<p>Princeton's first CNOT in silicon added another detail. While J is on, the conditional phase grows as in a CZ, so they applied a DC exchange pulse of duration 2π/J to bring it back to a multiple of 2π, and absorbed the single-qubit phases into the microwave phases. Their conditional π rotation took 130 ns, and the Bell-state fidelity of 75% was limited mostly by readout <cite data-r="zajac2018"></cite>.</p>
+<p>CROT needs microwaves during the two-qubit gate and a fixed, well-known J; CZ needs only a baseband pulse. Many groups use both: CZ for circuits, CROT for mapping a qubit onto a readout ancilla, as QuTech did for the inner qubits of their six-qubit device (Chapter 17) <cite data-r="philips2022"></cite>.</p>
+
+<h2>SWAP</h2>
+<p>If J is much larger than ΔE<sub>Z</sub>, the flip-flop part of exchange is no longer suppressed. A pulse with ∫J dt = ½ then swaps the two spins completely, a SWAP gate; half of that, √SWAP, is entangling. This was the original proposal for spin qubits, and in exchange-only qubits, where all operations are made from exchange pulses, SWAP is native: HRL's exchange-only processor reached 99.3% for SWAP <cite data-r="lossdiv,weinstein2023"></cite>. In a device like ours, a fast SWAP would need J well above 300 MHz. The alternative is to drive the swap resonantly, by modulating J at ΔE<sub>Z</sub>/h, the same idea RIKEN used to drive a singlet–triplet qubit with exchange pulses at its frequency <cite data-r="takeda2020st"></cite>. SWAP matters for moving quantum information through an array, a job that shuttling the electrons themselves can also do (Chapter 29).</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the CZ conditional phase is calibrated to π, but a sequence of several CZ gates goes wrong quickly, and the error depends on how long ago the last calibration was.</p>
+<p><b>Likely causes:</b> J drifts, through slow charge rearrangement near the barrier, and with it the conditional phase. Or heating from the barrier pulses shifts the qubit frequencies, so single-qubit phases change with the number of gates.</p>
+<p><b>What to do:</b> recalibrate J(V) and the CZ phase frequently (Chapter 31). Check the conditional phase after 1, 5 and 11 CZ gates: an error that grows linearly is a calibration error; one that grows with the gate rate is heating.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 22</span>
+<p>CZ: cosine window, J_max = 5.0 MHz, 200 ns; barrier pulse from J(V) inversion, pre-distorted. Conditional phase 180.0° after fine-tuning (+1.5% amplitude). Single-qubit phases from the barrier-induced frequency shifts: Q1 +178°, Q2 +133° → cancelled with virtual Z. Leakage (partner flip) &lt; 0.2%.</p>
+<p>CROT test: J = 15.5 MHz, f_R = 4.0 MHz (J/f_R = 3.87 ≈ √15), conditional π in 125 ns. Used for QND mapping.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 25</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>CZ</td><td>cosine window, J<sub>max</sub> 5 MHz, 200 ns, at the symmetry point</td><td>Chapter 26</td></tr>
+<tr><td>CZ single-qubit corrections</td><td>virtual Z: Q1 −178°, Q2 −133°</td><td>Chapter 26</td></tr>
+<tr><td>CROT</td><td>J = 15.5 MHz, f<sub>R</sub> = 4 MHz, 125 ns</td><td>Chapter 26</td></tr>
+<tr><td>Expected CZ error</td><td>≈ 0.8%, dominated by charge noise on J</td><td>Chapters 26, 32</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A flat-top (Tukey) CZ pulse has 30 ns cosine ramps and a 100 ns flat top at J = 3 MHz. Is it a CZ?</p>
+<details><summary>Show answer</summary><div>The integral is the flat top plus the two ramps, each of which contributes half its duration times J: 3 MHz × (100 + 30) ns = 0.39. That is less than ½, a conditional phase of 0.78π. Lengthen the flat top to 137 ns, or raise J to about 3.85 MHz.</div></details>
+<p>2. Why must the CZ ramps be slow compared with h/ΔE<sub>Z</sub>, and what goes wrong if they are not?</p>
+<details><summary>Show answer</summary><div>The eigenstates in the presence of exchange are slightly mixed antiparallel states. A sudden change of J projects the state onto the new eigenstates, leaving some amplitude in the "wrong" one, which then oscillates at ΔE<sub>Z</sub>/h: a partial swap of ↑↓ and ↓↑. Ramps slow compared with 1/(300 MHz) ≈ 3 ns, in practice tens of nanoseconds, let the states follow adiabatically.</div></details>
+<p>3. In a CROT with f<sub>R</sub> = 2 MHz, what J satisfies the first two synchronization conditions?</p>
+<details><summary>Show answer</summary><div>J = √3 × 2 MHz ≈ 3.46 MHz and J = √15 × 2 MHz ≈ 7.75 MHz.</div></details>
+</div>

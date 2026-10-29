@@ -1,0 +1,84 @@
+<!--meta {"id": "entanglement", "part": "Part G · Two qubits", "title": "Entanglement and two-qubit benchmarking"}-->
+
+<p class="lede">A calibrated CZ is a claim. Entanglement is the evidence: a state of two spins that no description of the spins separately can reproduce. This chapter makes a Bell state with the gates of the previous chapters, reconstructs it by tomography, and explains what the readout does to the result. It then measures how good the two-qubit gates are with randomized benchmarking, and places the numbers among those reported by others.</p>
+
+<h2>Making a Bell state</h2>
+<p>Start from |00⟩, both spins down. A Y(π/2) rotation on each qubit puts both on the equator, a product of two superpositions. The CZ then gives the |11⟩ component a minus sign, which correlates the two phases, and a final Y(π/2) on qubit 2 turns that correlation into the Bell state</p>
+\[ |\Phi^+\rangle = \frac{|00\rangle + |11\rangle}{\sqrt 2}, \]
+<p>up to a sign convention. In this state, each qubit on its own is completely random, but the two always agree when measured along the same axis. Measured along z, they are both 0 or both 1; measured along x, they agree too. No pair of independent spins does that along every axis.</p>
+<p>The whole circuit takes about 330 ns: two 62.5 ns rotations in parallel, the 200 ns CZ, and one more 62.5 ns rotation. It is short compared with T<sub>2</sub>* = 6 µs, so dephasing during preparation should cost only a fraction of a percent.</p>
+
+<h2>Tomography</h2>
+<p>To reconstruct the two-qubit density matrix ρ, measure the state in different bases. Before the readout, rotate each qubit so that its x, y or z component is mapped onto z: nine combinations of pre-rotations, each giving four outcome probabilities. From these 36 numbers a maximum-likelihood fit finds the physical density matrix most consistent with them <cite data-r="burkard2023"></cite>. The fidelity to the target is then F = ⟨Φ<sup>+</sup>|ρ|Φ<sup>+</sup>⟩. A fidelity above 50% proves entanglement.</p>
+<figure>
+<div class="figbody"><!--plot:bell-tomography--></div>
+<figcaption>Reconstructed density matrix of our Bell state (simulated, real part). The four corner elements are the signature of |Φ<sup>+</sup>⟩: equal populations of |00⟩ and |11⟩ and a strong coherence between them. Left, raw: readout errors move population into |01⟩ and |10⟩ and shrink the coherences, giving 90.3%. Right, after correcting for the measured readout errors: 94.0%.</figcaption>
+</figure>
+<p>Most of the gap between the raw and corrected fidelities comes from the readout, measured independently in Chapter 17. Correcting means inverting the assignment matrix, the probabilities of each outcome for each prepared state, before fitting ρ. This is legitimate if the readout errors are well characterized and independent of the state history, and it should always be reported together with the raw number. Readout errors are not part of the state, but they are part of any computation that uses the state, so both numbers are useful.</p>
+<div class="box numbers"><span class="tag">Worked numbers: where the 6% goes</span>
+<p>The corrected fidelity of 94% leaves 6% of error in the state itself. The CZ contributes about 0.8% (Chapter 25), and the three single-qubit gates about 0.25%.</p>
+<p>The rest comes from preparation: the initial |00⟩ is not perfect, with each qubit about 0.3% wrong from thermal initialization, and from errors that are not part of the gate model, such as residual exchange and heating during the sequence. A single number does not separate these; the GST of Chapter 23, extended to two qubits, does.</p>
+</div>
+<p>Published Bell-state fidelities in silicon show the field's progress, and also why both raw and corrected values are quoted:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Experiment</th><th>Bell-state fidelity</th></tr></thead>
+<tbody>
+<tr><td>Princeton 2018, first resonant CNOT</td><td>75%, readout-limited <cite data-r="zajac2018"></cite></td></tr>
+<tr><td>Delft 2018, programmable two-qubit processor</td><td>85–89% <cite data-r="watson2018"></cite></td></tr>
+<tr><td>QuTech 2022, six-qubit processor</td><td>78–91% raw, 88–96% with SPAM removed <cite data-r="philips2022"></cite></td></tr>
+<tr><td>QuTech 2022, two qubits characterized by GST</td><td>97.75–98.42% (estimated from the gate set) <cite data-r="xue2022"></cite></td></tr>
+</tbody></table></div>
+
+<h2>Two-qubit randomized benchmarking</h2>
+<p>Randomized benchmarking extends to two qubits (Chapter 23) with random elements of the two-qubit Clifford group, which has 11 520 elements. Each is compiled into native gates, on average about 1.5 CZ gates plus several single-qubit rotations. The decay of the probability of returning to |00⟩ gives the average two-qubit Clifford fidelity, with d = 4 in the formula F<sub>C</sub> = 1 − (1 − p)(d − 1)/d. Interleaving the CZ after every Clifford isolates the CZ (Figure 26.2).</p>
+<figure>
+<div class="figbody"><!--plot:rb2q-decay--></div>
+<figcaption>Two-qubit randomized benchmarking of our device (simulated; 20 random sequences per length). The reference decay gives an average two-qubit Clifford fidelity of 97.6%. Interleaving the CZ gives a faster decay, from which F<sub>CZ</sub> = 99.3%. The decay approaches ¼, the probability of finding |00⟩ in a fully mixed two-qubit state.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: does the Clifford fidelity add up?</span>
+<p>A two-qubit Clifford with 1.5 CZ gates at 0.7% error and about eight single-qubit gates at 0.08% has an expected error of 1.05% + 0.65% ≈ 1.7%. The measured 2.4% leaves about 0.7% for errors not captured by benchmarking each gate alone: idling of one qubit while the other is driven, crosstalk, and heating during long sequences.</p>
+<p>That missing 0.7% is typical. QuTech's GST found single-qubit gates of 99.7% in their own subspace but 99.16% in the full two-qubit space, the same kind of gap <cite data-r="xue2022"></cite>.</p>
+</div>
+<p>Two-qubit RB is expensive. Sequences are short, because each Clifford has many gates, and readout of both qubits is needed for every shot. Our Elzerman readouts, done one after the other, make each shot about 4 ms long, so a full two-qubit RB takes several hours. This is one reason why faster readout, such as the parity readout of Chapter 16, matters for characterization as much as for computation.</p>
+
+<h2>Where the field stands</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Result</th><th>Two-qubit gate</th><th>Method</th></tr></thead>
+<tbody>
+<tr><td>RIKEN 2022, CROT-based CNOT</td><td>99.51% (CNOT); 2Q Clifford 98.67%</td><td>interleaved RB <cite data-r="noiri2022"></cite></td></tr>
+<tr><td>QuTech 2022, adiabatic CZ</td><td>99.65% (CPhase)</td><td>GST <cite data-r="xue2022"></cite></td></tr>
+<tr><td>Princeton/HRL 2022</td><td>operations above 99%</td><td>GST <cite data-r="mills2022"></cite></td></tr>
+<tr><td>HRL 2023, exchange-only encoded qubits</td><td>CNOT 96.3%, SWAP 99.3%</td><td>RB <cite data-r="weinstein2023"></cite></td></tr>
+</tbody></table></div>
+<p>Two-qubit gates crossed the commonly quoted surface-code threshold, around 99%, in 2022 in several silicon devices at once. Since then the emphasis has moved to doing this in larger arrays, simultaneously and with mid-circuit measurements: error detection and parity checks on silicon qubits have been demonstrated <cite data-r="zhang2025qed,undseth2026"></cite>, and multi-qubit circuits on six-qubit arrays run end to end <cite data-r="fernandez2025"></cite>. The two qubits of this book are the unit cell of all of that.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the Bell-state fidelity is much lower than gate fidelities suggest, and the density matrix shows a strong |01⟩ or |10⟩ population.</p>
+<p><b>Likely causes:</b> imperfect initialization of one qubit, readout crosstalk (reading one qubit disturbs the other), or a population-swapping error in the CZ from too-fast ramps.</p>
+<p><b>What to do:</b> measure each qubit's readout with the other in both states, to check for crosstalk. Measure the probability of the partner flipping after a single CZ (Chapter 25). Repeat the tomography with the CZ replaced by an identity of the same length; that separates gate errors from everything else.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 24</span>
+<p>Bell |Φ+⟩ (Y90 ⊗ Y90, CZ, Y90 on Q2): raw 90.3%, readout-corrected 94.0% (MLE, 9 settings × 2000 shots).</p>
+<p>2Q RB (both qubits by Elzerman, sequential): F_C = 97.6%. IRB CZ: 99.3%. Total run 6 h with recalibration every 30 min.</p>
+<p>Q1 readout with Q2 in ↓ vs ↑: no difference within 0.2%.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 26</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Bell state |Φ<sup>+</sup>⟩</td><td>90.3% raw, 94.0% readout-corrected</td><td>Chapter 32</td></tr>
+<tr><td>Two-qubit Clifford fidelity</td><td>97.6%</td><td>Chapter 32</td></tr>
+<tr><td>CZ fidelity (IRB)</td><td>99.3%</td><td>Chapters 30, 32</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Measured along z, a two-qubit state gives 00 and 11 with probability ½ each, and never 01 or 10. Is it entangled?</p>
+<details><summary>Show answer</summary><div>Not necessarily. A classical mixture of |00⟩ and |11⟩ gives the same z statistics. Entanglement shows only in other bases: the Bell state also has perfect correlations along x (and anticorrelation along y), while the mixture shows no correlation there. This is why tomography needs pre-rotations.</div></details>
+<p>2. Why is the fully mixed limit of two-qubit RB ¼, not ½?</p>
+<details><summary>Show answer</summary><div>Two qubits have four basis states. In a completely depolarized state each is equally likely, so the probability of the expected outcome |00⟩ is ¼.</div></details>
+<p>3. A paper reports a 99.5% CZ fidelity from interleaved RB, and a 92% Bell-state fidelity. Are these inconsistent?</p>
+<details><summary>Show answer</summary><div>No. Interleaved RB isolates the gate and is insensitive to preparation and readout, while the Bell-state fidelity includes the preparation of the initial state and, if not corrected, the readout. A 92% Bell fidelity with a 99.5% gate points to SPAM errors of several percent.</div></details>
+</div>

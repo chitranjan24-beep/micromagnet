@@ -40,7 +40,7 @@
 </figure>
 <figure>
 <div class="figbody"><!--plot:tunnel-rates--></div>
-<figcaption>Left: the dot–reservoir tunnel rate of dot 2 versus the virtual barrier vB3, on a logarithmic scale, changing by one decade per about 30 mV. The bands mark the rate needed for Elzerman readout (Chapter 15) and the range where it becomes too slow for fast charge maps. Right: the interdot tunnel coupling t<sub>c</sub> versus the virtual barrier vB2, also exponential, here an e-fold per 10 mV.</figcaption>
+<figcaption>Left: the dot–reservoir tunnel rate of dot 2 versus the virtual barrier vB3, on a logarithmic scale, changing by one decade per about 30 mV. The bands mark the rate needed for Elzerman readout (Chapter 15) and the range where it becomes too slow for fast charge maps. Right: the interdot tunnel coupling t<sub>c</sub> versus the virtual barrier vB2, also exponential, here an e-fold per 10 mV, from 20 µeV at the readout setting to 0.4 µeV at the "off" setting used during single-qubit operation.</figcaption>
 </figure>
 <p>Different stages of the experiment want very different rates, which is why the barriers are re-tuned (or pulsed) between stages:</p>
 <div class="tablewrap"><table>
@@ -53,7 +53,7 @@
 </tbody></table></div>
 
 <h2>Interdot coupling versus barrier</h2>
-<p>The interdot tunnel coupling, controlled by the middle barrier B2, is just as exponential: HRL measured t<sub>c</sub> ∝ exp(V<sub>X</sub>/10.1 mV) for their interdot gate <cite data-r="borselli2015"></cite>. In our device, t<sub>c</sub> runs from below 1 µeV ("off") to well over 100 µeV over 60 mV of vB2 (Figure 12.4, right). That range matters for two reasons. For Pauli-blockade readout (Chapter 16), t<sub>c</sub> must be large enough for the singlet to tunnel quickly into (0,2), typically 10 to 50 µeV. For two-qubit gates, the exchange interaction J ≈ 4t<sub>c</sub>²/U, with U the charging energy, must be switchable from almost zero to megahertz, which requires exactly this exponential control (Chapter 24). The virtual barrier vB2, which changes t<sub>c</sub> without moving either dot, is the knob for both.</p>
+<p>The interdot tunnel coupling, controlled by the middle barrier B2, is just as exponential: HRL measured t<sub>c</sub> ∝ exp(V<sub>X</sub>/10.1 mV) for their interdot gate <cite data-r="borselli2015"></cite>. In our device, t<sub>c</sub> is 20 µeV at the setting used for readout, falls below 0.5 µeV ("off") 40 mV lower, and exceeds 100 µeV some 16 mV higher (Figure 12.4, right). That range matters for two reasons. For Pauli-blockade readout (Chapter 16), t<sub>c</sub> must be large enough for the singlet to tunnel quickly into (0,2), typically 10 to 50 µeV. For two-qubit gates, the exchange interaction J ≈ 4t<sub>c</sub>²/U, with U the charging energy, must be switchable from almost zero to megahertz, which requires exactly this exponential control (Chapter 24). The virtual barrier vB2, which changes t<sub>c</sub> without moving either dot, is the knob for both.</p>
 
 <h2>Pulsed-gate spectroscopy of excited states</h2>
 <p>One more measurement in the same family finds a dot's excited states without bias, which is useful once transport no longer works. Apply a square wave to the plunger that alternately lifts the dot level above the Fermi level and drops it below. With a small amplitude, only the ground state drops below the Fermi level, and electrons load into it at its tunnel rate. When the amplitude is large enough to pull an excited state below the Fermi level too, a second loading channel opens and the average sensor signal changes. The pulse amplitude at which that happens, times the lever arm, is the excited-state energy. Princeton measured orbital energies of about 3 meV in each of their nine dots this way <cite data-r="zajac2016"></cite>. The same idea, with spin states instead of orbitals, will be the basis of the spin readout in Chapter 15.</p>
@@ -67,7 +67,7 @@
 <div class="box notebook"><span class="tag">Lab notebook · day 8</span>
 <p>Detuning axis ε = vP2 − vP1 at the (1,0)–(0,1) transition, virtual gate "eps" created. PAT on P1, 2–40 GHz: hyperbola clear; gap 9.7 GHz → t_c = 20 µeV at vB2 = 0. Asymptote slope gives α_ε = 0.10 eV/V, agreeing with the diamonds.</p>
 <p>Γ(D2 ↔ right reservoir) vs vB3: one decade per 29 mV. Set vB3 so that Γ_in ≈ 22 kHz, Γ_out ≈ 33 kHz at the readout configuration. Same for D1 via vB1: ≈ 20 kHz.</p>
-<p>t_c vs vB2: e-fold per 10 mV. Parking value t_c = 20 µeV; "off" (vB2 = −25 mV) ≈ 1 µeV.</p>
+<p>t_c vs vB2: e-fold per 10 mV. Readout setting (vB2 = 0) t_c = 20 µeV; "off" (vB2 = −40 mV) ≈ 0.4 µeV.</p>
 </div>
 
 <div class="box passport"><span class="tag">Device passport · after Chapter 12</span>
@@ -75,7 +75,7 @@
 <thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
 <tbody>
 <tr><td>Detuning axis</td><td>ε = vP2 − vP1, α<sub>ε</sub> = 0.10 eV/V</td><td>Chapters 13, 16, 24</td></tr>
-<tr><td>Interdot tunnel coupling</td><td>t<sub>c</sub> = 20 µeV at parking; e-fold per 10 mV of vB2</td><td>Chapters 16, 24</td></tr>
+<tr><td>Interdot tunnel coupling</td><td>t<sub>c</sub> = 20 µeV at the readout setting (vB2 = 0); 0.4 µeV at vB2 = −40 mV; e-fold per 10 mV</td><td>Chapters 16, 24</td></tr>
 <tr><td>Dot–reservoir rates (readout setting)</td><td>D1 ≈ 20 kHz; D2: Γ<sub>in</sub> ≈ 22 kHz, Γ<sub>out</sub> ≈ 33 kHz</td><td>Chapter 15</td></tr>
 <tr><td>Rate sensitivity</td><td>one decade per ≈ 30 mV of vB1 / vB3</td><td>Chapters 15, 31</td></tr>
 <tr><td>Microwave delivery to P1</td><td>confirmed by PAT, 2–40 GHz</td><td>Chapter 18</td></tr>

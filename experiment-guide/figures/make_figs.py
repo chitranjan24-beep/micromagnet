@@ -578,13 +578,15 @@ def tunnel_rates():
     meas = np.arange(-35, 45, 7.0)
     ax.scatter(meas, 3 + meas / 29.5 + RNG.normal(0, 0.06, meas.size), 'f1', r=3.5, opacity=0.9)
     ax.line(V, np.log10(rate), 't1')
-    V2 = np.linspace(-30, 30, 300)
-    tc = 10 ** (1.0 + V2 / 23.3)   # ueV, e-fold per 10 mV
-    ax2 = Axes(330, 300, xlim=(-30, 30), ylim=(-0.5, 2.5), xlabel='virtual barrier vB2 (mV, relative)', ylabel='log₁₀ t_c (µeV)',
+    V2 = np.linspace(-45, 25, 300)
+    tc = 20.0 * np.exp(V2 / 10.0)   # ueV, e-fold per 10 mV, 20 ueV at the readout setting vB2 = 0
+    ax2 = Axes(330, 300, xlim=(-45, 25), ylim=(-0.7, 2.4), xlabel='virtual barrier vB2 (mV, relative)', ylabel='log₁₀ t_c (µeV)',
                title='interdot tunnel coupling', mr=12, yticks=[0, 1, 2])
     ax2.line(V2, np.log10(tc), 't3')
-    mt = np.arange(-26, 28, 6.0)
-    ax2.scatter(mt, 1.0 + mt / 23.3 + RNG.normal(0, 0.05, mt.size), 'f3', r=3.5, opacity=0.9)
+    mt = np.arange(-42, 24, 6.0)
+    ax2.scatter(mt, np.log10(20.0) + mt / 23.03 + RNG.normal(0, 0.05, mt.size), 'f3', r=3.5, opacity=0.9)
+    ax2.vline(0, 'thin dash', 'readout', ly=2.2)
+    ax2.vline(-40, 'thin dash', 'off', ly=2.2)
     save('tunnel-rates', row(ax.svg(), ax2.svg()))
 
 
@@ -1427,6 +1429,182 @@ def gst_budget():
     ax.line(np.array([-1, -1]), np.array([0, 0]), 't1', 'incoherent (decoherence)')
     ax.line(np.array([-1, -1]), np.array([0, 0]), 't2', 'coherent (calibration)')
     save('gst-budget', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- chapter 24: exchange
+U_MEV = 5.6
+
+
+def j_mhz(vb2):
+    """Exchange (MHz) vs virtual barrier vB2 (mV): J = 4 tc^2 / U, tc = 20 ueV exp(vB2/10 mV)."""
+    tc = 20.0 * np.exp(np.asarray(vb2, float) / 10.0)
+    return 4 * tc ** 2 / (U_MEV * 1e3) / H_UEV_GHZ * 1e3
+
+
+@fig
+def exchange_spectrum():
+    rng = np.random.default_rng(91)
+    vb = np.linspace(-40, -8, 161)
+    df = np.linspace(-14, 14, 281)       # MHz around Q1 at vB2 = -40
+    VB, DF = np.meshgrid(vb, df)
+    J = j_mhz(VB)
+    stark = 0.12 * (VB + 40)               # MHz: dot moves in the gradient when the barrier is pulsed
+    gam = 0.35
+    line = lambda c: gam ** 2 / ((DF - c) ** 2 + gam ** 2)
+    P = 0.5 * line(stark - J / 2) + 0.5 * line(stark + J / 2)
+    Pm = rng.binomial(100, np.clip(OFF_E + VIS_E * 0.5 * P, 0, 1)) / 100
+    ax = Axes(600, 360, xlim=(-40, -8), ylim=(-14, 14), xlabel='virtual barrier vB2 during the probe (mV)', ylabel='drive frequency − 15.420 GHz (MHz)', grid=False, mt=18)
+    ax.image(colormap(Pm[::-1], 'magma', 0, 0.45))
+    ax.text(-39, 11.5, 'Q2 ↑', 'sm', style='fill:#fff')
+    ax.text(-39, -12.5, 'Q2 ↓', 'sm', style='fill:#fff')
+    ax.text(-25, 11.5, 'splitting = J', 'sm', style='fill:#fff')
+    ax.text(-25, -12.5, 'common shift: the dot moves in the gradient', 'sm', style='fill:#fff')
+    save('exchange-spectrum', ax.svg())
+
+
+@fig
+def j_vs_barrier():
+    rng = np.random.default_rng(92)
+    vb = np.linspace(-45, -5, 200)
+    ax = Axes(330, 320, xlim=(-45, -5), ylim=(-2, 1.6), xlabel='virtual barrier vB2 (mV)', ylabel='log₁₀ J (MHz)', mt=18, mr=12, title='exchange versus barrier',
+              yticks=[-2, -1, 0, 1], yfmt=lambda v: {-2: '10 kHz', -1: '100 kHz', 0: '1 MHz', 1: '10 MHz'}.get(v, ''))
+    ax.line(vb, np.log10(j_mhz(vb)), 't1', 'J = 4t_c²/U, e-fold per 5 mV')
+    m1 = np.arange(-38, -26, 2.0)
+    ax.scatter(m1, np.log10(j_mhz(m1)) + rng.normal(0, 0.04, m1.size), 'f2', r=3.5, opacity=0.95, label='decoupled CPhase')
+    m2 = np.arange(-22, -6, 2.0)
+    ax.scatter(m2, np.log10(j_mhz(m2)) + rng.normal(0, 0.03, m2.size), 'f1', r=3.5, opacity=0.95, label='conditional spectroscopy')
+    ax.vline(-40, 'thin dash', 'off', ly=-1.85)
+    ax.vline(-13.1, 'thin dash', 'CZ', ly=1.35)
+    eps = np.linspace(-3, 3, 200)
+    rel = U_MEV ** 2 / (U_MEV ** 2 - eps ** 2)
+    ax2 = Axes(330, 320, xlim=(-3, 3), ylim=(0.9, 1.5), xlabel='detuning ε (meV)', ylabel='J(ε) / J(0)', mt=18, mr=12, title='exchange versus detuning')
+    ax2.line(eps, rel, 't3')
+    ax2.vline(0, 'thin dash', 'symmetry point', ly=1.45)
+    ax2.text(-2.8, 0.95, 'dJ/dε = 0 at ε = 0:', 'sm')
+    ax2.text(-2.8, 0.92, 'first-order protected', 'sm')
+    save('j-vs-barrier', row(ax.svg(legend_pos='br'), ax2.svg()))
+
+
+@fig
+def decoupled_cphase():
+    rng = np.random.default_rng(93)
+    T = np.linspace(0, 12, 121)          # us total exchange time
+    out = []
+    for vb, cls, fcls in [(-25, 't1', 'f1'), (-30, 't2', 'f2')]:
+        J = j_mhz(vb)
+        P = 0.5 * (1 + np.cos(np.pi * J * T) * np.exp(-(T / 25.0) ** 2))
+        Pm = rng.binomial(200, OFF_E + VIS_E * P) / 200
+        out.append((vb, J, cls, fcls, Pm))
+    ax = Axes(600, 300, xlim=(0, 12), ylim=(-0.03, 1.03), xlabel='total exchange time (µs)', ylabel='Q1 spin-up fraction', mt=18, yticks=[0, 0.5, 1])
+    tt = np.linspace(0, 12, 600)
+    for vb, J, cls, fcls, Pm in out:
+        ax.scatter(T, Pm, fcls, r=2.6, opacity=0.85)
+        ax.line(tt, OFF_E + VIS_E * 0.5 * (1 + np.cos(np.pi * J * tt) * np.exp(-(tt / 25.0) ** 2)), cls, f'vB2 = {vb} mV: J = {J * 1e3:.0f} kHz')
+    save('decoupled-cphase', ax.svg(legend_pos='br'))
+
+
+
+# ---------------------------------------------------------------- chapter 25: two-qubit gates
+@fig
+def cz_pulse():
+    T, Jmax = 200.0, 5.0                 # ns, MHz
+    t = np.linspace(-20, 220, 600)
+    win = np.where((t >= 0) & (t <= T), 0.5 * (1 - np.cos(2 * np.pi * t / T)), 0.0)
+    J = j_mhz(-40) + (Jmax - j_mhz(-40)) * win
+    vb = 5.0 * np.log(J / 69.1)
+    ax = Axes(330, 300, xlim=(-20, 220), ylim=(0, 5.6), xlabel='time (ns)', ylabel='J (MHz)', title='the exchange we want', mr=12)
+    ax.line(t, J, 't1')
+    ax.text(10, 5.15, 'cosine window, ∫J dt = ½ → 200 ns', 'sm')
+    ax2 = Axes(330, 300, xlim=(-20, 220), ylim=(-42, -10), xlabel='time (ns)', ylabel='vB2 (mV)', title='the barrier pulse that gives it', mr=12)
+    ax2.line(t, vb, 't2')
+    ax2.text(10, -12.5, 'vB2 = 5 mV × ln(J/69 MHz)', 'sm')
+    ax2.text(10, -38.5, 'off: −40 mV', 'sm')
+    save('cz-pulse', row(ax.svg(), ax2.svg()))
+
+
+@fig
+def crot_sync():
+    r = np.linspace(0.3, 9, 2000)                     # J / f_R
+    P = 1 / (1 + r ** 2) * np.sin(np.pi * np.sqrt(1 + r ** 2) / 2) ** 2
+    ax = Axes(600, 300, xlim=(0, 9), ylim=(-4.2, 0.1), xlabel='J / f_R', ylabel='log₁₀ off-resonant error', mt=18,
+              yticks=[-4, -3, -2, -1, 0])
+    ax.line(r, np.log10(P + 1e-5), 't1')
+    for n in range(1, 5):
+        z = np.sqrt(4 * n ** 2 - 1)
+        ax.vline(z, 'thin dash', f'√{4 * n * n - 1}', ly=-0.25)
+    ax.text(4.0, -3.5, 'RIKEN chose √15', 'sm')
+    save('crot-sync', ax.svg())
+
+
+
+# ---------------------------------------------------------------- chapter 26: Bell states and two-qubit benchmarking
+def _bell_rho(F):
+    phi = np.array([1, 0, 0, 1]) / np.sqrt(2)
+    return F * np.outer(phi, phi) + (1 - F) * np.eye(4) / 4
+
+
+def _rho_grid(ax, rho, x0, y0, cell, title):
+    parts = [f'<text class="ttl" x="{x0}" y="{y0 - 12}">{title}</text>']
+    labs = ['00', '01', '10', '11']
+    for i in range(4):
+        parts.append(f'<text class="sm" x="{x0 - 8}" y="{y0 + (i + 0.6) * cell}" text-anchor="end">{labs[i]}</text>')
+        parts.append(f'<text class="sm" x="{x0 + (i + 0.5) * cell}" y="{y0 + 4 * cell + 16}" text-anchor="middle">{labs[i]}</text>')
+        for j in range(4):
+            v = rho[i, j]
+            op = min(1.0, abs(v) / 0.5)
+            col = 'var(--sig-i)' if v >= 0 else 'var(--sig-q)'
+            parts.append(f'<rect x="{x0 + j * cell + 1}" y="{y0 + i * cell + 1}" width="{cell - 2}" height="{cell - 2}" rx="3" style="fill:{col};fill-opacity:{0.08 + 0.75 * op:.2f};stroke:var(--rule)"/>')
+            parts.append(f'<text class="sm" x="{x0 + (j + 0.5) * cell}" y="{y0 + (i + 0.58) * cell}" text-anchor="middle">{v:.2f}</text>')
+    return ''.join(parts)
+
+
+@fig
+def bell_tomography():
+    rng = np.random.default_rng(101)
+    rho_c = _bell_rho(0.94)
+    rho_c[0, 3] = rho_c[3, 0] = rho_c[0, 3] - 0.015
+    rho_c[1, 1] += 0.01; rho_c[2, 2] -= 0.01
+    # raw: apply readout errors (assignment) to the diagonal and shrink the coherences by the visibilities
+    Vq = 0.973
+    rho_r = rho_c.copy()
+    for i in range(4):
+        for j in range(4):
+            if i != j:
+                rho_r[i, j] *= Vq ** 2 if (i, j) in [(0, 3), (3, 0)] else Vq
+    d = np.diag(rho_c)
+    M1 = np.array([[0.997, 0.024], [0.003, 0.976]])
+    M = np.kron(M1, M1)
+    dr = M @ d
+    for i in range(4):
+        rho_r[i, i] = dr[i]
+    cell = 46
+    svg = [f'<svg viewBox="0 0 640 290" width="640" role="img" xmlns="http://www.w3.org/2000/svg">']
+    svg.append(_rho_grid(None, rho_r, 60, 50, cell, 'raw (readout errors included)'))
+    svg.append(_rho_grid(None, rho_c, 380, 50, cell, 'corrected for readout'))
+    f_raw = 0.5 * (rho_r[0, 0] + rho_r[3, 3] + 2 * rho_r[0, 3])
+    f_cor = 0.5 * (rho_c[0, 0] + rho_c[3, 3] + 2 * rho_c[0, 3])
+    svg.append(f'<text class="sm" x="60" y="282">Bell-state fidelity {100 * f_raw:.1f}% (raw), {100 * f_cor:.1f}% (corrected); real part of ρ shown</text>')
+    svg.append('</svg>')
+    save('bell-tomography', ''.join(svg))
+
+
+@fig
+def rb2q_decay():
+    rng = np.random.default_rng(102)
+    ms = np.array([1, 2, 3, 4, 6, 8, 10, 13, 16, 20, 25, 30, 40, 50, 60, 80])
+    p_ref = 1 - 0.024 * 4 / 3
+    p_cz = 1 - 0.007 * 4 / 3
+    A, B = 0.64, 0.25
+    ax = Axes(600, 320, xlim=(0, 80), ylim=(0.2, 0.95), xlabel='number of two-qubit Cliffords m', ylabel='probability of returning to |00⟩', mt=18)
+    for p, cls, fcls, lab in [(p_ref, 't1', 'f1', 'reference: F_C = 97.6%'), (p_ref * p_cz, 't2', 'f2', 'interleaved with CZ: F_CZ = 99.3%')]:
+        for m in ms:
+            seqs = B + A * p ** m + rng.normal(0, 0.006 + 0.02 * (1 - p ** m), 20)
+            ax.scatter(np.full(20, m), np.clip(seqs, 0, 1), fcls, r=1.8, opacity=0.35)
+        mm = np.linspace(0, 80, 300)
+        ax.line(mm, B + A * p ** mm, cls, lab)
+    ax.hline(0.25, 'thin dash', 'fully mixed: ¼', lx=62)
+    save('rb2q-decay', ax.svg(legend_pos='tr'))
 
 
 # ================================================================ main

@@ -1,0 +1,80 @@
+<!--meta {"id": "exchange", "part": "Part G · Two qubits", "title": "Exchange: making two spins talk"}-->
+
+<p class="lede">Two single qubits, however good, do not make a computer. They need an interaction that can be switched on hard for a two-qubit gate and switched off almost completely the rest of the time. Spin qubits get it from the same tunnelling that the previous chapters measured and tuned: when two electrons can hop between their dots, their energy depends on their relative spin orientation. This chapter explains where that exchange interaction comes from, how it looks in a device with a micromagnet, how to measure it over three orders of magnitude, and how to control it with the barrier gate at a point where it is protected from charge noise.</p>
+
+<h2>Where exchange comes from</h2>
+<p>Put one electron in each dot, in (1,1). If the tunnel coupling t<sub>c</sub> is not zero, each electron can make a brief virtual excursion into the other dot, into (0,2) or (2,0), and come back. That excursion is possible only if the two spins form a singlet, because two electrons in the same orbital must have opposite spins (Chapter 16). The singlet therefore gains a little energy from these virtual hops, by second-order perturbation, while the triplets do not. The energy difference between triplet and singlet is the <dfn data-def="The energy difference J between the triplet and singlet states of two spins in neighbouring dots, from virtual tunnelling; switched by the barrier gate for two-qubit gates.">exchange energy</dfn> J, and the two spins behave as if coupled by <cite data-r="lossdiv,burkard2023"></cite></p>
+\[ H_J = J\left(\mathbf{S}_1\cdot\mathbf{S}_2 - \tfrac{1}{4}\right), \qquad J \approx \frac{4t_c^2}{U} \text{ at the symmetric point,} \]
+<p>where U is the energy cost of the doubly occupied state, the charging energy reduced by the interdot charging energy, about 5.6 meV in our device. This simple Hubbard estimate captures the essential behaviour, the quadratic dependence on t<sub>c</sub>, but real dots deviate from it, especially at large J, where the orbitals deform <cite data-r="willmes2026"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: how small t<sub>c</sub> must be</span>
+<p>At the readout setting, t<sub>c</sub> = 20 µeV and J = 4 × (20 µeV)²/5.6 meV ≈ 0.29 µeV ≈ 69 MHz. Far too strong to leave on.</p>
+<p>For J = 5 MHz, a convenient value for a two-qubit gate, t<sub>c</sub> must be about 5.4 µeV. For J below 30 kHz, "off", t<sub>c</sub> must be below 0.42 µeV.</p>
+<p>With t<sub>c</sub> changing by a factor e for every 10 mV of vB2 (Chapter 12), J changes by e for every 5 mV. Going from 5 MHz to 23 kHz, a factor of 220, takes 27 mV of barrier: vB2 = −13 mV for the gate, −40 mV for off.</p>
+</div>
+
+<h2>Exchange in a magnetic-field gradient</h2>
+<p>In our device the two qubits differ in frequency by ΔE<sub>Z</sub>/h = 300 MHz, much more than the J of a few megahertz we will use. Exchange tries to mix the antiparallel states ↑↓ and ↓↑ into singlet and triplet, but a large Zeeman difference keeps them apart. The flip-flop part of the interaction is suppressed by the ratio J/ΔE<sub>Z</sub>, and what remains is an Ising-type coupling: the energy of each qubit depends on the state of the other <cite data-r="russ2018"></cite>. In the spectrum, each qubit's resonance splits into two lines, separated by J, one for each state of the partner. RIKEN's analysis gives the four transition frequencies as E<sub>Z</sub> ± (ΔẼ<sub>Z</sub> ± J)/2 with ΔẼ<sub>Z</sub> = √(ΔE<sub>Z</sub>² + J²) <cite data-r="noiri2022"></cite>.</p>
+<p>This is good news. The conditional energy shift is exactly what a controlled-phase gate needs (Chapter 25), and it can be read directly from the qubits' spectrum (Figure 24.1).</p>
+<figure>
+<div class="figbody"><!--plot:exchange-spectrum--></div>
+<figcaption>The resonance of qubit 1 as the barrier is opened (simulated). Qubit 2 is in a mixed state, so both conditional lines appear, each with half the contrast. Below vB2 ≈ −30 mV the splitting is smaller than the linewidth. Above it, the line splits by J, which grows exponentially with vB2. Both lines also move together, by 0.12 MHz/mV, because the barrier pulse shifts the electron in the micromagnet's gradient.</figcaption>
+</figure>
+
+<h2>Measuring J from 10 kHz to 20 MHz</h2>
+<p>No single method covers the whole range, because J changes by three orders of magnitude. Two complement each other.</p>
+<ul>
+<li><b>Conditional spectroscopy</b> (J ≳ 1 MHz). Prepare qubit 2 in ↓ or ↑, pulse the barrier, and find qubit 1's resonance with a weak drive during the pulse. The difference between the two frequencies is J. Princeton measured J this way, with a long, low-power probe on the left qubit, and found that 20 mV on their barrier changed J by about 10 MHz <cite data-r="zajac2018"></cite>.</li>
+<li><b>Decoupled controlled-phase oscillations</b> (J from about 10 kHz to 1 MHz). Put qubit 1 on the equator, pulse the barrier for half the time, apply π pulses to both qubits, pulse the barrier again, and project with a final π/2 pulse. The π pulses cancel all single-qubit phases, from the gradient shifts and from slow noise, but not the conditional phase, which oscillates at J/2 as a function of the total exchange time (Figure 24.3). QuTech used this sequence on their six-qubit device <cite data-r="philips2022"></cite>.</li>
+</ul>
+<figure>
+<div class="figbody"><!--plot:j-vs-barrier--></div>
+<figcaption>Left: exchange versus the virtual barrier (simulated measurements). Decoupled controlled-phase measurements (orange) cover the low range and conditional spectroscopy (blue) the high range. Both fall on one exponential, an e-fold per 5 mV. The "off" setting at −40 mV gives J = 23 kHz; the CZ gate uses 5 MHz at −13 mV. Right: at fixed barrier, J grows as the detuning moves away from the symmetry point in either direction. At ε = 0 its slope vanishes.</figcaption>
+</figure>
+<figure>
+<div class="figbody"><!--plot:decoupled-cphase--></div>
+<figcaption>Decoupled controlled-phase oscillations of qubit 1 at two barrier settings (simulated). The oscillation frequency is J/2 per unit of total exchange time: 465 kHz at −25 mV and 171 kHz at −30 mV. Smaller couplings, down to about 10 kHz, need proportionally longer times and are limited by the echo coherence.</figcaption>
+</figure>
+<p>A practical recipe, close to QuTech's: measure J where it is large and easy, in the upper part of the barrier range; fit an exponential; extrapolate to set the pulse amplitudes for any J you need; then check a few low values with decoupled oscillations <cite data-r="philips2022"></cite>. The fit, J(vB2), is a calibrated function, not a number, and it drifts: it is re-measured as part of the daily calibration.</p>
+
+<h2>Barrier control and the symmetry point</h2>
+<p>There are two ways to make J larger. One is to tilt the double dot towards (0,2) or (2,0) with the detuning, which lowers the energy cost of the virtual hop. This is how exchange was first controlled, and how singlet–triplet qubits are often operated (Chapter 27). The other is to raise t<sub>c</sub> with the barrier, keeping the dots level at ε = 0. At that point J depends on ε only quadratically (Figure 24.2, right): small charge-noise fluctuations of the detuning do not change J to first order. This symmetric operation, introduced for singlet–triplet qubits in GaAs and adopted by HRL and others, gave a large improvement in the quality of exchange oscillations <cite data-r="martins2016,reed2016"></cite>. Princeton's CNOT and QuTech's high-fidelity two-qubit gates operate there <cite data-r="zajac2018,xue2022"></cite>.</p>
+<p>The symmetry point has to be found, not assumed. QuTech did it by sweeping the detuning during decoupled exchange pulses inside a Ramsey sequence: the resulting pattern is symmetric about the symmetry point <cite data-r="xue2022"></cite>. Two details matter. The barrier must be pulsed as a virtual gate, with compensating pulses on both plungers, or the barrier pulse itself would detune the dots (Chapter 11). And the pulses need the pre-distortion of Chapter 13: because J depends exponentially on the barrier, a 1% overshoot of a 27 mV barrier pulse changes J by about 5%.</p>
+
+<h2>Side effects of a barrier pulse</h2>
+<ul>
+<li><b>Single-qubit phases.</b> Opening the barrier moves both electrons slightly, along the micromagnet's gradient, and their frequencies shift by about 0.12 MHz/mV (Figure 24.1). During a gate pulse, each qubit therefore picks up a phase of its own, unrelated to the other's state. It is large, but it is reproducible, and is cancelled by virtual Z corrections or by echo pulses (Chapter 25). QuTech found these shifts linear in the barrier voltage <cite data-r="xue2022"></cite>.</li>
+<li><b>Charge noise on J.</b> Because J depends exponentially on the barrier, voltage noise at the barrier is noise on J: dJ/dV = J/(5 mV). Slow charge noise equivalent to 0.4 mV, which QuTech estimated from conditional dephasing, changes a 5 MHz J by 0.4 MHz <cite data-r="xue2022"></cite>. That is why gates use the smallest J that is still fast enough, and why the quality of exchange oscillations, the number of periods before they decay, is a figure of merit for a two-qubit gate.</li>
+<li><b>The residual coupling.</b> At "off", J = 23 kHz, not zero. Over a 1 µs idle, that accumulates a conditional phase of 2π × 23 kHz × 1 µs ≈ 8°. For good idles and single-qubit gates, the on/off ratio must be large, at least a hundred. QuTech reached J<sub>off</sub> ≲ 30–50 kHz only by pulsing neighbouring barriers negative as well <cite data-r="philips2022"></cite>.</li>
+</ul>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> J cannot be turned off: even at the most negative barrier you can safely apply, the conditional splitting stays above 200 kHz.</p>
+<p><b>Likely causes:</b> the dots are too close or too large; the barrier gate has a weak lever arm on the tunnel coupling; or the dots are not at the symmetry point but tilted, where J is larger.</p>
+<p><b>What to do:</b> check the detuning first, by finding the symmetry point at a moderate J. Use neighbouring gates in the virtual barrier: plungers pulled slightly negative make the dots smaller and the barrier wider. If none of this works, the residual coupling must be included in the circuit design, for example by echoing it out during idles.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 21</span>
+<p>Single-qubit operation now at vB2 = −40 mV. Conditional spectroscopy −22…−6 mV + decoupled CPhase −38…−26 mV: J = 69 MHz × exp(vB2/5.0 mV), i.e. 23 kHz off, 5.0 MHz at −13.1 mV.</p>
+<p>Symmetry point: ε offset +0.18 mV (virtual detuning) from the nominal centre; set.</p>
+<p>Barrier-induced frequency shift: Q1 +0.12 MHz/mV, Q2 +0.09 MHz/mV (linear).</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 24</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Exchange law</td><td>J = 69 MHz × exp(vB2/5 mV) (vB2 relative to the readout setting)</td><td>Chapter 25</td></tr>
+<tr><td>J off / on</td><td>23 kHz at −40 mV; 5 MHz at −13.1 mV; on/off ratio 220</td><td>Chapters 25, 26</td></tr>
+<tr><td>Symmetry point</td><td>ε offset +0.18 mV</td><td>Chapter 25</td></tr>
+<tr><td>Barrier-induced shifts</td><td>Q1 +0.12 MHz/mV, Q2 +0.09 MHz/mV</td><td>Chapter 25</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why does exchange favour the singlet, and not the triplet?</p>
+<details><summary>Show answer</summary><div>Exchange comes from virtual hops into the doubly occupied dot. Two electrons in the same orbital must be in a spin singlet (Pauli exclusion), so only the singlet component can make the hop and gain the second-order energy shift. The triplets cannot, so they stay at their unshifted energy, and the singlet ends up lower by J.</div></details>
+<p>2. The tunnel coupling at the CZ setting doubles because of a gate drift. What happens to J and to a CZ gate calibrated before the drift?</p>
+<details><summary>Show answer</summary><div>J ∝ t<sub>c</sub>², so J quadruples, from 5 to 20 MHz. A pulse calibrated to give ∫J dt = ½ now gives 2, a conditional phase of 4π instead of π: completely wrong. This is why J(V) is recalibrated regularly.</div></details>
+<p>3. Why is the flip-flop part of exchange suppressed in our device, and why is that useful?</p>
+<details><summary>Show answer</summary><div>The flip-flop term swaps ↑↓ and ↓↑, but these differ in energy by ΔE<sub>Z</sub> = 300 MHz, so a coupling of J ≈ 5 MHz cannot drive the transition efficiently. Only the diagonal, Ising-like part remains, which shifts each qubit's energy depending on the other: a controlled phase, which is a natural two-qubit gate and does not move population between the qubits.</div></details>
+</div>
