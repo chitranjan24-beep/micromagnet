@@ -1,0 +1,81 @@
+<!--meta {"id": "diamonds", "part": "Part C · First signs of life", "title": "Coulomb diamonds, lever arms and electron temperature"}-->
+
+<p class="lede">Gate voltages are what you control, but energies are what matter. The measurement that converts one into the other is bias spectroscopy, which produces the diamond-shaped patterns that appear in almost every quantum-dot thesis. From one diamond plot you get the lever arm, the charging energy and the orbital spacing. From the width of a single Coulomb peak you then get the electron temperature. Every later chapter uses these numbers.</p>
+
+<h2>Bias spectroscopy</h2>
+<p>In Chapter 7, Coulomb peaks were measured with almost no bias across the dot: a peak appears only when the dot's electrochemical potential μ(N) lines up exactly with the Fermi level of the reservoirs. Now apply a finite source–drain bias V<sub>SD</sub>. The source and drain Fermi levels separate by eV<sub>SD</sub>, opening a <em>bias window</em>, and current flows whenever some μ(N) lies inside that window. Sweep the plunger and the bias together, plot the differential conductance dI/dV<sub>SD</sub>, and the regions of blockade appear as diamonds (Figure 8.1).</p>
+<figure>
+<div class="figbody"><!--plot:diamonds--></div>
+<figcaption>Coulomb diamonds of dot 1 in the few-electron regime (simulated with E<sub>C</sub> = 6.5 meV, α = 0.10 eV/V, and an excited orbital 3 meV above the ground state). Inside each dark diamond the number of electrons is fixed and no current flows. The bright edges mark where a level enters the bias window. The fainter lines running parallel to the edges, inside the conducting regions, come from transport through the excited orbital. To the left of the N = 0 → 1 transition, the blockaded region never closes, because there is no lower transition: the dot is empty.</figcaption>
+</figure>
+<p>The geometry of a diamond follows from requiring μ(N) to sit at the edge of the bias window. Inside a diamond, μ(N) is below both reservoirs and μ(N+1) is above both, so the electron number is fixed. The diamond closes at a bias equal to the energy needed to add one more electron, the <dfn data-def="The difference μ(N+1) − μ(N): the charging energy plus any single-particle level spacing. It sets the height of a Coulomb diamond in bias and its width in gate voltage.">addition energy</dfn> E<sub>add</sub> = E<sub>C</sub> + ΔE. Its width along the gate axis, at zero bias, is the peak spacing of Chapter 7, E<sub>add</sub>/(eα). Dividing height by width gives the lever arm directly:</p>
+\[ \alpha = \frac{V_{SD}^{\text{tip}}}{\Delta V_g}, \]
+<p>where V<sub>SD</sub><sup>tip</sup> is the bias at the diamond's tip and ΔV<sub>g</sub> its width at zero bias. An equivalent method uses the slopes m<sub>S</sub> and m<sub>D</sub> of the two edges of a diamond, which works even when the diamond is not symmetric because the bias is applied to only one side <cite data-r="connors2019"></cite>:</p>
+\[ \alpha = \left|\frac{m_S\, m_D}{m_S - m_D}\right|. \]
+<div class="box numbers"><span class="tag">Worked numbers: reading Figure 8.1</span>
+<p>The N = 1 diamond spans P1 = 450 to 515 mV, so ΔV<sub>g</sub> = 65 mV, and closes at V<sub>SD</sub> ≈ 6.5 mV. The lever arm is α = 6.5/65 = 0.10, i.e. 0.10 eV/V or 100 µeV per mV.</p>
+<p>The addition energy for the second electron is E<sub>add</sub> = eV<sub>SD</sub><sup>tip</sup> = 6.5 meV. Since the first two electrons share the lowest orbital (spin up and spin down), this is the charging energy.</p>
+<p>The excited-state line meets the diamond edge at a bias of 3 mV, so the first excited orbital lies 3 meV above the ground state. Our dot is small and steep: comparable values have been reported in overlapping-gate Si/SiGe devices <cite data-r="zajac2016"></cite>.</p>
+</div>
+
+<h2>Excited states, shells and valleys</h2>
+<p>The faint lines inside the conducting regions are not a nuisance; they are spectroscopy. When the bias window is wide enough to include an excited state of the dot as well as the ground state, a second transport channel opens and the current steps up. The bias at which the step appears gives the excitation energy directly. In our device the first excited orbital is 3 meV up, far above anything else that matters, which is exactly what a qubit dot should have.</p>
+<p>Following the addition energy from one electron number to the next reveals the dot's shell structure. In a silicon dot, each orbital can hold four electrons: two spins times two valley states. If the valley splitting is large, the addition energies show a small bump after two electrons (the lower valley full) and a larger one after four (the whole orbital shell full). Princeton saw exactly such a bump at the 4 → 5 transition in all nine dots of their array <cite data-r="zajac2016"></cite>. Valley splittings of a few hundred µeV are small compared with charging energies, though, so diamonds rarely measure them precisely. Chapter 14 uses better methods.</p>
+
+<h2>Is the dot really empty?</h2>
+<p>The diamond to the left of the first transition in Figure 8.1 never closes. That is what an empty dot looks like: there is no further electron to remove, so no further transition bounds the blockade. It is tempting to conclude from transport alone that the dot is empty, and in very clean devices, transport can indeed be followed down to the last electron <cite data-r="zajac2016"></cite>. But there is a trap. As the dot empties, it also shrinks, its tunnel barriers grow thicker, and the current through it can fall below the measurement noise even though electrons remain. Peaks that simply disappear are not proof of N = 0. Proof comes from a charge sensor, which sees an electron leave the dot whether or not any current flows through it (Chapters 9 and 11).</p>
+
+<h2>Electron temperature from a Coulomb peak</h2>
+<p>A Coulomb peak has a finite width because the reservoirs' Fermi distributions do. When the tunnel coupling is weak enough that the level's lifetime broadening hΓ is much smaller than k<sub>B</sub>T<sub>e</sub>, the peak shape is set purely by temperature <cite data-r="beenakker1991"></cite>:</p>
+\[ G(V_g) \propto \cosh^{-2}\!\left(\frac{e\,\alpha\,(V_g - V_0)}{2\,k_B T_e}\right), \qquad \text{FWHM} = 3.53\,\frac{k_B T_e}{e\,\alpha}. \]
+<p>The lever arm enters because the peak is measured in gate voltage but broadened in energy. This is one reason it is measured first.</p>
+<figure>
+<div class="figbody"><!--plot:te-fit--></div>
+<figcaption>Measuring the electron temperature. Left: simulated Coulomb peaks at 50 mK and 200 mK, the second four times wider. Right: the measured peak width (points) as the mixing chamber is heated. At high temperature the width follows the ideal line T<sub>e</sub> = T<sub>MXC</sub>. At low temperature it saturates, because the electrons stop following the fridge. The saturation value gives the base electron temperature, here about 50 mK.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: what width to expect</span>
+<p>At T<sub>e</sub> = 50 mK, k<sub>B</sub>T<sub>e</sub> = 4.3 µeV. With α = 0.10 eV/V the FWHM is 3.53 × 4.3 µeV / 0.10 eV/V ≈ 152 µV, about 0.15 mV on the plunger.</p>
+<p>At 200 mK the peak would be 0.61 mV wide. If you see 0.6 mV wide peaks at base temperature, your electrons are at about 200 mK, and Chapter 4's checklist applies.</p>
+</div>
+<p>Three conditions must be satisfied for the width to mean temperature, and each is a classic source of error:</p>
+<ol>
+<li><b>Lifetime broadening must be negligible.</b> If the barriers are too open, the peak gets an extra Lorentzian width hΓ. Close the barriers until the width stops decreasing; only then is the width thermal.</li>
+<li><b>The excitation must be small.</b> An AC excitation comparable to k<sub>B</sub>T<sub>e</sub>/e (about 4 µV here) broadens the peak itself. Use a few microvolts, or measure at zero bias with a charge sensor.</li>
+<li><b>The measurement must not heat what it measures.</b> A sensor excitation that is too large warms the reservoirs. Princeton found T<sub>e</sub> rising steadily once their sensor excitation exceeded about 85 µV peak to peak <cite data-r="mills2022ro"></cite>.</li>
+</ol>
+<p>The most reliable version of this measurement, used once a charge sensor works, watches the occupation of a qubit dot as its level is swept through the reservoir's Fermi level. The time-averaged occupation then traces out the Fermi function directly, with no transport through the dot at all. Princeton found 120 mK this way in an early device <cite data-r="zajac2016"></cite>, and later 45 mK after improving thermalization <cite data-r="mills2022ro"></cite>.</p>
+
+<h2>The sensor dot gets the same treatment</h2>
+<p>The sensor channel's dot is characterized in exactly the same way: a barrier–barrier map to form it, diamonds to measure its lever arm and charging energy. Our sensor dot is larger than the qubit dots, by design. That gives it a smaller charging energy (about 4 meV), a smaller lever arm from its plunger (about 0.08 eV/V), and broad, strongly conducting peaks, which make a good sensor (Chapter 9).</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the diamonds do not close cleanly. Their edges are broken into segments, or extra diamonds of different sizes overlap.</p>
+<p><b>Likely cause:</b> more than one dot in series, often a disorder dot under a barrier in addition to the intended one. Two dots in series produce a pattern of overlapping or irregular diamonds instead of a regular chain.</p>
+<p><b>What to do:</b> return to the barrier–barrier map (Chapter 7) and find settings where only one set of resonances appears, typically by opening the suspect barrier slightly.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 3</span>
+<p>Diamonds on dot 1, followed from N ≈ 15 down: spacing grows from 21 mV to 65 mV. Last three diamonds: α_P1 = 0.100 ± 0.005 eV/V, E_add(1→2) = 6.5 meV, excited orbital ≈ 3 meV. No peaks below P1 ≈ 450 mV, but current was already ~50 fA on the last peak, so N = 0 not confirmed. Will check with the sensor.</p>
+<p>Peak width at base with 5 µV excitation: 0.155 mV → T_e ≈ 51 mK. Heating MXC to 300 mK: width follows T_MXC above ≈ 100 mK. Dot 2 (P2) similarly: α_P2 = 0.10 eV/V. Sensor dot: α_SP = 0.08 eV/V, E_C ≈ 4 meV.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 8</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Plunger lever arms</td><td>α<sub>P1</sub> = α<sub>P2</sub> = 0.10 eV/V; α<sub>SP</sub> = 0.08 eV/V</td><td>everywhere</td></tr>
+<tr><td>Charging energy (qubit dots)</td><td>6.5 meV (few electrons)</td><td>Chapters 11, 12</td></tr>
+<tr><td>Orbital spacing</td><td>≈ 3 meV</td><td>Chapters 14, 16</td></tr>
+<tr><td>Sensor dot</td><td>E<sub>C</sub> ≈ 4 meV</td><td>Chapter 9</td></tr>
+<tr><td>Electron temperature</td><td>T<sub>e</sub> ≈ 50 mK at T<sub>MXC</sub> = 10 mK</td><td>Chapters 15, 17</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A diamond is 40 mV wide in plunger voltage and closes at 2.4 mV of bias. What are the lever arm and the addition energy?</p>
+<details><summary>Show answer</summary><div>α = 2.4/40 = 0.06 eV/V, and E<sub>add</sub> = 2.4 meV.</div></details>
+<p>2. A Coulomb peak measured with α = 0.06 eV/V has a FWHM of 0.5 mV. What electron temperature does that imply, assuming thermal broadening? What would you check before believing it?</p>
+<details><summary>Show answer</summary><div>k<sub>B</sub>T<sub>e</sub> = FWHM × eα / 3.53 = 0.5 mV × 0.06 / 3.53 ≈ 8.5 µeV, so T<sub>e</sub> ≈ 99 mK. Before believing it, check that the width does not shrink when the barriers are closed further (no lifetime broadening), that the excitation is a few µV or less, and that the width follows the fridge temperature when the fridge is heated.</div></details>
+<p>3. Why is the disappearance of Coulomb peaks in transport not sufficient proof that a dot is empty?</p>
+<details><summary>Show answer</summary><div>As the dot empties and shrinks, its tunnel barriers become thicker and the current through each remaining peak falls exponentially. Peaks can drop below the measurement noise while electrons are still in the dot. A charge sensor detects the electron number directly, regardless of whether current can flow through the dot.</div></details>
+</div>

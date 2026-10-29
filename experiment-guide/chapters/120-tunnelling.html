@@ -1,0 +1,92 @@
+<!--meta {"id": "tunnelling", "part": "Part D · Seeing single electrons fast", "title": "Tunnelling: rates, couplings and spectroscopy"}-->
+
+<p class="lede">How fast an electron can hop between a dot and its reservoir, and how strongly it is coupled to the neighbouring dot, decide almost everything that comes next. Spin readout needs the dot–reservoir rate in a narrow window. Pauli-blockade readout needs a suitable interdot coupling. The exchange interaction behind two-qubit gates is tunnelling in disguise. This chapter measures and sets these rates, and on the way introduces two powerful tools: the detuning axis and photon-assisted tunnelling.</p>
+
+<h2>The detuning axis</h2>
+<p>Zoom in on one interdot transition of the stability diagram, the one between (1,0) and (0,1). Moving along the transition line changes the total energy of both configurations together. Moving across it changes their energy difference. That difference is the <dfn data-def="The energy difference between two charge configurations of a double dot that differ by one electron moving between the dots, e.g. (1,1) and (0,2); controlled by pulsing the plungers in opposite directions.">detuning</dfn> ε, and the direction in gate space that changes ε without changing the total is the detuning axis. With virtual gates it is simply vP2 − vP1, scaled so that ε is in units of energy:</p>
+\[ \varepsilon = e\,\alpha\,(\delta v_{P2} - \delta v_{P1}) \quad \text{(for equal lever arms } \alpha\text{)}. \]
+<p>Every operation near an interdot transition is described along this axis: initialization, readout, exchange. It is worth setting up a virtual detuning gate in the software, together with its orthogonal partner (both plungers moving together), so that pulses can be programmed directly in ε.</p>
+
+<h2>Tunnel coupling and the interdot anticrossing</h2>
+<p>If the two dots were not coupled at all, the electron would sit in dot 1 for ε &lt; 0 and in dot 2 for ε &gt; 0, with an abrupt switch at ε = 0, smeared only by temperature. With a tunnel coupling t<sub>c</sub> between them, the two charge states mix near ε = 0 into bonding and antibonding molecular states, separated by</p>
+\[ \Omega = \sqrt{\varepsilon^2 + 4t_c^2}. \]
+<p>The electron's position, which is what the sensor measures, then changes smoothly across a width set by t<sub>c</sub> (Figure 12.1). In thermal equilibrium the probability of finding it in dot 2 is <cite data-r="dicarlo2004"></cite></p>
+\[ P_2(\varepsilon) = \frac{1}{2}\left[1 + \frac{\varepsilon}{\Omega}\tanh\!\left(\frac{\Omega}{2k_BT_e}\right)\right]. \]
+<figure>
+<div class="figbody"><!--plot:interdot-polarization--></div>
+<figcaption>Charge polarization across the interdot transition at T<sub>e</sub> = 50 mK, for three tunnel couplings. For t<sub>c</sub> = 2 µeV, below the thermal energy of 4.3 µeV, the width is set by temperature. For larger t<sub>c</sub> the transition broadens in proportion to t<sub>c</sub>, so its width measures the tunnel coupling directly.</figcaption>
+</figure>
+<p>Fitting a sensor trace across the transition with this formula gives t<sub>c</sub>, as long as t<sub>c</sub> is not much smaller than k<sub>B</sub>T<sub>e</sub>. Then temperature dominates, and the fit only gives an upper bound. Larger couplings also visibly round the corners of the honeycomb cells, and HRL extracted t<sub>c</sub> from that curvature <cite data-r="borselli2015"></cite>. For accurate values, especially in the range that matters for qubits, a frequency measurement is better.</p>
+
+<h2>Photon-assisted tunnelling</h2>
+<p>Apply a continuous microwave tone of frequency f to one of the plungers, and sweep the detuning. Wherever the photon energy hf matches the splitting Ω between the bonding and antibonding states, the microwaves drive the electron into the excited charge state, which sits mostly in the "wrong" dot. The sensor sees this as an extra peak (or dip) beside the interdot transition. Repeating at many frequencies traces out the dispersion Ω(ε) directly (Figure 12.2). This is <dfn data-def="Resonant tunnelling between charge states driven by a microwave photon whose energy matches their splitting; used to measure tunnel couplings, lever arms and excited-state energies.">photon-assisted tunnelling</dfn> (PAT) <cite data-r="oosterkamp1998"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:pat-map--></div>
+<figcaption>Simulated photon-assisted tunnelling map for t<sub>c</sub> = 20 µeV. The response follows the hyperbola hf = √(ε² + 4t<sub>c</sub>²) (dashed). Its minimum at ε = 0 gives 2t<sub>c</sub>/h ≈ 9.7 GHz, so t<sub>c</sub> = 20 µeV. The straight asymptotes at large |ε| calibrate the detuning axis: their slope converts plunger voltage to energy along ε, a second, independent lever-arm measurement.</figcaption>
+</figure>
+<p>PAT is the most precise way to measure the interdot coupling, and it does double duty. The asymptotes of the hyperbola give the lever arm along the detuning axis without any transport measurement. The same technique measures excited-state energies, such as valley splittings, which show up as additional resonance lines. HRL used PAT to measure valley energies of 70 and 14 µeV in two dots of their exchange-only device <cite data-r="weinstein2023"></cite>. It also checks, early on, that microwaves actually reach the gate they are applied to, which matters before you rely on that gate for EDSR (Chapter 18).</p>
+
+<h2>Dot–reservoir tunnel rates</h2>
+<p>The rate Γ at which an electron tunnels between a dot and its reservoir is controlled by the outer barrier, B1 for dot 1 and B3 for dot 2. It depends exponentially on the barrier voltage: HRL found the rate changing as exp(V/12.8 mV), one decade per about 30 mV, and could tune it over nine orders of magnitude with a single gate <cite data-r="borselli2015"></cite>. Because of this exponential sensitivity, the rate must be measured, not guessed, and it must be measured at the configuration where it will be used: moving a plunger changes the barrier as well.</p>
+<p>Three methods cover the whole range:</p>
+<ol>
+<li><b>Smearing of transition lines</b> (slow rates). Apply a square wave of frequency f to the plunger while sweeping across a dot–reservoir transition. If Γ is much larger than f, the electron follows the square wave and the transition appears split into two copies. If Γ is smaller, it cannot follow and the lines blur. The crossover gives Γ to within a factor of a few, which is quick and useful for orientation <cite data-r="borselli2015"></cite>.</li>
+<li><b>Averaged time-resolved response</b> (kilohertz to megahertz). Pulse the dot level from above the Fermi level to below it and back, and record the sensor signal after each edge, averaged over thousands of repetitions. The occupation relaxes exponentially, and fitting gives the loading and unloading rates (Figure 12.3).</li>
+<li><b>Single-shot dwell times</b> (rates below the sensor bandwidth). Park the level at the Fermi level and record the random telegraph signal (Chapter 9). Histograms of the times spent in each state are exponential, with time constants 1/Γ<sub>in</sub> and 1/Γ<sub>out</sub>.</li>
+</ol>
+<figure>
+<div class="figbody"><!--plot:load-unload--></div>
+<figcaption>Average occupation of dot 2 after a pulse edge that lowers its level below the reservoir's Fermi level (blue, loading) or raises it above (orange, unloading), simulated with thousands of repetitions averaged. Exponential fits give the loading and unloading rates. Unloading is usually a little faster, because the pulse that raises the level also lowers the effective barrier <cite data-r="borselli2015"></cite>.</figcaption>
+</figure>
+<figure>
+<div class="figbody"><!--plot:tunnel-rates--></div>
+<figcaption>Left: the dot–reservoir tunnel rate of dot 2 versus the virtual barrier vB3, on a logarithmic scale, changing by one decade per about 30 mV. The bands mark the rate needed for Elzerman readout (Chapter 15) and the range where it becomes too slow for fast charge maps. Right: the interdot tunnel coupling t<sub>c</sub> versus the virtual barrier vB2, also exponential, here an e-fold per 10 mV.</figcaption>
+</figure>
+<p>Different stages of the experiment want very different rates, which is why the barriers are re-tuned (or pulsed) between stages:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Purpose</th><th>Rate wanted</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Fast charge maps</td><td>≳ 1 MHz</td><td>The electron must follow the gate sweep, otherwise lines smear (Chapter 11).</td></tr>
+<tr><td>Elzerman readout</td><td>≈ 10–100 kHz</td><td>Slow enough for the sensor to see each event, fast enough to beat spin relaxation (Chapter 15).</td></tr>
+<tr><td>Holding a qubit in place</td><td>as slow as possible</td><td>The electron must not swap with the reservoir during manipulation.</td></tr>
+<tr><td>Isolated operation (no reservoir)</td><td>≲ 1 Hz, effectively zero</td><td>Electrons stay in the array for days, and readout uses Pauli blockade. QuTech kept their six electrons in the array for over a month <cite data-r="philips2022"></cite>.</td></tr>
+</tbody></table></div>
+
+<h2>Interdot coupling versus barrier</h2>
+<p>The interdot tunnel coupling, controlled by the middle barrier B2, is just as exponential: HRL measured t<sub>c</sub> ∝ exp(V<sub>X</sub>/10.1 mV) for their interdot gate <cite data-r="borselli2015"></cite>. In our device, t<sub>c</sub> runs from below 1 µeV ("off") to well over 100 µeV over 60 mV of vB2 (Figure 12.4, right). That range matters for two reasons. For Pauli-blockade readout (Chapter 16), t<sub>c</sub> must be large enough for the singlet to tunnel quickly into (0,2), typically 10 to 50 µeV. For two-qubit gates, the exchange interaction J ≈ 4t<sub>c</sub>²/U, with U the charging energy, must be switchable from almost zero to megahertz, which requires exactly this exponential control (Chapter 24). The virtual barrier vB2, which changes t<sub>c</sub> without moving either dot, is the knob for both.</p>
+
+<h2>Pulsed-gate spectroscopy of excited states</h2>
+<p>One more measurement in the same family finds a dot's excited states without bias, which is useful once transport no longer works. Apply a square wave to the plunger that alternately lifts the dot level above the Fermi level and drops it below. With a small amplitude, only the ground state drops below the Fermi level, and electrons load into it at its tunnel rate. When the amplitude is large enough to pull an excited state below the Fermi level too, a second loading channel opens and the average sensor signal changes. The pulse amplitude at which that happens, times the lever arm, is the excited-state energy. Princeton measured orbital energies of about 3 meV in each of their nine dots this way <cite data-r="zajac2016"></cite>. The same idea, with spin states instead of orbitals, will be the basis of the spin readout in Chapter 15.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the PAT map shows no resonance, although the sensor clearly sees the interdot transition.</p>
+<p><b>Likely causes:</b> the microwaves are not reaching the gate (a broken or badly attenuated line, a bias tee that blocks high frequencies, a bad bond); the power is far too low; or the tunnel coupling is so large that the gap 2t<sub>c</sub>/h lies above your frequency range.</p>
+<p><b>What to do:</b> raise the power gradually and look for broadening of the interdot line, which shows that some microwave power arrives. Check the line's transmission at room temperature in the next warm-up. Lower t<sub>c</sub> with vB2 to bring the gap into range.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 8</span>
+<p>Detuning axis ε = vP2 − vP1 at the (1,0)–(0,1) transition, virtual gate "eps" created. PAT on P1, 2–40 GHz: hyperbola clear; gap 9.7 GHz → t_c = 20 µeV at vB2 = 0. Asymptote slope gives α_ε = 0.10 eV/V, agreeing with the diamonds.</p>
+<p>Γ(D2 ↔ right reservoir) vs vB3: one decade per 29 mV. Set vB3 so that Γ_in ≈ 22 kHz, Γ_out ≈ 33 kHz at the readout configuration. Same for D1 via vB1: ≈ 20 kHz.</p>
+<p>t_c vs vB2: e-fold per 10 mV. Parking value t_c = 20 µeV; "off" (vB2 = −25 mV) ≈ 1 µeV.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 12</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Detuning axis</td><td>ε = vP2 − vP1, α<sub>ε</sub> = 0.10 eV/V</td><td>Chapters 13, 16, 24</td></tr>
+<tr><td>Interdot tunnel coupling</td><td>t<sub>c</sub> = 20 µeV at parking; e-fold per 10 mV of vB2</td><td>Chapters 16, 24</td></tr>
+<tr><td>Dot–reservoir rates (readout setting)</td><td>D1 ≈ 20 kHz; D2: Γ<sub>in</sub> ≈ 22 kHz, Γ<sub>out</sub> ≈ 33 kHz</td><td>Chapter 15</td></tr>
+<tr><td>Rate sensitivity</td><td>one decade per ≈ 30 mV of vB1 / vB3</td><td>Chapters 15, 31</td></tr>
+<tr><td>Microwave delivery to P1</td><td>confirmed by PAT, 2–40 GHz</td><td>Chapter 18</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A PAT hyperbola has its minimum at 6 GHz. What is t<sub>c</sub>, in µeV and in GHz?</p>
+<details><summary>Show answer</summary><div>2t<sub>c</sub>/h = 6 GHz, so t<sub>c</sub>/h = 3 GHz, which is 3 × 4.136 µeV ≈ 12.4 µeV.</div></details>
+<p>2. The dot–reservoir rate is 2 kHz, and you need 30 kHz. With one decade per 30 mV, how much must the barrier change? What else must you adjust?</p>
+<details><summary>Show answer</summary><div>A factor of 15 is log₁₀15 ≈ 1.18 decades, so about 35 mV more on the barrier. The barrier also pulls on the dot level (about 30% of a plunger in our device), so the plunger must be lowered by roughly 10 mV to keep the level in place. With a virtual barrier, this compensation is automatic.</div></details>
+<p>3. Why does the width of the interdot transition stop telling you t<sub>c</sub> when t<sub>c</sub> is very small?</p>
+<details><summary>Show answer</summary><div>When 2t<sub>c</sub> is much smaller than k<sub>B</sub>T<sub>e</sub>, the thermal smearing of the occupation is wider than the tunnel-coupling broadening, so the transition width reflects the electron temperature, not t<sub>c</sub>. PAT, which measures the gap directly as a frequency, remains accurate down to much smaller couplings.</div></details>
+</div>

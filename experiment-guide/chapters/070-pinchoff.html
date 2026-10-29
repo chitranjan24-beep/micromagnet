@@ -1,0 +1,83 @@
+<!--meta {"id": "pinchoff", "part": "Part C · First signs of life", "title": "Pinch-offs, barriers and the first dot"}-->
+
+<p class="lede">Once the channel conducts, every gate is tested individually: lowering it should close the channel beneath it. The voltages at which gates "pinch off", and the way they do it, form a map of the device's electrostatics. Two barriers set just below pinch-off, with a plunger between them, make the first quantum dot, and its Coulomb peaks are the first truly quantum signal from the device.</p>
+
+<h2>One gate at a time</h2>
+<p>Start from the "all open" state of Chapter 6: every gate along the O1–O2 path at 0.6 V, comfortably above threshold, with a small AC bias and a lock-in measuring the current. Now lower one gate while keeping all the others fixed. As long as there is still an electron gas under it, current flows. When the gate falls below the local threshold, the electrons beneath it are pushed out, a potential barrier rises across the channel, and the current stops. That gate has <dfn data-def="The gate voltage at which the electron gas under a gate is depleted and the channel stops conducting; for a barrier gate, the point below which tunnelling through it becomes negligible.">pinched off</dfn> the channel.</p>
+<figure>
+<div class="figbody"><!--plot:pinch-off--></div>
+<figcaption>Pinch-off curves of the three barrier gates of our device, each swept with all other gates open. Each curve falls from the open-channel conductance to zero over about 100 mV. The pinch-off voltages differ by tens of millivolts, because each barrier sits in a slightly different electrostatic environment. The small bumps near pinch-off are resonances through unintended small dots, formed by disorder in the potential.</figcaption>
+</figure>
+<p>A pinch-off curve tells you more than one number:</p>
+<ul>
+<li><b>Does the gate work at all?</b> A gate whose tip is disconnected from its pad cannot pinch off, so its curve stays flat no matter how far you lower it. This is the first test that catches broken gates (Chapter 3).</li>
+<li><b>Where does it pinch off?</b> The voltage, relative to the turn-on threshold, tells you how strongly the gate couples to the well. Gates in higher layers are farther from the well and usually need larger swings.</li>
+<li><b>How sharply?</b> The width of the transition reflects the gate's lever arm on the barrier. A very gradual pinch-off suggests weak control. A very abrupt one suggests a strong gate, which will need finer steps later.</li>
+<li><b>What happens near zero?</b> Bumps and resonances just before pinch-off come from tunnelling through small, unintended puddles of electrons trapped by disorder. A few are normal. Many large, irregular resonances warn that the potential under the gate is rough.</li>
+</ul>
+<p>Plungers are tested the same way. Lowering a plunger also pinches off the channel, since the dots must sit under accumulated electrons too. Knowing every gate's pinch-off gives you a starting point for every gate when you build a dot.</p>
+<p>In GaAs, the equivalent experiment is done with negative voltages on depletion gates, and a narrow constriction between two gates (a quantum point contact) shows something beautiful as it pinches off: its conductance falls in steps of 2e²/h, the conductance quantum, as one-dimensional channels close one by one <cite data-r="hanson2007"></cite>. The steep edge of the last step makes a quantum point contact an excellent charge sensor. Such plateaus are seldom clean in silicon devices, where disorder, the heavier effective mass and the valley degree of freedom blur them, so silicon devices usually use sensor dots instead (Chapter 9).</p>
+
+<h2>Two barriers make a dot</h2>
+<p>A quantum dot needs a region of electrons separated from the reservoirs by two tunnel barriers. In our device, dot 1 sits under P1, bounded by B1 on the left and B2 on the right. Set P1 to a moderate value and map the current through the device as a function of both barrier voltages at once (Figure 7.2).</p>
+<figure>
+<div class="figbody"><!--plot:barrier-map--></div>
+<figcaption>Current through dot 1 as a function of its two barriers, with plunger P1 fixed (logarithmic colour scale, simulated). In the upper right both barriers are open, and current flows freely. Lowering either barrier alone pinches the channel off. In the corner where both are close to pinch-off, the electrons under P1 become isolated between two tunnel barriers. The current then flows only in narrow resonances, the Coulomb peaks, which run along diagonals because both barriers also pull on the dot's potential.</figcaption>
+</figure>
+<p>This map is the classic way to find a dot. Far from the corner, the barriers are either fully open (no isolated region, just a channel) or fully closed (no current at all). In the corner, both barriers are high enough to isolate the region between them, but thin enough that electrons can still tunnel through. Then Coulomb blockade appears: current flows only when the energy of the dot lines up with the reservoirs, which happens at a discrete set of gate voltages.</p>
+<p>The diagonal direction of the resonances is itself informative. Raising either barrier lowers the potential in the dot slightly (each barrier has a lever arm on the dot as well as on its tunnel barrier), so a resonance condition is met along lines where the sum of the two effects is constant. A resonance line that runs along a different direction, or that responds to only one barrier, belongs to a different, unintended dot, often one formed by disorder under a single gate.</p>
+<p>Once peaks are found, the barriers are set a little inside the corner: closed enough that the peaks are sharp, open enough that the peak current is easy to measure. From then on the barriers stay fixed, and the plunger does the counting.</p>
+
+<h2>The constant-interaction picture</h2>
+<p>To interpret Coulomb peaks quantitatively, the field uses a simple model: the <dfn data-def="A model of a quantum dot in which the Coulomb interaction is captured by a single total capacitance, so adding the N-th electron costs a fixed charging energy plus the single-particle energy of the level it occupies.">constant-interaction model</dfn> <cite data-r="kouwenhoven2001,hanson2007"></cite>. It treats the dot as a small conductor with a total capacitance C<sub>Σ</sub> to its surroundings, of which C<sub>g</sub> is to the plunger gate. The energy needed to add the N-th electron, the dot's <b>electrochemical potential</b>, is</p>
+\[ \mu(N) = \left(N - \tfrac{1}{2}\right)E_C - e\,\alpha\, V_g + E_N + \text{const}, \qquad E_C = \frac{e^2}{C_\Sigma},\quad \alpha = \frac{C_g}{C_\Sigma}. \]
+<p>Here E<sub>C</sub> is the <dfn data-def="The electrostatic energy e²/C_Σ needed to add one more electron to a dot, where C_Σ is its total capacitance; several meV in small Si dots.">charging energy</dfn>, α is the lever arm of the gate, and E<sub>N</sub> is the single-particle (orbital) energy of the level the N-th electron occupies. An electron can tunnel onto the dot from the source and off to the drain only when μ(N) lies between the source and drain electrochemical potentials. At near-zero bias that happens only at isolated plunger voltages, which are the Coulomb peaks.</p>
+<p>The spacing between consecutive peaks follows directly. Moving from μ(N) = 0 to μ(N + 1) = 0 requires</p>
+\[ \Delta V_g = \frac{E_C + \Delta E}{e\,\alpha}, \]
+<p>where ΔE = E<sub>N+1</sub> − E<sub>N</sub> is zero when the two electrons share an orbital (spin up and spin down) and equal to the orbital or valley spacing otherwise. Without ΔE this reduces to ΔV<sub>g</sub> = e/C<sub>g</sub>: the plunger must add exactly one electron's worth of induced charge.</p>
+<div class="box numbers"><span class="tag">Worked numbers: peak spacing for our device</span>
+<p>With E<sub>C</sub> = 6.5 meV and α = 0.10 eV/V, two peaks that share an orbital are separated by ΔV = 6.5 meV / (0.10 eV/V) = 65 mV on the plunger.</p>
+<p>A peak that requires an extra orbital of 3 meV is separated by (6.5 + 3) / 0.10 = 95 mV.</p>
+<p>A many-electron dot, which is larger and therefore has a smaller charging energy of perhaps 2 meV, shows peaks about 20 mV apart. As the dot empties, the spacing grows. That growth is the first sign that you are approaching the last electrons (Chapter 11).</p>
+</div>
+
+<h2>How each gate acts on the dot</h2>
+<p>The plunger is not the only gate that moves the dot. Every nearby gate has some capacitance to it, and that cross-coupling becomes important as soon as there are two dots. It is measured directly from the peaks. Map the current versus the plunger and one other gate X. Each Coulomb peak appears as a line, and its slope tells you the relative strength of the two gates:</p>
+\[ \left.\frac{dV_P}{dV_X}\right|_{\text{peak}} = -\frac{\alpha_X}{\alpha_P}. \]
+<p>A steep line (X has little effect) means weak cross-coupling, a shallow one strong cross-coupling. In our device, B1 and B2 each have about 30% of P1's lever arm on dot 1, and P2 about 30% as well. These ratios will become the off-diagonal elements of the virtual-gate matrix in Chapter 11.</p>
+
+<h2>A dot is not yet a qubit dot</h2>
+<p>The first dot you find is usually a many-electron dot, tens of electrons in a puddle larger than intended, because the gates are still well above the voltages needed for few electrons. That is fine. It is the right object for the next two chapters: measuring the lever arm and charging energy with Coulomb diamonds, measuring the electron temperature, and forming a charge sensor. Reducing the qubit dots to one electron each comes later, once the sensor can count electrons where transport current no longer can (Chapter 11).</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> in the barrier–barrier map, there are resonances, but they respond to only one barrier, or run at odd angles, or there are many overlapping sets of them.</p>
+<p><b>Likely cause:</b> unintended dots formed by disorder, typically under one of the barriers, or a double dot where you expected a single dot.</p>
+<p><b>What to do:</b> raise the plunger to deepen the intended dot, which makes it dominate. Try a different region of the map. Check whether the stray resonances move with a gate that should not influence them, which tells you where they are. Sometimes a different combination of barrier settings, or the neighbouring dot, behaves much better.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 2</span>
+<p>Pinch-offs (others at 0.6 V): B1 0.18 V, B2 0.26 V, B3 0.21 V; P1 0.30 V, P2 0.31 V; SB1 0.22 V, SB2 0.24 V. All gates pinch off, so all tips are connected.</p>
+<p>B1 vs B2 map at P1 = 0.50 V, P2 = 0.6 V (P2 region used as part of the right lead): clean diagonal Coulomb peaks below B1 ≈ 0.28, B2 ≈ 0.35. Parked at B1 = 0.24, B2 = 0.31.</p>
+<p>P1 sweep: regular peaks every ≈ 21 mV → many-electron dot (E_C ≈ 2 meV if α ≈ 0.1). Next: Coulomb diamonds for the lever arm.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 7</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Barrier pinch-offs (others open)</td><td>B1 0.18 V, B2 0.26 V, B3 0.21 V</td><td>Chapters 11, 12</td></tr>
+<tr><td>Plunger pinch-offs</td><td>P1 0.30 V, P2 0.31 V</td><td>Chapter 11</td></tr>
+<tr><td>Sensor barriers</td><td>SB1 0.22 V, SB2 0.24 V</td><td>Chapter 9</td></tr>
+<tr><td>Cross-coupling on dot 1</td><td>B1, B2, P2 each ≈ 0.3 of P1</td><td>Chapter 11</td></tr>
+<tr><td>First dot</td><td>many-electron dot under P1, peaks ≈ 21 mV apart</td><td>Chapter 8</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A barrier's pinch-off curve stays flat at the open-channel conductance down to −0.2 V. What does that tell you?</p>
+<details><summary>Show answer</summary><div>The gate has no effect on the channel, which almost always means its tip is electrically disconnected from its bond pad (a break in the gate line), or the wrong line is being swept. Check the line assignment and bond map first; if they are right, the gate is broken.</div></details>
+<p>2. In a map of current versus P1 and B1, a Coulomb peak line has a slope dV<sub>P1</sub>/dV<sub>B1</sub> = −0.3. What is B1's lever arm on dot 1 if P1's is 0.10 eV/V?</p>
+<details><summary>Show answer</summary><div>α<sub>B1</sub>/α<sub>P1</sub> = 0.3, so α<sub>B1</sub> = 0.03 eV/V. Raising B1 by 10 mV lowers the dot by 300 µeV, equivalent to raising P1 by 3 mV.</div></details>
+<p>3. Why do the Coulomb peaks in the barrier–barrier map of Figure 7.2 run along diagonals?</p>
+<details><summary>Show answer</summary><div>Both barriers have lever arms on the dot's potential as well as on their own tunnel barriers. Raising either one lowers the dot level, so the resonance condition μ(N) = 0 is met along lines where the combined effect of the two barriers is constant, i.e. lines with negative slope. A resonance that ignores one of the barriers is probably a different, unintended dot.</div></details>
+</div>

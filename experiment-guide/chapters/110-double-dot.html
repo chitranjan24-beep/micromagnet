@@ -1,0 +1,92 @@
+<!--meta {"id": "double-dot", "part": "Part D · Seeing single electrons fast", "title": "The double dot: stability diagrams, the last electron and virtual gates"}-->
+
+<p class="lede">With a fast sensor, two-dimensional maps of the device's charge states take seconds instead of hours. The map of a double dot, its charge stability diagram, is the most important picture in the field: it shows how many electrons sit in each dot for every pair of gate voltages. This chapter teaches you to read it, uses it to empty both dots down to a single electron each, and introduces virtual gates, which make the map rectangular and the device far easier to control.</p>
+
+<h2>Forming the double dot</h2>
+<p>A double dot needs three tunnel barriers: B1 between the left reservoir and dot 1, B2 between the two dots, and B3 between dot 2 and the right reservoir. The outer barriers B1 and B3 are set so that each dot exchanges electrons with its reservoir easily on the time scale of a map (a few kilohertz or faster). The middle barrier B2 is set lower, so the two dots are distinct but still tunnel-coupled. The plungers P1 and P2 then choose how many electrons each dot holds.</p>
+<p>The map is taken by stepping P1 and P2 over a grid while the RF sensor integrates for a few microseconds at each point. With 200 × 200 points at 10 µs each, a complete map takes under a second, so the effect of every other gate can be explored almost interactively. The sensor plunger is compensated throughout (Chapter 9), and the map is usually plotted as the derivative of the sensor signal, which turns each charge transition into a thin line.</p>
+
+<h2>Reading the honeycomb</h2>
+<figure>
+<div class="figbody"><!--plot:csd-dqd--></div>
+<figcaption>Simulated charge stability diagram of our double dot in the few-electron regime, plotted as the derivative of the sensor signal. Each cell has a fixed number of electrons (N₁, N₂). The steep lines are transitions of dot 1 (an electron enters or leaves dot 1 from its reservoir); the shallow lines are transitions of dot 2. The short segments joining them, near the corners of each cell, are interdot transitions, where an electron moves from one dot to the other and the total number stays the same. The bottom-left cell is (0,0): both dots empty.</figcaption>
+</figure>
+<p>The diagram is made of hexagonal cells, which is why it is often called a <dfn data-def="The hexagonal pattern of charge states in a double-dot charge stability diagram, bounded by dot–reservoir transition lines and short interdot transition lines.">honeycomb</dfn> <cite data-r="vanderwiel2002"></cite>. Every feature has a meaning:</p>
+<ul>
+<li><b>Inside a cell</b> the electron numbers (N₁, N₂) are fixed. Nothing changes as you move around within it, so the sensor signal is flat.</li>
+<li><b>The steep lines</b> mark where dot 1's electrochemical potential crosses its reservoir's Fermi level: N₁ changes by one. They are nearly vertical because P1 couples strongly to dot 1, and tilted because P2 couples to dot 1 too. Their slope is −α<sub>11</sub>/α<sub>12</sub>, the ratio of the two plungers' lever arms on dot 1.</li>
+<li><b>The shallow lines</b> are dot 2's transitions, with slope −α<sub>21</sub>/α<sub>22</sub>. They appear stronger in the map because dot 2 is closer to the sensor.</li>
+<li><b>The short interdot segments</b> connect the corners of neighbouring cells. Along them, one electron moves between the dots, (1,0) ↔ (0,1) for example. They are the most important lines for spin qubits: Pauli spin blockade readout (Chapter 16) and the exchange interaction (Chapter 24) both happen close to an interdot transition.</li>
+<li><b>Triple points</b> at the ends of each interdot segment are where three charge states are degenerate. The length of the interdot segment is set by the <em>mutual</em> charging energy, the extra energy an electron in one dot costs an electron in the other. In our map it corresponds to about 0.9 meV.</li>
+</ul>
+<p>The spacing of the lines gives the charging energies. Successive steep lines are separated along P1 by about E<sub>C</sub>/(eα<sub>11</sub>), 65 mV here. The ratios of the slopes give the cross-coupling of the plungers, which we will need for virtual gates. Everything in the map is the constant-interaction model of Chapter 7 extended to two dots <cite data-r="vanderwiel2002,hanson2007"></cite>.</p>
+
+<h2>Down to the last electron</h2>
+<p>For single-spin qubits, each dot should hold exactly one electron. The procedure is conceptually simple. Lower both plungers until the map shows a cell with no transitions below or to the left of it, then identify that cell as (0,0) and count up from there.</p>
+<figure>
+<div class="figbody"><!--plot:last-electron--></div>
+<figcaption>Sensor signal along a line through the stability diagram, sweeping dot 1's (virtual) plunger with dot 2 kept empty (simulated). Below the first transition, no further transitions appear over a range of 250 mV, several times the spacing of the last two transitions. That is the signature of an empty dot. Each step above it adds one electron.</figcaption>
+</figure>
+<p>"No more lines" is a necessary condition for an empty dot, but not a sufficient one, and this is where many hours are lost. As a dot empties, its tunnel barrier to the reservoir becomes thicker and the tunnel rate drops exponentially. When the rate falls below the rate at which the map is swept, the electron no longer leaves when it should, and the transition line first smears, then breaks into a ragged pattern of switching events, then disappears, even though the electron is still there. HRL's first undoped dots showed exactly these regions, where the tunnel rate was slower than the gate modulation <cite data-r="borselli2015"></cite>.</p>
+<p>So before declaring (0,0), check that the last lines are sharp, and that they stay where they are when the map is swept more slowly or the outer barrier is opened. Then the absence of further lines means something. Industrial-scale surveys now check this automatically across hundreds of devices on a wafer, measuring where the last electron leaves each dot <cite data-r="neyens2024"></cite>.</p>
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> near the apparent (0,0) region, the transition lines become blurred or jagged and then fade out, instead of ending cleanly.</p>
+<p><b>Likely cause:</b> the dot–reservoir tunnel rate has become slower than the sweep. The electron is "latched" on or off the dot, missing transitions.</p>
+<p><b>What to do:</b> raise the outer barrier (B1 or B3) to speed up tunnelling, and compensate its effect on the dot with the plunger, or slow the sweep down. If the lines reappear and continue, the dot was not yet empty.</p>
+</div>
+
+<h2>Virtual gates</h2>
+<p>Look again at Figure 11.1. Because P1 also pulls on dot 2 and P2 on dot 1, every line is tilted, and moving one gate changes both dots. For a double dot this is merely awkward. For the operations ahead it is a real problem: we will need to move dot 1's level without touching dot 2's, change the tunnel barrier between them without moving either level, and pulse along carefully chosen directions in gate space. The standard solution is <dfn data-def="Linear combinations of physical gate voltages chosen so that each combination changes only one dot potential or one tunnel barrier, compensating cross-capacitances.">virtual gates</dfn>: new control knobs, each a linear combination of physical gates, chosen so that each one acts on only one quantity <cite data-r="volk2019,hanson2007"></cite>.</p>
+<p>The construction follows directly from the lever-arm matrix. To first order, the changes in the two dots' electrochemical potentials are</p>
+\[ \begin{pmatrix} \delta\mu_1 \\ \delta\mu_2 \end{pmatrix} = -e \begin{pmatrix} \alpha_{11} & \alpha_{12} \\ \alpha_{21} & \alpha_{22} \end{pmatrix} \begin{pmatrix} \delta V_{P1} \\ \delta V_{P2} \end{pmatrix} = -e\,A\,\delta\mathbf{V}. \]
+<p>We want virtual plungers vP1 and vP2 such that vP1 moves only dot 1 (by as much as P1 alone would) and vP2 only dot 2. That means choosing physical voltages</p>
+\[ \delta\mathbf{V} = A^{-1} \begin{pmatrix} \alpha_{11} & 0 \\ 0 & \alpha_{22} \end{pmatrix} \delta\mathbf{u} = M\,\delta\mathbf{u}, \]
+<p>where δ<b>u</b> = (δvP1, δvP2). The software then applies M every time you ask for a virtual-gate change. Only the ratios α<sub>12</sub>/α<sub>11</sub> and α<sub>21</sub>/α<sub>22</sub> are needed, and these are exactly the slopes of the transition lines in the stability diagram.</p>
+<div class="box numbers"><span class="tag">Worked numbers: our virtual-gate matrix</span>
+<p>From the map, dot 1's lines have slope dV<sub>P2</sub>/dV<sub>P1</sub> = −1/0.3 and dot 2's lines −0.3, so α<sub>12</sub>/α<sub>11</sub> = α<sub>21</sub>/α<sub>22</sub> = 0.3. With α<sub>11</sub> = α<sub>22</sub> = 0.10 eV/V,</p>
+\[ A = \begin{pmatrix} 0.10 & 0.03 \\ 0.03 & 0.10 \end{pmatrix}\,\text{eV/V},\qquad M = A^{-1}\begin{pmatrix} 0.10 & 0 \\ 0 & 0.10\end{pmatrix} = \begin{pmatrix} 1.099 & -0.330 \\ -0.330 & 1.099 \end{pmatrix}. \]
+<p>A step of +10 mV on vP1 is therefore applied as +11.0 mV on P1 and −3.3 mV on P2. The 3.3 mV taken off P2 cancels P1's pull on dot 2, and the extra 1.0 mV on P1 makes up for the small push the P2 change gives dot 1.</p>
+</div>
+<figure>
+<div class="figbody"><!--plot:virtual-gates--></div>
+<figcaption>The same double dot mapped with physical gates (left) and with virtual gates (right). In virtual coordinates, dot 1's transitions become vertical and dot 2's horizontal: each virtual plunger now acts on one dot only. The interdot transitions remain short diagonal segments.</figcaption>
+</figure>
+<p>In practice the matrix is larger than 2 × 2. Every gate that matters gets a row and a column: the barriers, whose cross-couplings to the dots are typically 20 to 40% <cite data-r="borselli2015"></cite>, and the sensor plunger, whose compensation becomes one more row. A <b>virtual barrier</b> vB2, for example, raises B2 while lowering P1 and P2 just enough to keep both dots' levels fixed, so that it changes only the tunnel coupling between them. That is the knob used for exchange in Chapter 24 <cite data-r="xue2022,philips2022"></cite>.</p>
+<p>Three limitations are worth knowing:</p>
+<ul>
+<li><b>Linearity is local.</b> Lever arms change as dots grow, shrink and move, so a matrix measured in one region of gate space is only accurate near it. Groups recalibrate the matrix at the operating point they use.</li>
+<li><b>It is refined iteratively.</b> Measure the slopes, apply the matrix, map again, and correct the residual tilt. Two or three iterations usually suffice.</li>
+<li><b>It is time-consuming for big arrays.</b> With dozens of gates there are hundreds of cross-couplings. Automated extraction from fast maps is an active area <cite data-r="che2024,mills2019,zwolak2023"></cite>.</li>
+</ul>
+
+<h2>Arrays: adding one dot at a time</h2>
+<p>In longer arrays, a new problem appears: a dot in the middle has no reservoir of its own, and loading it requires cotunnelling through its neighbours, which becomes impractically slow beyond three or four dots. Transitions go missing and lines from many dots run nearly parallel, so maps become almost impossible to read. QuTech's solution, the "n + 1 method", builds the array one dot at a time from one end. Each new dot is added next to a reservoir, filled, and then isolated by virtual gates that keep the occupations of all previously formed dots fixed. In this way they loaded eight GaAs dots with one electron each <cite data-r="volk2019"></cite>. Our two-dot device does not need this, but every larger device does.</p>
+
+<h2>Choosing where to operate</h2>
+<p>For single-spin qubits the natural operating region is the (1,1) cell: one electron in each dot. Readout and initialization will use the neighbourhood of a transition, either a dot–reservoir line (Elzerman readout, Chapter 15) or the (1,1)–(0,2) interdot line (Pauli blockade, Chapter 16). Some groups deliberately work with three electrons in one dot and one in the other, (3,1), because the two inner electrons form a closed shell and the larger dot gives a wider readout window. QuTech's six-qubit device used (3,1)–(4,0) transitions for this reason <cite data-r="philips2022"></cite>. For now we park the device in the middle of the (1,1) cell, with both outer barriers set so that each dot can still exchange electrons with its reservoir quickly when needed.</p>
+
+<div class="box notebook"><span class="tag">Lab notebook · days 5–7</span>
+<p>RF maps P1 vs P2 at 10 µs/pt, 200×200: honeycomb visible from (4,4) down. Last lines smeared near P1 ≈ 470 mV; opened B1 by 15 mV (compensated with P1), lines sharp again. (0,0) confirmed: no transitions over 250 mV below the last line on either axis.</p>
+<p>Slopes: α12/α11 = 0.31, α21/α22 = 0.29 → virtual-gate matrix v1. After one iteration, residual tilt &lt; 2°. Added rows for B1, B2, B3 and SP.</p>
+<p>Operating point (1,1): vP1 = 485 mV, vP2 = 498 mV; mutual charging ≈ 0.9 meV.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 11</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Lever-arm matrix (plungers)</td><td>α<sub>11</sub> = α<sub>22</sub> = 0.10 eV/V, α<sub>12</sub> ≈ α<sub>21</sub> ≈ 0.03 eV/V</td><td>everywhere</td></tr>
+<tr><td>Virtual-gate matrix</td><td>v1 (plungers, barriers, sensor)</td><td>Chapters 12–26</td></tr>
+<tr><td>Charge configuration</td><td>(0,0) confirmed; (1,1) operating point at vP1 = 485, vP2 = 498 mV</td><td>Chapters 12–16</td></tr>
+<tr><td>Mutual charging energy</td><td>≈ 0.9 meV</td><td>Chapter 12</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. In a stability diagram you see one set of lines with slope −4 and another with slope −0.2. Which set belongs to dot 1, and what are the cross-coupling ratios?</p>
+<details><summary>Show answer</summary><div>The steep lines (slope −4) belong to dot 1, since P1 dominates it: α<sub>12</sub>/α<sub>11</sub> = 1/4 = 0.25. The shallow lines (slope −0.2) belong to dot 2: α<sub>21</sub>/α<sub>22</sub> = 0.2.</div></details>
+<p>2. Why are the interdot transition lines the most important lines for spin qubits?</p>
+<details><summary>Show answer</summary><div>Near an interdot transition the two electrons can tunnel between the dots. The singlet–triplet energy structure there allows Pauli spin blockade readout, and the exchange interaction between the two spins, used for two-qubit gates, arises from tunnelling across the same barrier. Both are controlled by the detuning from that line and by the interdot tunnel coupling.</div></details>
+<p>3. Using our matrix M, what physical voltage changes implement a virtual step of +5 mV on vP2 only?</p>
+<details><summary>Show answer</summary><div>δV = M (0, 5 mV): δV<sub>P1</sub> = −0.330 × 5 = −1.65 mV and δV<sub>P2</sub> = 1.099 × 5 ≈ +5.5 mV.</div></details>
+</div>

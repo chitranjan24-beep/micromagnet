@@ -1,0 +1,79 @@
+<!--meta {"id": "turn-on", "part": "Part C · First signs of life", "title": "Waking the device up: leakage, turn-on and ohmics"}-->
+
+<p class="lede">The first hours at base temperature answer simple questions with big consequences. Does every gate hold voltage without leaking? Do the ohmic contacts reach the quantum well? At what voltage do electrons first appear? A device that fails here cannot be rescued by clever tuning, so these checks come first, and they are done slowly and carefully, one line at a time.</p>
+
+<h2>First, do no harm</h2>
+<p>The device has been sitting with every line grounded at the breakout box. Before anything is released, the software limits are loaded (Chapter 5), every DC channel is set to 0 V, and the instruments are connected. Lines are then un-grounded one at a time. Each gate is ramped slowly, at around 10 mV/s, never stepped. A step of a volt applied in microseconds charges the gate capacitance with a current pulse, and through the stray capacitance between layers it can put an unintended voltage across thin oxide. A slow ramp makes the same change harmless.</p>
+<p>It is also worth deciding in advance how far each gate will be allowed to go. In our device the plungers and barriers should never need more than about +1 V, and the lead gates perhaps +1.5 V. The limits sit a little above that, so that a typing error is caught by software rather than by the device.</p>
+
+<h2>Leakage: does each gate hold its voltage?</h2>
+<p>A gate is a capacitor plate. Once charged, it should draw no steady current. If it does, current is flowing through the oxide into the semiconductor or into another gate, a <dfn data-def="A steady current from a gate through its oxide into the semiconductor or into another gate; harmless at the pA level, but a sign of damaged or weak oxide when larger.">gate leak</dfn>. Leakage is checked for every gate individually: ramp it from 0 V towards its maximum while all other gates stay at 0 V, and record the current it draws. Many DC sources can measure their own output current. Otherwise a sensitive ammeter in series, or a large series resistor with a voltmeter across it, does the job.</p>
+<p>Two other currents are worth watching during the same sweep: the current on the other gates, which reveals gate-to-gate shorts, and the current on the ohmic contacts, which reveals leakage into the quantum well. With the lead gates at 0 V there is no electron gas, so any current reaching an ohmic must have come through an oxide.</p>
+<figure>
+<div class="figbody"><!--plot:turn-on--></div>
+<figcaption>Left: turning on the device. The current between ohmics O1 and O2 under a small bias, as both lead gates and all channel gates are swept together. Nothing flows below about 0.36 V; above that, a two-dimensional electron gas forms and the current rises roughly linearly. The down-sweep turns on at a slightly lower voltage than the up-sweep (hysteresis). Right: a leakage check on one gate. The current stays at the noise floor until about 1.55 V, then rises steeply. The gate's safe operating range ends well below that point.</figcaption>
+</figure>
+<p>What counts as acceptable? A healthy gate draws no current above the instrument's noise floor (tens of picoamperes at most) over its whole planned range. A gate that leaks only above some voltage, like the one in Figure 6.1, is usable as long as it stays well below that onset. Its limit is lowered in the software and noted in the passport. A gate that leaks at a few hundred millivolts is effectively dead, and any gate shorted to another will behave as part of that other gate.</p>
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> raising gate B2 makes a current appear on gate P1, proportional to the B2 voltage.</p>
+<p><b>Likely cause:</b> a resistive short between B2 and P1 through the oxide separating their layers, which would show up as a resistance of perhaps megaohms between the two lines.</p>
+<p><b>What to do:</b> measure the resistance between the two lines directly. If it is high (gigaohms), the effect may be capacitive pickup during the ramp, which disappears when the ramp stops. If it is resistive, the two gates must be operated with small voltage differences, or one of them sacrificed. Record it in the passport so that nobody later "discovers" it again.</p>
+</div>
+
+<h2>Turning on: making electrons appear</h2>
+<p>Our heterostructure contains no electrons until a gate pulls them in (Chapter 2). The first real measurement is therefore the <dfn data-def="The gate voltage at which a two-dimensional electron gas first forms under a gate in an accumulation-mode device, seen as the onset of current between two ohmic contacts.">turn-on</dfn>: the gate voltage at which a conducting channel first forms between two ohmic contacts.</p>
+<p>The procedure is simple. Apply a small AC excitation between two ohmics, say 100 µV at 77 Hz on O1, and measure the current at O2 with a lock-in. Then sweep all the gates along the path between them together: the lead gates LL and LR, and the plungers and barriers in the channel. Because every gate on the path rises together, the only question being asked is "is there any electron gas at all?". The screening gates stay near 0 V so that they define the channel.</p>
+<p>The result looks like the left panel of Figure 6.1. Below threshold, nothing. At threshold, the conduction band under the gates dips below the Fermi level of the ohmics, and electrons flow in. Above threshold, the electron density grows roughly linearly with gate voltage, and so does the conductance, until the series resistance of the ohmic contacts and the filters limits the current.</p>
+<p>Several things can be read from this one curve:</p>
+<ul>
+<li><b>The threshold voltage</b> (0.36 V here) tells you where the device's electrostatics starts. Dots will form at somewhat higher voltages on the plungers, and barriers will pinch off near this value (Chapter 7).</li>
+<li><b>The saturation level</b> tells you the total series resistance. With 100 µV excitation and about 10 nA at the top of our sweep, the resistance is about 10 kΩ. That includes the ohmic contacts, the filters (a few kilohms in our fridge, Chapter 3) and the channel itself. A curve that saturates at a much lower current suggests a poor ohmic contact.</li>
+<li><b>Hysteresis</b>, the difference between up- and down-sweeps, comes from charges that become trapped at the interface or in the oxide when the gate is raised, and are released only slowly. A small hysteresis of tens of millivolts, as here, is normal. A large one (hundreds of millivolts), or a threshold that keeps moving from sweep to sweep, warns of an unstable device that will be hard to tune.</li>
+<li><b>Noise and jumps</b> just above threshold come from the electron gas being so dilute that it percolates through disorder. A smooth turn-on suggests a clean interface. Large, irregular jumps suggest charge traps nearby.</li>
+</ul>
+<p>Industrial-scale characterization uses exactly this measurement to compare devices across a wafer. Intel, for example, reported turn-on and related statistics across hundreds of devices on 300 mm wafers <cite data-r="neyens2024"></cite>.</p>
+<div class="box numbers"><span class="tag">Worked numbers: what density do we have?</span>
+<p>The electron gas under a gate behaves like one plate of a parallel-plate capacitor, with the gate as the other plate. The capacitance per area is ε/d, where d is the distance from the gate to the well and ε the permittivity of the material in between.</p>
+<p>For 30 nm of SiGe (relative permittivity about 13) plus about 10 nm of Al₂O₃ (about 9), the series combination gives C/A ≈ ε₀ / (30 nm/13 + 10 nm/9) ≈ 8.85 × 10⁻¹² / (3.4 × 10⁻⁹) ≈ 2.6 × 10⁻³ F/m².</p>
+<p>Each additional volt above threshold then adds a density n = (C/A)·ΔV/e ≈ 2.6 × 10⁻³ / 1.6 × 10⁻¹⁹ ≈ 1.6 × 10¹⁶ m⁻², which is 1.6 × 10¹² cm⁻² per volt. At 0.3 V above threshold the density is around 5 × 10¹¹ cm⁻², typical for the reservoirs of Si/SiGe qubit devices <cite data-r="borselli2015"></cite>.</p>
+</div>
+
+<h2>Testing every ohmic</h2>
+<p>With the channel on, each ohmic contact is checked in turn. Measure the two-terminal resistance between pairs of ohmics through the accumulated channel. If O1–O2 conducts, O1–O3 does not, and O2–O3 does not, then O3 (or its bond, or its line) is the problem. The sensor channel is checked the same way: accumulate SL, SR, SP and the sensor barriers together, and measure O3 to O4. Its turn-on voltage will be similar to the qubit channel's, but not identical, because the sensor channel sits under a slightly different gate geometry.</p>
+<p>A contact that does not conduct at all might be an open bond or line (check its continuity from the breakout box), an ohmic implant that misses the well, or a lead gate that does not reach over the ohmic. The first can sometimes be fixed in the next cooldown. The others are fabrication problems.</p>
+
+<h2>For comparison: waking up a GaAs device</h2>
+<p>A modulation-doped GaAs device starts the other way round. Its electron gas is already present at zero gate voltage, so the ohmics conduct as soon as the device is cold, and two-terminal resistances of a few kilohms are normal. The first gate tests are then <em>depletion</em> tests: each gate is made negative until the electrons beneath it are pushed away and the current through the channel falls (Chapter 7). Leakage checks are similar, but at negative voltages. Above a certain negative voltage on a Schottky gate on GaAs, current starts to tunnel through the barrier.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> no current at any gate voltage, even well above the expected threshold.</p>
+<p><b>Possible causes:</b> the excitation is not reaching the device (check the lock-in output and the line); an ohmic or its bond is open; one gate on the path does not turn on (broken gate, so the channel stays depleted under it); or a wrong polarity convention in the software.</p>
+<p><b>What to do:</b> confirm continuity from the breakout box. Try a different pair of ohmics. Then sweep the gates on the path one at a time with all others high: the one whose sweep makes no difference is probably disconnected.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 1, afternoon</span>
+<p>Leakage, each gate alone up to its limit: all &lt; 20 pA. B3 starts leaking at 1.55 V → limit lowered to 1.2 V. No gate-to-gate shorts found.</p>
+<p>Global turn-on O1→O2 (LL, LR, P1, P2, B1–B3 together, CS = 0): threshold 0.36 V up, 0.335 V down. 10 nA at 0.8 V with 100 µV → ≈ 10 kΩ total. Small jumps near threshold, otherwise smooth.</p>
+<p>Sensor channel O3→O4: turn-on 0.39 V, similar shape. All four ohmics fine. Parked: all channel gates at 0.6 V, CS at 0 V.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 6</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Gate leakage</td><td>all &lt; 20 pA within limits; B3 limited to 1.2 V</td><td>everywhere</td></tr>
+<tr><td>Turn-on threshold</td><td>qubit channel 0.36 V; sensor channel 0.39 V</td><td>Chapters 7, 8</td></tr>
+<tr><td>Hysteresis</td><td>≈ 25 mV</td><td>tuning strategy</td></tr>
+<tr><td>Series resistance (open channel)</td><td>≈ 10 kΩ</td><td>Chapter 8</td></tr>
+<tr><td>Ohmics</td><td>O1–O4 all working</td><td>Chapters 8–10</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why are all the gates along the path swept together for the first turn-on, instead of one at a time?</p>
+<details><summary>Show answer</summary><div>Current can only flow if electrons are accumulated under every gate along the path. Sweeping one gate alone while the others stay at 0 V would show nothing, because the others keep the channel empty. Sweeping them together tests the simplest possible question, whether a channel forms at all, and finds the overall threshold. Individual gates are then tested by lowering them one at a time from the "all open" state (Chapter 7).</div></details>
+<p>2. A turn-on curve shows 300 mV of hysteresis, and the threshold moves by 50 mV every time you repeat the sweep. What does this suggest, and how would you proceed?</p>
+<details><summary>Show answer</summary><div>Many charge traps near the interface or in the oxide are being filled and emptied as the gates move, so the electrostatic landscape is not stable. Tuning will be frustrating, because every large excursion changes the device. A common strategy is to sweep once to a working point, then avoid large excursions and let the device settle; some groups find it helps to wait or to cycle the gates a few times. If the instability persists, it may be better to switch to another device on the chip.</div></details>
+<p>3. Using the capacitance estimate in the worked example, how much does the reservoir density change if the lead gate is raised by 50 mV?</p>
+<details><summary>Show answer</summary><div>About 1.6 × 10¹² cm⁻² per volt × 0.05 V = 8 × 10¹⁰ cm⁻². That is a 16% change on a density of 5 × 10¹¹ cm⁻², which is why lead gates are usually set once and left alone: changing them changes the reservoirs, and with them the tunnel barriers next to them.</div></details>
+</div>

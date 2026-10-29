@@ -27,6 +27,8 @@ def _nice_ticks(lo, hi, n=5):
 def _fmt(v):
     if abs(v) < 1e-12:
         return '0'
+    if abs(v) >= 1000 and abs(v) < 1e5 and float(v).is_integer():
+        return f'{int(v)}'.replace('-', '−')
     if abs(v) >= 1000 or abs(v) < 0.01:
         s = f'{v:.3g}'
     else:
@@ -96,8 +98,9 @@ class Axes:
             anchor = 'end' if lx is None else 'start'
             self.parts.append(f'<text class="sm" text-anchor="{anchor}" x="{xx:.1f}" y="{Y - 4:.1f}">{label}</text>')
 
-    def text(self, x, y, s, cls='sm', anchor='start', dx=0, dy=0):
-        self.parts.append(f'<text class="{cls}" text-anchor="{anchor}" x="{float(self.X(x)) + dx:.1f}" y="{float(self.Y(y)) + dy:.1f}">{s}</text>')
+    def text(self, x, y, s, cls='sm', anchor='start', dx=0, dy=0, style=''):
+        st = f' style="{style}"' if style else ''
+        self.parts.append(f'<text class="{cls}" text-anchor="{anchor}" x="{float(self.X(x)) + dx:.1f}" y="{float(self.Y(y)) + dy:.1f}"{st}>{s}</text>')
 
     def image(self, rgba, extent=None):
         """rgba: HxWx4 uint8 array covering xlim x ylim (row 0 = top)."""

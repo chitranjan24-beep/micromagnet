@@ -1,0 +1,129 @@
+<!--meta {"id": "electronics", "part": "Part B · Getting a chip ready and cold", "title": "The electronics around the fridge"}-->
+
+<p class="lede">Outside the fridge sits a rack of instruments, each solving one problem: holding gate voltages steady, measuring tiny currents, playing fast pulses, generating microwaves, and reading out the sensor. This chapter explains what each instrument does for our device, why each needs the specifications it has, and how they are tied together in time. The exact brands vary from lab to lab; the jobs do not.</p>
+
+<h2>The jobs to be done</h2>
+<p>Our device needs six kinds of signal. It is worth listing them before looking at any hardware, because the requirements follow directly from the physics:</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Job</th><th>Where it goes</th><th>What it needs</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Static gate voltages</td><td>every gate</td><td>many channels, µV stability, high resolution, slow safe ramps</td><td>They set the electrostatic landscape. Their noise moves the dots directly.</td></tr>
+<tr><td>Transport and DC sensing</td><td>ohmic contacts</td><td>pA–nA current measurement, small AC excitation</td><td>First characterization; current through the sensor</td></tr>
+<tr><td>Fast gate pulses</td><td>P1, P2, B2 (via bias tees)</td><td>ns timing, mV amplitudes, long sequences, triggers</td><td>Moving between initialization, manipulation and readout; exchange pulses</td></tr>
+<tr><td>Microwave bursts</td><td>P1 (MW)</td><td>10–20 GHz, phase control, shaped envelopes</td><td>EDSR rotations of each qubit</td></tr>
+<tr><td>Readout carrier and demodulation</td><td>sensor ohmic O3 (tank)</td><td>stable ~200 MHz tone, low-noise amplification, fast demodulation</td><td>Single-shot charge detection in microseconds</td></tr>
+<tr><td>Timing and synchronization</td><td>all instruments</td><td>a common clock and a master trigger</td><td>Every pulse and every measurement must line up</td></tr>
+</tbody></table></div>
+
+<h2>Static gate voltages</h2>
+<p>Every gate needs a DC voltage that stays put, often for days. The instrument is a multichannel low-noise DC source, essentially a rack of precision digital-to-analog converters with filtered outputs: 24 to 48 channels with 18 to 25 bits of resolution, a few volts of range, and very low noise. Commercial units used widely in the field include QDevil's QDAC and Basel Precision Instruments' LNHR DAC, and many groups build their own <cite data-r="wessels2026"></cite>.</p>
+<p>Three properties matter most:</p>
+<ul>
+<li><b>Noise.</b> A fluctuating gate voltage is indistinguishable from charge noise: it moves the dot levels. At a lever arm of 0.1 eV/V, 10 µV of noise on a plunger moves the dot by 1 µeV. Good sources are quiet at the microvolt level, and the fridge filters remove what remains above a few kilohertz.</li>
+<li><b>Resolution.</b> You need to place a dot level to a fraction of the thermal energy, which means steps of well under a millivolt. A room-temperature voltage divider (for example 1:5 or 1:10) is often added on sensitive gates: it reduces the range and the noise and improves the resolution by the same factor.</li>
+<li><b>Safe ramping.</b> Gates are fragile. The software layer enforces maximum voltages for every gate and ramps between values slowly, so that a mistyped "5" instead of "0.5" does not destroy a device.</li>
+</ul>
+<div class="box numbers"><span class="tag">Worked numbers: resolution in energy</span>
+<p>A 20-bit source spanning ±10 V has steps of 20 V / 2²⁰ ≈ 19 µV. Through a 1:10 divider that becomes 1.9 µV at the gate, or 0.19 µeV at a lever arm of 0.1 eV/V: far finer than anything we need.</p>
+<p>A 14-bit pulse generator spanning ±1 V has steps of 2 V / 2¹⁴ ≈ 122 µV. After 10 dB of line attenuation (a voltage factor of 0.32), that is 39 µV at the gate, about 3.9 µeV of dot energy. That is close to the thermal energy, which is coarse for a readout level. This is why fast generators are used for <em>changes</em> around an operating point set precisely by the DC source, not for setting the operating point itself.</p>
+</div>
+
+<h2>Measuring currents: transport and DC sensing</h2>
+<p>The first measurements on a cold device are transport measurements: a small bias across two ohmics, and a measurement of the current that flows through the device. The currents are tiny, from picoamperes to nanoamperes, so the current is converted to a voltage by a <b>transimpedance amplifier</b> (also called a current preamplifier) with a gain of 10⁷ to 10⁹ V/A. High gain means low noise but low bandwidth, typically a kilohertz or so at the highest gains.</p>
+<p>Most transport is measured with a <b>lock-in amplifier</b>. A small AC excitation, typically 10 to 100 µV at a low frequency such as 77 Hz (chosen to avoid harmonics of the mains frequency), is added to the source–drain bias. The lock-in multiplies the resulting current by a reference at the same frequency and averages, recovering only the part of the current that responds to the excitation: the differential conductance dI/dV. This rejects offsets, drifts and most of the 1/f noise of the amplifier. The excitation must be small compared with k<sub>B</sub>T<sub>e</sub>/e (about 4 µV at 50 mK) to probe the true linear response, or at least small compared with the features you want to resolve. For first surveys, larger excitations are acceptable.</p>
+<p>A variation used for charge sensing is to apply a small square wave to a gate instead of the bias, and lock in to the sensor current at that frequency. This measures the <em>transconductance</em> dI/dV<sub>gate</sub>, which highlights charge transitions as sharp lines. HRL used exactly this to map their first undoped dots <cite data-r="borselli2015"></cite>.</p>
+
+<h2>Fast pulses</h2>
+<p>An arbitrary waveform generator (AWG) plays pre-programmed voltage waveforms on several channels with nanosecond timing. For spin qubits it must provide:</p>
+<ul>
+<li>enough amplitude: after line attenuation, pulses of 1 to 50 mV at the plunger and barrier gates;</li>
+<li>sample rates around 1 GS/s or more, so edges and exchange pulses can be shaped at the nanosecond level;</li>
+<li>long sequences built from reusable segments, since a single experiment may contain thousands of different pulse sequences;</li>
+<li>marker and trigger outputs, to start other instruments at the right moment.</li>
+</ul>
+<p>The AWG's outputs are usually DC-coupled, so a waveform can hold a level for milliseconds; the bias tee on the sample board then defines the lowest frequency that actually reaches the gate (Chapter 3). Modern "qubit controllers", from companies such as Zurich Instruments, Qblox, Quantum Machines and Keysight, or open-source designs built on RFSoC FPGA boards, combine AWG channels, microwave generation, digitizers and a real-time sequencer in one system. That makes feedback and conditional operations much easier <cite data-r="philips2022,wessels2026"></cite>.</p>
+
+<h2>Microwave drive</h2>
+<p>EDSR needs bursts at the qubit frequencies, 15.42 and 15.72 GHz for our device, with precisely controlled duration, amplitude and phase. The phase matters because it defines the rotation axis: a burst with phase 0 rotates about x, one with phase 90° about y (Chapter 19). The standard way to make such bursts is <b>IQ modulation</b>:</p>
+<ul>
+<li>A microwave source provides a continuous local oscillator (LO) tone, say at 15.50 GHz.</li>
+<li>An AWG provides two baseband waveforms, I(t) and Q(t), oscillating at an intermediate frequency (IF) of tens to a few hundred megahertz and shaped by the pulse envelope.</li>
+<li>An IQ mixer multiplies them together to produce a burst at LO ± IF. The sign is chosen by the relative phase of I and Q. With IF = −80 MHz the output is at 15.42 GHz (qubit 1); with IF = +220 MHz it is at 15.72 GHz (qubit 2). One LO and one mixer can thus drive both qubits.</li>
+</ul>
+<p>Real mixers are imperfect. Some LO leaks through, and an unwanted mirror-image sideband appears at LO ∓ IF. Both must be calibrated away with small DC offsets and amplitude and phase corrections on I and Q. An uncorrected sideband at the wrong frequency can drive the other qubit. Many labs use vector signal generators that contain the mixer and its calibration. The key point is that <em>phase coherence</em> comes from the LO: as long as the LO runs continuously and the IF waveforms are timed on a fixed clock, every burst has a well-defined phase relative to the qubit's rotating frame.</p>
+
+<h2>Readout electronics</h2>
+<p>For reflectometry (Chapter 10), a stable RF source generates the carrier near the tank's resonance frequency, around 205 MHz for our device. It is sent down the attenuated input line, and the reflected wave comes back through the HEMT amplifier. At room temperature the signal is amplified further and then <b>demodulated</b>: multiplied by a copy of the carrier and its 90°-shifted version, and low-pass filtered. The result is the in-phase and quadrature components I and Q of the reflected signal. A charge transition changes the tank's impedance, which shifts the reflected signal by a small vector in the IQ plane.</p>
+<p>Demodulation can be done with analog mixers followed by a digitizer, or entirely digitally by sampling the RF signal directly and multiplying in an FPGA, as lock-in amplifiers and qubit controllers do. Digital demodulation also makes it easy to integrate over a chosen window and compare the result with a threshold in real time, so the controller knows within microseconds whether the sensor saw a charge transition. That is what real-time feedback, such as initialization by measurement, requires <cite data-r="philips2022"></cite>.</p>
+
+<h2>Timing and synchronization</h2>
+<p>Every instrument that generates or measures a time-dependent signal contains its own clock. Left alone, the clocks drift apart by parts per million, and a 15 GHz drive would slip in phase relative to the AWG's IF waveforms. Two measures keep everything coherent:</p>
+<ul>
+<li><b>A common frequency reference.</b> One instrument (or a dedicated rubidium or crystal reference) distributes a 10 MHz reference signal to all the others, and each locks its internal clocks to it. All frequencies in the system are then fixed multiples of one master clock.</li>
+<li><b>A master trigger.</b> One sequencer starts each repetition of the experiment and triggers the others: the AWG starts its pulses, the microwave burst is gated, the digitizer starts recording. The timing between them is calibrated once, including cable delays, and then stays fixed.</li>
+</ul>
+<p>With these in place, timing jitter between instruments is in the picosecond range, which is irrelevant for spin qubits: a jitter of 10 ps on a 125 ns π pulse changes the rotation angle by less than 10⁻⁴. What does matter is that the phase of every microwave burst is referenced to the same continuously running LO, and that the software tracks the phase of each qubit's rotating frame through the sequence (Chapter 22).</p>
+
+<h2>Software</h2>
+<p>The software stack is as much a part of the experiment as the hardware. In most groups it has four layers:</p>
+<ol>
+<li><b>Instrument drivers</b> that talk to each box over Ethernet, USB or GPIB.</li>
+<li><b>A gate layer</b> that knows each gate's safe limits and ramp rates, and implements <em>virtual gates</em> (Chapter 11), so you can ask for "move dot 1's level by 50 µeV" and the software adjusts several physical gates together.</li>
+<li><b>A measurement framework</b> that runs sweeps, builds pulse sequences, stores data with all instrument settings, and plots results. Common open-source choices are QCoDeS, Quantify and the QICK/spinQICK packages; many groups use their own.</li>
+<li><b>A calibration manager</b> that stores the current best values of every calibrated parameter (the device passport, in effect) and the routines that update them <cite data-r="philips2022"></cite>.</li>
+</ol>
+<p>Two habits pay for themselves many times over. Save every instrument setting with every dataset, automatically. Six weeks later, nobody remembers which divider was on P2. And keep the device passport in the software, not just in a notebook, so that every experiment reads the same calibrated values.</p>
+
+<h2>The signal map of our device</h2>
+<p>Putting it together, Figure 5.1 shows what is connected to what for our device.</p>
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 420" width="860" role="img" aria-label="Instrument connections for the device">
+  <defs><marker id="e-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fillink2"/></marker></defs>
+  <rect x="20" y="20" width="200" height="54" rx="5" class="boxl"/><text class="ttl" x="32" y="42">DC source (24 ch)</text><text class="sm" x="32" y="60">all gates; dividers on P1, P2, SP</text>
+  <rect x="20" y="96" width="200" height="54" rx="5" class="boxl"/><text class="ttl" x="32" y="118">AWG (4 ch, 1 GS/s)</text><text class="sm" x="32" y="136">P1, P2, B2 pulses; markers</text>
+  <rect x="20" y="172" width="200" height="66" rx="5" class="boxl"/><text class="ttl" x="32" y="194">MW: LO + IQ mixer</text><text class="sm" x="32" y="212">I/Q from AWG (IF −80 / +220 MHz)</text><text class="sm" x="32" y="228">→ 15.42 / 15.72 GHz</text>
+  <rect x="20" y="260" width="200" height="66" rx="5" class="boxl"/><text class="ttl" x="32" y="282">RF source + demodulator</text><text class="sm" x="32" y="300">205 MHz carrier; I/Q out;</text><text class="sm" x="32" y="316">integrate + threshold</text>
+  <rect x="20" y="348" width="200" height="54" rx="5" class="boxl"/><text class="ttl" x="32" y="370">lock-in + current amp</text><text class="sm" x="32" y="388">transport, DC sensing</text>
+  <rect x="300" y="160" width="160" height="90" rx="6" class="boxa"/><text class="ttl" x="312" y="184">sequencer /</text><text class="ttl" x="312" y="202">trigger master</text><text class="sm" x="312" y="222">10 MHz reference</text><text class="sm" x="312" y="238">to all instruments</text>
+  <rect x="560" y="60" width="270" height="300" rx="8" class="box"/>
+  <text class="ttl" x="575" y="84">fridge → sample board → device</text>
+  <text class="sm" x="575" y="110">P1: DC + pulses (bias tee) + microwaves</text>
+  <text class="sm" x="575" y="130">P2: DC + pulses (bias tee)</text>
+  <text class="sm" x="575" y="150">B2: DC + exchange pulses (bias tee)</text>
+  <text class="sm" x="575" y="170">B1, B3, SB1, SB2: DC</text>
+  <text class="sm" x="575" y="190">SP: DC (+ compensation pulses)</text>
+  <text class="sm" x="575" y="210">LL, LR, SL, SR, CS: DC</text>
+  <text class="sm" x="575" y="230">O3: tank circuit (RF in/out) + DC bias</text>
+  <text class="sm" x="575" y="250">O4: to ground / current amplifier</text>
+  <text class="sm" x="575" y="270">O1, O2: reservoir ohmics (DC)</text>
+  <text class="sm" x="575" y="300">all DC lines: filtered twisted pairs</text>
+  <text class="sm" x="575" y="320">fast lines: attenuated coax</text>
+  <g class="thin">
+    <line x1="220" y1="47" x2="558" y2="110" marker-end="url(#e-ar)"/>
+    <line x1="220" y1="123" x2="558" y2="130" marker-end="url(#e-ar)"/>
+    <line x1="220" y1="205" x2="558" y2="112" marker-end="url(#e-ar)"/>
+    <line x1="220" y1="293" x2="558" y2="230" marker-end="url(#e-ar)"/>
+    <line x1="220" y1="375" x2="558" y2="250" marker-end="url(#e-ar)"/>
+    <line x1="300" y1="200" x2="222" y2="123" marker-end="url(#e-ar)"/>
+    <line x1="300" y1="205" x2="222" y2="205" marker-end="url(#e-ar)"/>
+    <line x1="300" y1="215" x2="222" y2="290" marker-end="url(#e-ar)"/>
+  </g>
+</svg>
+</div>
+<figcaption>The signal map for our device. Static voltages come from a multichannel DC source. Fast pulses and the microwave I/Q waveforms come from an AWG. The microwave burst is made by IQ-modulating a local oscillator. Reflectometry uses a carrier at the tank frequency and a demodulator that can threshold in real time. One sequencer triggers everything, and all instruments share a 10 MHz reference.</figcaption>
+</figure>
+<div class="box notebook"><span class="tag">Lab notebook · first day cold</span>
+<p>Base 10 mK reached 06:20. All instruments on common 10 MHz (from rubidium reference); trigger master = AWG marker 1.</p>
+<p>Gate limits loaded: plungers/barriers −0.2 V … +1.0 V, lead gates −0.2 … +1.5 V, CS −0.5 … +0.3 V; ramp 10 mV/s. Dividers 1:5 on P1, P2, SP.</p>
+<p>Lock-in: 77.7 Hz, 100 µV excitation on O1 (transport), current amp 10⁸ V/A on O2. Ready to un-ground lines one by one.</p>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why not simply set the readout level of a plunger with the AWG, instead of combining a DC source with AWG pulses?</p>
+<details><summary>Show answer</summary><div>The AWG's resolution and stability are coarser. A 14-bit generator over ±1 V has 122 µV steps, which after the line becomes several µeV of dot energy, comparable to the thermal energy. A precision DC source sets the operating point with sub-µeV resolution and low drift; the AWG only adds relative pulses on top.</div></details>
+<p>2. An IQ mixer is driven with LO = 15.50 GHz and IF = −80 MHz, and its image sideband is poorly suppressed. At what frequency is the image, and why could that matter for our device?</p>
+<details><summary>Show answer</summary><div>The wanted output is at LO + IF = 15.42 GHz, and the image is at LO − IF = 15.58 GHz. That is not on qubit 2 (15.72 GHz), but it is only 140 MHz away, and a strong image or other spurious tones can still drive off-resonant rotations or heat the device. With other IF choices the image could land right on the other qubit, so IF frequencies are chosen with this in mind and the sideband is calibrated away.</div></details>
+<p>3. Two instruments are not locked to a common reference and their clocks differ by 1 ppm. How much phase does a 15 GHz drive slip relative to the AWG over 100 µs?</p>
+<details><summary>Show answer</summary><div>A 1 ppm error at 15 GHz is 15 kHz. Over 100 µs that accumulates 15 kHz × 100 µs = 1.5 cycles, about 540° of phase. Without a common reference, the rotation axes of successive pulses would be essentially random over a Ramsey or echo sequence.</div></details>
+</div>

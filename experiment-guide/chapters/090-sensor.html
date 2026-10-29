@@ -1,0 +1,73 @@
+<!--meta {"id": "sensor", "part": "Part C · First signs of life", "title": "A charge sensor: counting electrons without current"}-->
+
+<p class="lede">Transport stops working exactly where things get interesting: when the qubit dots hold only one or two electrons, almost no current can flow through them. From here on, every measurement goes through a charge sensor, a separate dot whose current responds to the charges nearby. This chapter forms the sensor, chooses its operating point, and shows what it can and cannot do when read out with an ordinary DC current measurement.</p>
+
+<h2>How a sensor sees a single electron</h2>
+<p>The sensor dot SD sits about 100 nm from dot 2. The two are not tunnel-coupled; no electron can hop between them. But they are capacitively coupled: an electron arriving in dot 2 raises the electrostatic potential at the sensor slightly, which shifts the sensor's levels up, exactly as if its plunger SP had been lowered a little. If the sensor is tuned onto the steep side of one of its Coulomb peaks, that small shift becomes a large change in its conductance <cite data-r="field1993,hanson2007"></cite>.</p>
+<p>The size of the shift, expressed as an equivalent voltage on the sensor's plunger, is approximately</p>
+\[ \Delta V_{SP} \approx \frac{e\,C_m}{C_{SP}\,C_{\Sigma,2}}, \]
+<p>where C<sub>m</sub> is the mutual capacitance between dot 2 and the sensor, C<sub>SP</sub> is the capacitance between the sensor dot and its plunger, and C<sub>Σ,2</sub> is the total capacitance of dot 2 <cite data-r="zajac2016"></cite>. The shift falls off steeply with distance, because in a densely gated device the metal overhead screens the field of the electron (Chapter 2). In our device one electron in dot 2 shifts the sensor peak by about 0.16 mV of SP-equivalent voltage, a sizeable fraction of the peak's width. An electron in dot 1, farther away, shifts it by less, about 0.10 mV.</p>
+<figure>
+<div class="figbody"><!--plot:sensor-operating--></div>
+<figcaption>The sensor dot's Coulomb peak (blue) and the same peak shifted by one extra electron in dot 2 (orange). The dashed curve is the slope of the peak. At the operating point on the steepest flank, one electron changes the sensor conductance by about 0.15 e²/h, roughly a third of the peak height.</figcaption>
+</figure>
+
+<h2>Choosing the operating point</h2>
+<p>The sensor's job is to turn a small potential shift into the largest possible change in signal, so it is parked where the slope of its peak is steepest (Figure 9.1). A few practical considerations refine that choice:</p>
+<ul>
+<li><b>Peak height and width.</b> A tall, broad peak gives a larger current and therefore a better signal-to-noise ratio, as long as the shift per electron is still a reasonable fraction of the width. That is why the sensor dot is made larger than the qubit dots and its barriers are set fairly open: its peaks are lifetime-broadened and strongly conducting (around 0.5 e²/h), not sharp and thermally limited.</li>
+<li><b>Dynamic range.</b> A sensor on the steepest flank responds linearly only for shifts much smaller than the peak width. Several electrons moving at once, or a slow drift, push it off the flank, and the response becomes non-linear or even changes sign.</li>
+<li><b>Which side?</b> Either flank works, but they respond with opposite signs. Pick one and stay on it, so that "the sensor signal went up" always means the same thing.</li>
+</ul>
+<p>Princeton reported sensor shifts of about 0.26 mV per electron for the nearest dot in their nine-dot array, and HRL typical maximum fractional current changes of 20% <cite data-r="zajac2016,borselli2015"></cite>. Our numbers are similar.</p>
+
+<h2>Keeping the sensor on its flank</h2>
+<p>The moment you start sweeping the qubit dots' gates to look for their charge transitions, a problem appears. P2 is about 100 nm from the sensor dot, so it has a small direct capacitance to the sensor, too. Sweeping P2 by 100 mV moves the sensor's level as much as several millivolts on SP would, which drags the sensor through its own Coulomb peaks. The resulting signal is a large sawtooth from the sensor itself, with the small steps from dot 2's charge transitions buried in it (Figure 9.2, orange).</p>
+<p>The cure is <b>compensation</b>. Measure how much SP must change to undo a given change in P2, the ratio of P2's lever arm on the sensor to SP's, and let the software adjust SP automatically whenever P2 moves. HRL did exactly this with linear corrections to the sensor plunger, which held the sensor's sensitivity constant over large gate sweeps for hours <cite data-r="borselli2015"></cite>. With compensation, the sensor stays on its flank, and only real charge transitions change the signal (Figure 9.2, blue). This is the simplest example of a virtual gate (Chapter 11).</p>
+<figure>
+<div class="figbody"><!--plot:sensor-compensation--></div>
+<figcaption>Sensor signal while plunger P2 is swept through three charge transitions of dot 2 (simulated). Without compensation (orange), P2's direct coupling to the sensor drags the sensor across its own peak and then into blockade, so the transitions appear as small kinks on a large background and then vanish. With SP compensated (blue), the sensor stays on its flank, and each transition appears as a clean step. The steps become smaller as the dot fills, because each additional electron sits slightly farther from the sensor and is better screened.</figcaption>
+</figure>
+
+<h2>The limit of DC sensing: speed</h2>
+<p>So far the sensor current has been measured the ordinary way: a small bias across the sensor, and a room-temperature current amplifier at the end of a long cable. This works well for mapping charge transitions slowly. But spin readout needs to catch a single electron tunnelling, often within microseconds, and here DC sensing runs into a hard limit.</p>
+<p>The sensor is a resistor of 50 to 100 kΩ on the steep flank of its peak. The cable from the device to the room-temperature amplifier, with its filters, has a capacitance to ground of roughly a nanofarad. Together they form an RC low-pass filter.</p>
+<div class="box numbers"><span class="tag">Worked numbers: why DC sensing is slow</span>
+<p>With R = 100 kΩ and C = 1 nF, the time constant is RC = 10⁵ × 10⁻⁹ = 100 µs, and the bandwidth 1/(2πRC) ≈ 1.6 kHz.</p>
+<p>A tunnelling event that lasts 50 µs, typical of spin readout, is washed out completely.</p>
+<p>The fridge filters, designed to keep the electrons cold (Chapter 4), make it worse. In practice a DC-measured sensor in a well-filtered fridge reaches a few kilohertz to a few tens of kilohertz. Princeton, for example, filtered a 500 kHz-sampled DC sensor signal to 30 kHz, the bandwidth of their amplifier <cite data-r="zajac2016"></cite>.</p>
+</div>
+<p>There are two ways out. One is to put the current-to-voltage conversion close to the device: Princeton later used a 20 kΩ resistor on the sample holder with cryogenic amplifiers at 1 K and 4 K, reaching about 1 MHz bandwidth <cite data-r="mills2022ro"></cite>, and HRL uses a similar cold transimpedance arrangement <cite data-r="blumoff2022"></cite>. The other, and the most widely used, is radio-frequency reflectometry, which sidesteps the cable capacitance by making it part of a resonant circuit (Chapter 10).</p>
+
+<h2>Watching electrons tunnel in real time</h2>
+<p>Even with a few kilohertz of bandwidth, the sensor can do something remarkable: watch a single electron hop on and off a dot in real time. Tune dot 2's level close to the Fermi level of its reservoir, and close its barrier B3 until the electron tunnels at, say, 100 Hz. The sensor signal then switches randomly between two levels, one for N electrons and one for N + 1. This is a <dfn data-def="A signal that switches randomly between two discrete levels, as a sensor does when an electron tunnels on and off a nearby dot.">random telegraph signal</dfn>.</p>
+<p>Two numbers come out of such a trace. A histogram of the signal shows two peaks, and the ratio of their separation to their width is the sensor's <b>signal-to-noise ratio</b> at that bandwidth. Princeton measured SNR = 6.9 at 30 kHz <cite data-r="zajac2016"></cite>. From the SNR and the bandwidth B follows the <dfn data-def="The smallest charge change detectable with unit signal-to-noise ratio in one second of averaging, δq ≈ e/(SNR·√B), in units of e/√Hz.">charge sensitivity</dfn>, δq ≈ e/(SNR·√B), which for Princeton's numbers is 8 × 10⁻⁴ e/√Hz. The second number is the time-averaged occupation as the dot's level is swept slowly through the Fermi level. It traces out the reservoir's Fermi function, and its width gives the electron temperature with no transport through the dot at all (Chapter 8).</p>
+
+<h2>What the sensor shows first</h2>
+<p>With a compensated sensor, sweeping P1 and P2 shows charge transitions that are completely invisible in transport, right down to the last electron. The next step is to make those sweeps fast enough to explore large regions of gate space, and to understand the pattern of lines that two dots produce. That needs a faster sensor, which is the subject of the next chapter. The pattern itself, the charge stability diagram, is the subject of Chapter 11.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the sensor signal occasionally jumps by a large amount and stays there, or its sensitivity changes from hour to hour.</p>
+<p><b>Likely cause:</b> a charge trap near the sensor switching state. That shifts the sensor peak by a fraction of its width, exactly like a real electron would. Slow drift of the gate voltages or of trapped charges has a similar, gradual effect.</p>
+<p><b>What to do:</b> re-centre the sensor on its flank regularly. Groups automate this: before each measurement, a short sweep of SP finds the steepest point again. If one trap switches often, try a different sensor peak or a slightly different sensor configuration, which can move the sensor away from the trap.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 9</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Sensor operating point</td><td>steep flank of an SD peak, G ≈ 0.3 e²/h</td><td>Chapters 10, 11</td></tr>
+<tr><td>Signal per electron</td><td>D2: ≈ 0.16 mV SP-equivalent (ΔG ≈ 0.15 e²/h); D1: ≈ 0.10 mV</td><td>Chapters 10, 16</td></tr>
+<tr><td>Sensor compensation</td><td>P1 → SP −0.008, P2 → SP −0.012 (V/V)</td><td>Chapter 11</td></tr>
+<tr><td>DC sensing bandwidth</td><td>a few kHz</td><td>motivates Chapter 10</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Why is the sensor dot deliberately made larger, and its barriers more open, than the qubit dots?</p>
+<details><summary>Show answer</summary><div>A sensor needs a large current and a steep, but not too narrow, Coulomb peak, so that a small potential shift gives a large, linear change in current with good signal-to-noise ratio. A larger dot with open barriers has broader, strongly conducting peaks. The qubit dots need the opposite: small size, large charging and orbital energies, and weak, controlled tunnelling.</div></details>
+<p>2. A sensor shows SNR = 4 at a bandwidth of 10 kHz. What is its charge sensitivity, and what SNR would you expect at 100 kHz if the noise is white?</p>
+<details><summary>Show answer</summary><div>δq ≈ e/(4 × √10⁴) = e/400 = 2.5 × 10⁻³ e/√Hz. With white noise, the noise amplitude grows as √B, so at 100 kHz the SNR falls by √10 to about 1.3, too low for reliable single-shot detection.</div></details>
+<p>3. In our device, P2's cross-coupling to the sensor is 0.012 V/V, and the sensor peak is about 0.56 mV wide (FWHM) on SP. How far does an uncompensated 200 mV sweep of P2 move the sensor, and what happens to the measurement?</p>
+<details><summary>Show answer</summary><div>The sensor moves by 0.012 × 200 mV = 2.4 mV of SP-equivalent voltage, about four peak widths. Starting on one flank, it is dragged across the top of its peak, down the other flank and into Coulomb blockade, where it no longer responds to anything. Transitions in the first part of the sweep appear as small kinks on a large background, and those in the last part are invisible. Compensating SP keeps it on the flank throughout.</div></details>
+</div>

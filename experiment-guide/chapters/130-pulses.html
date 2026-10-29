@@ -1,0 +1,134 @@
+<!--meta {"id": "pulses", "part": "Part D · Seeing single electrons fast", "title": "Pulses: moving gates in nanoseconds"}-->
+
+<p class="lede">So far every gate voltage has been set by a DC source and left to settle. A qubit experiment instead moves the device through several configurations in every cycle, initialize, manipulate, read, sometimes within a microsecond, and repeats that cycle thousands of times. This chapter is about getting those fast voltage changes onto the gates intact: what the bias tee does to them, how to check that the size you program is the size that arrives, how to find and remove the distortion of fast edges, and how fast pulses also give you a live view of the charge stability diagram.</p>
+
+<h2>Why the gates need two paths</h2>
+<p>The DC lines are heavily filtered to keep the electrons cold and quiet (Chapter 4). Their bandwidth is a few hundred hertz at most, so a voltage step through them takes milliseconds to settle. The fast lines are coaxial cables with attenuators and no low-pass filters, so they pass gigahertz, but they also carry more noise and cannot hold a steady voltage through a long chain of capacitively coupled components. The bias tee on the sample board joins the two (Chapter 3). The DC path sets where the gate sits on average; the coax adds the fast changes on top. Every pulse you program is therefore a deviation from the DC working point, and the gate sees</p>
+\[ V_{\text{gate}}(t) = V_{DC} + V_{\text{pulse}}(t) \ast h(t), \]
+<p>where h(t) is the response of the fast path: the AWG's own output stage, the attenuators and cables, the bias tee, the bond wire and the gate itself. The rest of this chapter is about the two ends of h(t): what it does on long timescales (the bias tee) and on short ones (everything else).</p>
+
+<h2>Slow time scales: the bias tee forgets the average</h2>
+<p>The capacitor of the bias tee passes changes and blocks steady voltages. Seen from the gate, the pulse path is a high-pass filter with a time constant τ = RC, 2 MΩ × 100 nF = 0.2 s in our board, a cutoff of 0.8 Hz. A pulse much shorter than τ passes almost unchanged. But over many repetitions the capacitor charges up to the <em>average</em> of the pulse sequence, and that average is subtracted from every level (Figure 13.1).</p>
+<figure>
+<div class="figbody"><!--plot:bias-tee-droop--></div>
+<figcaption>The voltage at the gate in four stages of a 10 ms cycle (load +10 mV, manipulate +20 mV, read +5 mV, empty 0 mV), repeated for one second through a bias tee with τ = 0.2 s. Left: the levels as programmed relative to zero. Within a second, all of them sink by the sequence's average, 7.5 mV, and the read level ends up 2.5 mV below the DC point instead of 5 mV above it. Right: the same pulses shifted so that each cycle averages to zero. The levels are then where they were set from the first cycle on.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: how much a bias tee moves your levels</span>
+<p>A sequence with an average of 7.5 mV shifts every level by 7.5 mV. With a lever arm of 0.10 eV/V, that is 750 µeV, ten times the width of the spin readout window you will set up in Chapter 15 (about 60 µeV). The readout simply stops working, and it stops working gradually over the first second, which makes the cause hard to see.</p>
+<p>Within a single long pulse, the level also droops by a fraction t/τ of its amplitude. A 10 mV pulse held for 1 ms droops by 10 mV × 1/200 = 50 µV, or 5 µeV, which is harmless. Held for 50 ms, it droops by 2.5 mV, which is not.</p>
+</div>
+<p>There are three remedies, and most groups use all three:</p>
+<ul>
+<li><b>Make every sequence average to zero.</b> Add a compensation segment at the end of the cycle, at the opposite voltage, whose area cancels the rest. Delft's first silicon micromagnet qubit used exactly such a four-stage cycle, initialize, manipulate, read and compensate <cite data-r="kawakami2014"></cite>. Alternatively, shift the whole pulse down by its average, as in Figure 13.1, and move the DC point up by the same amount.</li>
+<li><b>Keep pulse lengths much shorter than τ.</b> Long holds belong on the DC path, not in the pulse.</li>
+<li><b>Let the bias tee settle.</b> When a sequence starts or changes, the capacitor needs several τ, about a second here, to reach its new state. Running a few hundred cycles before recording any data avoids a slowly drifting start to every measurement.</li>
+</ul>
+<p>The same high-pass filtering also limits the fast lines from below: a pulse path with a 0.8 Hz cutoff cannot hold a level for seconds. That is one reason the DC sources are still needed, and why truly static configurations, like the operating point between experiments, always come from them.</p>
+
+<h2>Is the pulse the size you programmed?</h2>
+<p>Between the AWG and the gate are attenuators, usually 20 to 30 dB on the fast lines to keep thermal noise out (Chapter 4), plus the cable losses that grow with frequency. Room-temperature arithmetic gives a first estimate of how much of the programmed amplitude arrives, but the device itself gives the real answer. Apply a square wave to vP1, much slower than the dot–reservoir tunnel rate, and sweep the DC level of vP1 across a charge transition, for a range of programmed amplitudes. The transition then appears twice: once when the DC level reaches it, and once when the top of the pulse does (Figure 13.2).</p>
+<figure>
+<div class="figbody"><!--plot:pulse-amplitude-map--></div>
+<figcaption>Calibrating the pulse amplitude at the gate. A square wave on vP1 makes a charge transition appear twice: at the DC level where the transition sits (vertical line) and where the top of the square wave reaches it (slanted line). The slanted line moves by 0.5 mV of DC for each millivolt of programmed amplitude, so half the programmed amplitude reaches the gate. The derivative of the sensor signal is shown.</figcaption>
+</figure>
+<p>The slope of the slanted line is the fraction of the programmed amplitude that arrives at the gate, here 0.5, measured with the dot itself, including every attenuator, cable loss and divider. Multiplying by the lever arm converts the AWG's programmed amplitude directly into energy. Do this once for every gate that receives pulses, and repeat it at a few pulse frequencies: if the slope changes with frequency, the fast path's response is not flat, which is the subject of the next section. The same measurement, done with slower and slower square waves, also shows where the bias tee begins to cut in.</p>
+
+<h2>Fast time scales: edges that do not stay where you put them</h2>
+<p>A step programmed on the AWG does not arrive at the gate as a clean step. The coax attenuates high frequencies more than low ones (the skin effect), connectors and bond wires reflect a few percent of the signal, and the bias tee and board components add slow tails of their own. The result is an edge that overshoots, rings, and then creeps toward its final value over hundreds of nanoseconds to microseconds (Figure 13.3, left) <cite data-r="duan2026"></cite>.</p>
+<p>Why does a few percent matter? Because so much of what follows depends steeply on gate voltage. The exchange coupling that drives a two-qubit gate changes exponentially with the barrier voltage, by a factor e for every 5 mV in our device (Chapter 24). A 3% error on a 20 mV barrier pulse is 0.6 mV, which changes J by 13% and leaves a conditional phase error of the same relative size after the gate. A singlet–triplet qubit, which is driven entirely by baseband exchange pulses, sees the creeping edge as a chirp in its oscillation frequency (Chapter 27). An Elzerman readout pulse that is still settling in its first microseconds puts the dot's levels slightly in the wrong place just when a spin-up electron is most likely to tunnel out.</p>
+<figure>
+<div class="figbody"><!--plot:step-response--></div>
+<figcaption>Left: a step as it arrives at the gate without correction (orange), with a 4% overshoot that decays in about 25 ns and a 3% sag over the following microsecond, and after digital pre-distortion (blue). Right: measuring the same response in situ. A charge transition is located at each delay after a 2 mV step on vP1. Its apparent position follows the error of the step, which can be measured at the sub-percent level and then inverted.</figcaption>
+</figure>
+<p>The cure is <dfn data-def="Shaping the programmed waveform with the inverse of the measured line response, so that the pulse arriving at the gate has the intended shape.">pre-distortion</dfn>: measure the step response h(t) of each fast line, compute a digital filter that inverts it, and apply that filter to every waveform before it leaves the AWG. Many modern AWGs and control systems include real-time filters for this, typically a few exponential correction stages and a short finite-impulse-response stage for the first nanoseconds.</p>
+<p>The step response is best measured where it matters, at the gate. A room-temperature oscilloscope sees the AWG and cables but not the bonds and the sample board. The device itself can act as the oscilloscope: a charge transition is a very sharp voltage reference. Step vP1 by a few millivolts at time zero, and at a variable delay afterwards ask whether the charge transition has been crossed, by measuring the occupation for a range of small DC offsets. The DC offset at which the transition is found at each delay maps out how far the gate is from its target (Figure 13.3, right). The Rochester group developed exactly this, detuning-axis pulsed spectroscopy at the (1,0)–(0,1) transition, to measure each plunger line's response in situ before any spin qubit was tuned up, and corrected the distortions to about a nanosecond with a digital pre-distortion filter <cite data-r="duan2026"></cite>.</p>
+
+<h2>Virtual gates for pulses</h2>
+<p>The virtual gates of Chapter 11 apply to pulses as well: a pulse on vP1 is sent as a pulse on P1 together with small compensating pulses on P2 and the barriers, so that dot 2 stays put while dot 1 moves. Two details make this work. First, the compensation pulses must arrive at the same moment, so cable delays must be matched, or calibrated and corrected in software, to within a nanosecond or so. Second, the lines must have the same response: if the P1 edge rings and the P2 edge does not, the compensation is right on average and wrong for the first few hundred nanoseconds. Pre-distortion makes all lines look alike, which is another reason to do it before anything that relies on fast virtual-gate pulses, such as exchange gates with compensated barrier pulses (Chapter 24).</p>
+
+<h2>Video mode: the charge stability diagram live</h2>
+<p>With fast lines and fast readout, a charge stability diagram no longer needs a slow raster of DC steps. Instead, a fast sawtooth (or triangle) ramp is applied to vP1 through its bias tee, and a slower stepped ramp to vP2, while the reflectometry signal is digitized continuously. A 100 × 100-pixel map at 2 µs per pixel takes 20 ms, so the diagram can be refreshed many times per second, like a video. Moving a DC knob, a barrier or the sensor plunger, then shows its effect live, and the hours of tuning in Chapter 11 shrink to minutes. Most modern spin-qubit labs tune their devices this way.</p>
+<p>Video mode inherits every issue from this chapter. The ramps go through bias tees, so they should average to zero: a symmetric sawtooth centred on the DC point works. The ramp frequency, here 5 kHz for the fast axis, sits far above the bias tee cutoff, so the droop is negligible. Any delay between the ramp and the digitizer shifts the image along the fast axis, and a triangle ramp then shows doubled lines for the up and down halves. The fix is to calibrate the delay until both halves overlap. Finally, the electron has to follow the ramp. Where a dot–reservoir rate falls below the pixel rate, transition lines fade or disappear (Chapter 12), and a missing line in a video-mode map is a statement about tunnel rates, not about charges.</p>
+<p>That last point connects to an effect worth knowing by name. When a rate is very slow, the charge state does not change where it would in equilibrium, but stays as it was until a faster path becomes available. The region of the diagram where the "wrong" charge state persists is called a <dfn data-def="A region of the charge stability diagram where the charge state cannot change on the measurement timescale because the relevant tunnel rate is too slow, so the previous state persists.">latched</dfn> region. Latching is a nuisance in fast charge maps, but it is used deliberately for readout: a spin-dependent charge state can be made to latch, which keeps it in place long enough to be measured with a high signal (Chapter 16) <cite data-r="harveycollard2018"></cite>.</p>
+
+<h2>Putting a cycle together</h2>
+<p>A single-qubit experiment is a repeated cycle of a few stages, each a different gate configuration, with other instruments switched on and off in step. Figure 13.4 shows the cycle for the Elzerman experiments of Part E. In each stage you can already see the logic of the following chapters: the dot is first emptied, then loaded with an electron of the lower-energy spin, then pulled deep into Coulomb blockade so that it cannot exchange electrons with the reservoir while the microwaves rotate its spin, and finally placed where only a spin-up electron can leave.</p>
+<figure class="wide">
+<div class="figbody">
+<svg viewBox="0 0 860 330" width="860" role="img" aria-label="Timing diagram of one measurement cycle">
+  <g class="sm">
+    <text x="16" y="56">energy level of dot 2</text><text x="16" y="72">(set by vP2)</text>
+    <text x="16" y="146">MW I/Q on P1</text>
+    <text x="16" y="196">RF carrier (sensor)</text>
+    <text x="16" y="246">digitizer window</text>
+    <text x="16" y="296">marker / trigger</text>
+  </g>
+  <g class="thin">
+    <line x1="160" y1="20" x2="160" y2="310" stroke-dasharray="3 3"/>
+    <line x1="250" y1="20" x2="250" y2="310" stroke-dasharray="3 3"/>
+    <line x1="410" y1="20" x2="410" y2="310" stroke-dasharray="3 3"/>
+    <line x1="500" y1="20" x2="500" y2="310" stroke-dasharray="3 3"/>
+    <line x1="760" y1="20" x2="760" y2="310" stroke-dasharray="3 3"/>
+    <line x1="840" y1="20" x2="840" y2="310" stroke-dasharray="3 3"/>
+  </g>
+  <g class="ttl" style="font-size:12px">
+    <text x="166" y="16">empty</text><text x="256" y="16">load spin-down</text><text x="416" y="16">manipulate</text>
+    <text x="566" y="16">read (spin-up tunnels out)</text><text x="764" y="16">compen.</text>
+  </g>
+  <path class="t1" d="M140,70 L160,70 L160,40 L250,40 L250,86 L410,86 L410,104 L500,104 L500,70 L760,70 L760,52 L840,52"/>
+  <g class="sm">
+    <text x="166" y="34">above E_F</text><text x="256" y="80">below E_F</text><text x="416" y="99">deep, blockade</text><text x="506" y="64">E_F between spin levels</text>
+  </g>
+  <path class="t2" d="M140,150 L425,150"/>
+  <path class="t2" d="M425,150 L425,132 M429,150 L429,168 M433,150 L433,132 M437,150 L437,168 M441,150 L441,132 M445,150 L445,168 M449,150 L449,132 M453,150 L453,168 M457,150 L457,132 M461,150 L461,168 M465,150 L465,132 M469,150 L469,168 M473,150 L473,132 M477,150 L477,168 M481,150 L481,132 M485,150 L485,168"/>
+  <path class="t2" d="M485,150 L840,150"/>
+  <path class="t1" d="M140,204 L500,204 L500,184 L760,184 L760,204 L840,204"/>
+  <path class="t1" d="M140,254 L508,254 L508,234 L752,234 L752,254 L840,254"/>
+  <path class="t1" d="M140,304 L160,304 L160,286 L164,286 L164,304 L425,304 L425,286 L429,286 L429,304 L508,304 L508,286 L512,286 L512,304 L840,304"/>
+  <g class="sm">
+    <text x="430" y="186">burst 125 ns</text>
+    <text x="580" y="178">on only while reading</text>
+    <text x="580" y="228">starts after the edge settles</text>
+  </g>
+  <text class="sm" x="166" y="326">≈ 1 ms</text><text class="sm" x="256" y="326">≈ 1 ms</text><text class="sm" x="416" y="326">µs</text><text class="sm" x="506" y="326">≈ 0.7 ms</text><text class="sm" x="764" y="326">≈ 1 ms</text>
+</svg>
+</div>
+<figcaption>Timing of one cycle of an Elzerman-readout single-qubit experiment (not to scale). The plunger moves dot 2's level through four configurations; the microwave burst arrives only while the dot is deep in blockade; the readout carrier is on only while reading, so it cannot heat the device or disturb the qubit during manipulation; the digitizer records the read stage. Marker pulses from the sequencer start each instrument. The compensation stage makes the cycle average to zero for the bias tee.</figcaption>
+</figure>
+<p>Getting this cycle right is mostly about timing. All instruments share one 10 MHz reference and one trigger (Chapter 5), but each signal travels a different path. The microwave line has an IQ mixer and different cables, and the readout chain has amplifiers and filters, so their delays relative to the plunger pulse differ by tens of nanoseconds. Each delay is calibrated once, with the device. For the microwave burst, slide it in time across the edge of the manipulation stage and watch where the qubit stops responding (Chapter 18). For the digitizer, look for the plunger edge in the averaged sensor signal. Switching the readout carrier and sensor off during manipulation is not only about timing: both deposit power near the qubit, and QuTech and Princeton both keep them off except during readout <cite data-r="philips2022,mills2022ro"></cite>. Pulses heat the device too, which shows up as small shifts of the qubit frequency during and after bursts (Chapter 22) <cite data-r="undseth2023"></cite>.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> a pulsed experiment works for the first few seconds after you start it and then fades, or a readout point that worked yesterday is off by a few millivolts today, after the sequence was changed.</p>
+<p><b>Likely cause:</b> the sequence's average is not zero, and the bias tee is shifting every level by it. Changing the length of any stage changes the average, and with it the shift.</p>
+<p><b>What to do:</b> compute the average of the sequence and compensate it, automatically, in the software that builds sequences. Check by repeating the pulse-amplitude map of Figure 13.2 with the full sequence running.</p>
+<p><b>What you see:</b> lines in a video-mode map appear doubled, or shifted between the forward and backward sweeps.</p>
+<p><b>Likely cause:</b> a delay between the ramp and the digitizer. <b>What to do:</b> shift the acquisition in time until the two halves overlap, then keep that delay in the configuration.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 9</span>
+<p>Pulse amplitude at gate (square wave 1 kHz, transition map): P1 0.50, P2 0.52, B2 0.48 of programmed. Same at 100 kHz within 1%.</p>
+<p>Step response at (1,0)–(0,1), 2 mV steps on vP1, vP2: overshoot 4% / 25 ns, sag 3% / 0.6 µs on both. Exponential + FIR pre-distortion loaded on AWG; residual &lt; 0.3% after 5 ns.</p>
+<p>All sequences zero-average (compensation stage added automatically). Delays: MW +38 ns, digitizer +210 ns relative to P1 edge.</p>
+<p>Video mode running: 100 × 100 px, 2 µs/px, 20 ms/frame on the (0,0)–(1,1) region.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 13</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Bias tee time constant</td><td>0.2 s; all sequences zero-average</td><td>everywhere</td></tr>
+<tr><td>Pulse amplitude at gate</td><td>P1 0.50, P2 0.52, B2 0.48 of programmed</td><td>Chapters 15, 16, 24</td></tr>
+<tr><td>Pre-distortion</td><td>loaded on P1, P2, B2; residual &lt; 0.3% after 5 ns</td><td>Chapters 24, 25, 27</td></tr>
+<tr><td>Delays relative to P1</td><td>MW +38 ns, digitizer +210 ns</td><td>Chapters 15, 18</td></tr>
+<tr><td>Video mode</td><td>100 × 100 px at 20 ms/frame</td><td>Chapter 31</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. A cycle has stages of 2 ms at +8 mV, 1 µs at +15 mV, 1 ms at +3 mV and 2 ms at 0 mV. What compensation level, held for 1 ms, makes it average to zero?</p>
+<details><summary>Show answer</summary><div>The area is 2 × 8 + 0.001 × 15 + 1 × 3 + 0 = 19.015 mV·ms. A 1 ms compensation stage must cancel it, so its level is −19 mV. That is large, so in practice one would either lengthen the compensation stage (−3.8 mV for 5 ms) or shift all levels down by the average and adjust the DC point.</div></details>
+<p>2. Why is a step response measured with an oscilloscope at room temperature not good enough for pre-distortion?</p>
+<details><summary>Show answer</summary><div>It misses everything between the end of the fridge coax and the gate: the bias tee, the sample board, the bond wires and the gate itself, which contribute some of the slow tails and reflections. The cables also behave differently cold. Measuring with a charge transition includes all of it.</div></details>
+<p>3. In a video-mode map, one transition line is visible at the top of the image but fades out at the bottom. What does that tell you?</p>
+<details><summary>Show answer</summary><div>The tunnel rate for that transition falls along the line, presumably because the gate stepped on the slow axis also closes the barrier. Where it drops below the pixel rate, the electron no longer follows the fast ramp, and the line fades. The charge transition is still there; it is just too slow to see at this speed.</div></details>
+</div>

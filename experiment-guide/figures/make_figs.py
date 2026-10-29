@@ -207,6 +207,495 @@ def line_noise():
     save('line-noise', ax.svg(legend_pos='tr'))
 
 
+# ================================================================ Part C
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -60, 60)))
+
+
+@fig
+def turn_on():
+    V = np.linspace(0, 0.8, 500)
+    def I(V, Vth):  # nA, a channel that turns on and then rises roughly linearly (lead resistance limited)
+        x = (V - Vth) / 0.012
+        return 2.0 * np.log1p(np.exp(np.clip(x, -50, 50))) * 0.012 / 0.1
+    up, dn = I(V, 0.36), I(V, 0.335)
+    ax = Axes(330, 300, xlim=(0, 0.8), ylim=(-0.2, 10.5), xlabel='lead gates LL = LR (V)', ylabel='current O1 → O2 (nA)',
+              title='accumulation (turn-on)', mr=12)
+    ax.line(V, up + RNG.normal(0, 0.03, V.size), 't1', 'sweep up')
+    ax.line(V, dn + RNG.normal(0, 0.03, V.size), 't2', 'sweep down')
+    ax.vline(0.36, 'thin dash', 'threshold', ly=8.8)
+    Vg = np.linspace(0, 2.2, 400)
+    Ig = 0.3 * RNG.normal(0, 1, Vg.size) + 1e3 * np.exp((Vg - 2.2) / 0.11)   # pA
+    ax2 = Axes(330, 300, xlim=(0, 2.2), ylim=(-5, 120), xlabel='voltage on one gate (V)', ylabel='current drawn by the gate (pA)',
+               title='leakage check', mr=12)
+    ax2.line(Vg, Ig, 't3')
+    ax2.hline(10, 'thin dash', 'tolerable leakage', lx=0.05)
+    ax2.vline(1.55, 'thin dash', 'onset', ly=100)
+    save('turn-on', row(ax.svg(legend_pos='tl'), ax2.svg()))
+
+
+@fig
+def pinch_off():
+    V = np.linspace(-0.1, 0.8, 600)
+    ax = Axes(600, 310, xlim=(-0.1, 0.8), ylim=(-0.2, 6.5), xlabel='barrier voltage (V), all other gates open',
+              ylabel='conductance (e²/h)', mt=18)
+    for Vpo, cls, lab, w in [(0.18, 't1', 'B1', 0.035), (0.26, 't3', 'B2', 0.03), (0.21, 't2', 'B3', 0.04)]:
+        G = 5.2 * sigmoid((V - Vpo - 0.06) / w)
+        # weak resonances near pinch-off: unintended small dots / disorder
+        G += 0.35 * np.exp(-((V - Vpo - 0.02) / 0.006) ** 2) + 0.2 * np.exp(-((V - Vpo - 0.045) / 0.007) ** 2)
+        G += RNG.normal(0, 0.02, V.size)
+        ax.line(V, G, cls, f'{lab}: pinch-off ≈ {Vpo:.2f} V')
+    save('pinch-off', ax.svg(legend_pos='br'))
+
+
+@fig
+def barrier_map():
+    """Current through dot 1 versus its two barriers B1 (x) and B2 (y), plunger P1 fixed (log colour scale)."""
+    b1 = np.linspace(0.10, 0.50, 400); b2 = np.linspace(0.15, 0.55, 400)
+    B1, B2 = np.meshgrid(b1, b2)
+    T1 = sigmoid((B1 - 0.27) / 0.03); T2 = sigmoid((B2 - 0.34) / 0.03)
+    Gs = 1 / (1 / (T1 + 1e-12) + 1 / (T2 + 1e-12))          # two barriers in series (classical)
+    mu = -(B1 + B2) / 0.022                                 # dot level falls as both barriers rise (units of peak spacing)
+    frac = mu - np.floor(mu)
+    peaks = np.exp(-((frac - 0.5) / 0.07) ** 2)
+    closed = sigmoid((0.6 - (T1 + T2)) / 0.12)              # Coulomb blockade only when the barriers are fairly closed
+    G = Gs * ((1 - closed) + closed * (0.02 + peaks))
+    Z = np.log10(G + 1e-5)
+    ax = Axes(430, 400, xlim=(0.10, 0.50), ylim=(0.15, 0.55), xlabel='B1 (V)', ylabel='B2 (V)', grid=False, ml=56, mt=18)
+    ax.image(colormap(Z[::-1], 'viridis', -3.2, 0))
+    ax.text(0.40, 0.49, 'open channel', 'sm', anchor='middle')
+    ax.text(0.12, 0.17, 'pinched off', 'sm', anchor='start', style='fill:#fff')
+    ax.text(0.30, 0.235, '← a dot forms here:', 'sm', anchor='start', style='fill:#fff')
+    ax.text(0.30, 0.235, '   diagonal Coulomb peaks', 'sm', anchor='start', style='fill:#fff', dy=14)
+    save('barrier-map', ax.svg())
+
+
+def ci_current(Vsd, Vg, Ec, alpha, kT, Vg0, Nrange, eo=None, eta=0.5):
+    """Sequential-tunnelling current (arb.) through a single dot in the constant-interaction model.
+    Energies in meV, voltages in mV. eo: optional excited-state energy (meV) opening an extra channel."""
+    I = np.zeros_like(Vsd)
+    for N in Nrange:
+        mu = N * Ec - alpha * (Vg - Vg0)
+        muS, muD = eta * Vsd, -(1 - eta) * Vsd
+        I += fermi(mu - muS, kT) - fermi(mu - muD, kT)
+        if eo is not None:
+            mue = mu + eo
+            # excited channel adds current only inside the bias window where the ground channel also conducts
+            win = (fermi(mu - muS, kT) - fermi(mu - muD, kT))
+            I += 0.6 * (fermi(mue - muS, kT) - fermi(mue - muD, kT)) * np.sign(win) * (np.abs(win) > 0.5)
+    return I
+
+
+@fig
+def diamonds():
+    vg = np.linspace(400, 640, 520)          # mV on P1
+    vsd = np.linspace(-9, 9, 360)            # mV bias
+    VG, VSD = np.meshgrid(vg, vsd)
+    Ec, alpha = 6.5, 0.10
+    I = ci_current(VSD, VG, Ec, alpha, kT=0.06, Vg0=450, Nrange=range(0, 4), eo=3.0)
+    G = np.abs(np.gradient(I, vsd, axis=0))
+    ax = Axes(600, 360, xlim=(400, 640), ylim=(-9, 9), xlabel='plunger P1 (mV)', ylabel='bias V_SD (mV)', grid=False, mt=18)
+    ax.image(colormap(G[::-1], 'magma', 0, np.percentile(G, 99.3)))
+    for x, lab in [(420, 'N = 0'), (482.5, 'N = 1'), (547.5, 'N = 2'), (612, 'N = 3')]:
+        ax.text(x, 0, lab, 'lbl', anchor='middle', dy=4, style='fill:#fff')
+    save('diamonds', ax.svg())
+
+
+@fig
+def te_fit():
+    V = np.linspace(-0.6, 0.6, 400)   # mV around a peak
+    alpha = 0.10
+    ax = Axes(330, 300, xlim=(-0.6, 0.6), ylim=(-0.03, 1.1), xlabel='plunger offset (mV)', ylabel='conductance (norm.)',
+              title='peak shape', mr=12)
+    for Te, cls in [(0.05, 't1'), (0.2, 't2')]:
+        kT = KB_UEV * Te / 1000      # meV
+        G = 1 / np.cosh(alpha * V / (2 * kT)) ** 2
+        ax.line(V, G + RNG.normal(0, 0.01, V.size), cls, f'Tₑ = {int(Te * 1000)} mK')
+    Tm = np.linspace(0.01, 0.5, 100)
+    Te = np.sqrt(Tm ** 2 + 0.048 ** 2)
+    fwhm = 3.525 * KB_UEV * Te / alpha / 1000   # mV
+    ax2 = Axes(330, 300, xlim=(0, 0.5), ylim=(0, 1.6), xlabel='mixing-chamber temperature (K)', ylabel='peak FWHM (mV)',
+               title='width versus temperature', mr=12)
+    ax2.line(Tm, 3.525 * KB_UEV * Tm / alpha / 1000, 'thin dash', 'Tₑ = T_MXC (ideal)')
+    ax2.line(Tm, fwhm, 't1', 'measured: saturates')
+    pts = np.array([0.01, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5])
+    ax2.scatter(pts, 3.525 * KB_UEV * np.sqrt(pts ** 2 + 0.048 ** 2) / alpha / 1000 * (1 + RNG.normal(0, 0.03, pts.size)), 'f1', r=3.5, opacity=0.9)
+    save('te-fit', row(ax.svg(legend_pos='tr'), ax2.svg(legend_pos='tl')))
+
+
+@fig
+def sensor_operating():
+    V = np.linspace(-1.5, 1.5, 700)    # mV on SP relative to a peak
+    w = 0.32
+    G0 = 0.45 / np.cosh(V / w) ** 2
+    shift = 0.16                       # mV equivalent shift when one electron enters D2
+    G1 = 0.45 / np.cosh((V + shift) / w) ** 2
+    slope = np.abs(np.gradient(G0, V))
+    ax = Axes(600, 310, xlim=(-1.5, 1.5), ylim=(-0.02, 0.52), xlabel='sensor plunger SP (mV, relative to peak centre)',
+              ylabel='sensor conductance (e²/h)', mt=18)
+    ax.line(V, G0, 't1', 'D2 holds N electrons')
+    ax.line(V, G1, 't2', 'D2 holds N+1 electrons')
+    ax.line(V, slope / slope.max() * 0.45, 'thin dash', 'slope |dG/dV| (scaled)')
+    Vop = V[np.argmax(slope * (V > 0))]
+    ax.vline(Vop, 'acc', 'operating point', ly=0.49)
+    print('operating point %.3f mV, dG = %.3f e2/h' % (Vop, 0.45 / np.cosh(Vop / w) ** 2 - 0.45 / np.cosh((Vop + shift) / w) ** 2))
+    save('sensor-operating', ax.svg(legend_pos='tl'))
+
+
+@fig
+def sensor_compensation():
+    VP = np.linspace(300, 520, 1500)                # mV on P2
+    trans = [345, 410, 468]                          # D2 charge transitions (0->1, 1->2, 2->3)
+    nD2 = sum(sigmoid((VP - t) / 0.6) for t in trans)
+    w = 0.32
+    cross = 0.012                                    # SP-equivalent shift per mV of P2 (cross-capacitance)
+    shift = 0.16
+    Vop = 0.28
+    def G(Veff):
+        return 0.45 / np.cosh(Veff / w) ** 2
+    # uncompensated: P2 sweeps the sensor along its own peak and through neighbouring peaks (period 1.6 mV in SP units)
+    per = 50.0                                       # sensor peak spacing on SP: E_C/alpha = 4 meV / 0.08 eV/V
+    Veff_u = Vop - cross * (VP - 300) + shift * nD2
+    Gu = sum(G(Veff_u + k * per) for k in range(-6, 6))
+    Veff_c = Vop + shift * nD2 - 0.0                  # compensated: SP moved by -cross*dVP2 automatically
+    Gc = G(Veff_c)
+    ax = Axes(600, 320, xlim=(300, 520), ylim=(-0.02, 1.02), xlabel='plunger P2 (mV)', ylabel='sensor signal (e²/h, offset)', mt=18, yticks=[])
+    ax.line(VP, Gu * 0.9 + 0.5 + RNG.normal(0, 0.004, VP.size), 't2', 'without compensation')
+    ax.line(VP, Gc * 1.0 + 0.02 + RNG.normal(0, 0.004, VP.size), 't1', 'with SP compensated')
+    for t, lab in zip(trans, ['0→1', '1→2', '2→3']):
+        ax.vline(t, 'thin dash', lab, ly=0.45)
+    save('sensor-compensation', ax.svg(legend_pos='tr'))
+
+
+# ================================================================ Part D
+L_TANK, CP_TANK = 1.2e-6, 0.5e-12
+
+
+def gamma(f, R, L=L_TANK, Cp=CP_TANK, Z0=50.0):
+    w = 2 * np.pi * f
+    Zdev = 1 / (1j * w * Cp + 1 / R)
+    Z = 1j * w * L + Zdev
+    return (Z - Z0) / (Z + Z0)
+
+
+@fig
+def reflecto_resonance():
+    f = np.linspace(150e6, 260e6, 2000)
+    ax = Axes(330, 300, xlim=(150, 260), ylim=(0, 1.02), xlabel='frequency (MHz)', ylabel='|Γ|', title='reflection magnitude', mr=12)
+    ax2 = Axes(330, 300, xlim=(150, 260), ylim=(-180, 180), xlabel='frequency (MHz)', ylabel='phase of Γ (°)', title='reflection phase',
+               yticks=[-180, -90, 0, 90, 180], mr=12)
+    for R, cls, lab in [(12e3, 't2', 'R = 12 kΩ'), (48e3, 't1', 'R = 48 kΩ (matched)'), (200e3, 't3', 'R = 200 kΩ'), (1e10, 't4', 'R → ∞ (blockade)')]:
+        g = gamma(f, R)
+        ax.line(f / 1e6, np.abs(g), cls, lab)
+        ax2.line(f / 1e6, np.degrees(np.angle(g)), cls)
+    print('f0 = %.1f MHz, Rmatch = %.1f kOhm' % (1 / (2 * np.pi * np.sqrt(L_TANK * CP_TANK)) / 1e6, L_TANK / (50 * CP_TANK) / 1e3))
+    save('reflecto-resonance', row(ax.svg(legend_pos='bl'), ax2.svg()))
+
+
+@fig
+def reflecto_match():
+    R = np.logspace(3.5, 6.5, 500)
+    f0 = 1 / (2 * np.pi * np.sqrt(L_TANK * CP_TANK))
+    g = gamma(f0, R)
+    dG = np.abs(np.gradient(g, np.log(R)))
+    ax = Axes(600, 300, xlim=(3.5, 6.5), ylim=(0, 1.4), xlabel='sensor resistance R (log scale)', ylabel='value at f₀', yticks=[0, 0.25, 0.5, 0.75, 1],
+              xticks=[4, 5, 6], xfmt=lambda v: {4: '10 kΩ', 5: '100 kΩ', 6: '1 MΩ'}.get(int(round(v)), ''), mt=18)
+    ax.line(np.log10(R), np.abs(g), 't1', '|Γ| at f₀')
+    ax.line(np.log10(R), dG / dG.max(), 't2', 'response to a change in R, |dΓ/d ln R| (normalised)')
+    ax.vline(np.log10(L_TANK / (50 * CP_TANK)), 'thin dash', 'R = L/(Z₀C_p) = 48 kΩ', ly=0.15)
+    save('reflecto-match', ax.svg(legend_pos='tr'))
+
+
+@fig
+def snr_time():
+    tmin = 0.055      # us, integration time for SNR = 1
+    rng = np.random.default_rng(3)
+    axs = []
+    for t, title in [(0.2, '0.2 µs integration'), (2.0, '2 µs integration')]:
+        snr = math.sqrt(t / tmin)
+        sig = 1.0 / snr
+        a = rng.normal(0, sig, 4000); b = rng.normal(1, sig, 4000)
+        bins = np.linspace(-1.5, 2.5, 90)
+        ha, _ = np.histogram(a, bins); hb, _ = np.histogram(b, bins)
+        c = (bins[1:] + bins[:-1]) / 2
+        ax = Axes(330, 280, xlim=(-1.5, 2.5), ylim=(0, max(ha.max(), hb.max()) * 1.45), xlabel='demodulated signal (norm.)', ylabel='counts',
+                  title=f'{title}: SNR ≈ {snr:.1f}', mr=12, yticks=[])
+        ax.area(c, np.zeros_like(c), ha, 'fa1'); ax.line(c, ha, 't1', 'N electrons')
+        ax.area(c, np.zeros_like(c), hb, 'fa2'); ax.line(c, hb, 't2', 'N + 1')
+        axs.append(ax.svg(legend_pos='tr'))
+    save('snr-time', row(*axs))
+
+
+@fig
+def rf_power():
+    P = np.linspace(-125, -80, 300)    # dBm at the device
+    amp = 10 ** (P / 20)                # carrier amplitude (arb.)
+    Pb = -100.0                         # power at which the RF excitation broadens the sensor peak
+    broad = np.sqrt(1 + (10 ** ((P - Pb) / 20) / 1.0) ** 2)
+    signal = amp / broad ** 1.6         # response per electron: grows with amplitude, drops once the peak broadens
+    snr = signal / signal.max()
+    ax = Axes(600, 290, xlim=(-125, -80), ylim=(0, 1.08), xlabel='carrier power at the tank (dBm)', ylabel='SNR per electron (normalised)', mt=18)
+    ax.line(P, snr, 't1', 'measured SNR in a fixed integration time')
+    ax.vline(P[np.argmax(snr)], 'thin dash', 'optimum', ly=1.02)
+    ax.text(-124, 0.36, 'too weak: amplifier noise wins', 'sm')
+    ax.text(-95, 0.38, 'too strong: the carrier', 'sm')
+    ax.text(-95, 0.38, 'broadens the sensor peak', 'sm', dy=14)
+    print('optimum power %.1f dBm' % P[np.argmax(snr)])
+    save('rf-power', ax.svg(legend_pos='tl'))
+
+
+# ---------------------------------------------------------------- chapter 11: double dot
+ALPHA = np.array([[0.10, 0.03], [0.03, 0.10]])      # eV/V: rows = dots, columns = gates P1, P2
+
+
+def dd_occupation(V1, V2, U=(6.5, 6.5), Um=0.9, A=ALPHA, V0=(0.450, 0.460), kT=0.004, Nmax=4):
+    """Thermal charge occupation of a double dot in the constant-interaction model.
+    V in volts, energies in meV. Returns <N1>, <N2>."""
+    n1 = (A[0, 0] * (V1 - V0[0]) + A[0, 1] * (V2 - V0[1])) * 1000 / U[0]   # induced charge (in electrons) offsets
+    n2 = (A[1, 0] * (V1 - V0[0]) + A[1, 1] * (V2 - V0[1])) * 1000 / U[1]
+    states = [(i, j) for i in range(Nmax) for j in range(Nmax)]
+    Es = []
+    for (i, j) in states:
+        # E = U1/2 * (i - 0.5 - n1)^2 ... shifted so that the 0->1 transition sits at n = 0
+        E = U[0] * (0.5 * i * i - i * (0.5 + n1)) + U[1] * (0.5 * j * j - j * (0.5 + n2)) + Um * i * j
+        Es.append(E)
+    Es = np.array(Es)
+    Emin = Es.min(axis=0)
+    w = np.exp(-(Es - Emin) / kT)
+    Z = w.sum(axis=0)
+    N1 = sum(w[k] * states[k][0] for k in range(len(states))) / Z
+    N2 = sum(w[k] * states[k][1] for k in range(len(states))) / Z
+    return N1, N2
+
+
+def csd_image(v1, v2, A=ALPHA, Um=0.9, sens=(0.10, 0.16), noise=0.0, kT=0.004):
+    V1, V2 = np.meshgrid(v1, v2)
+    N1, N2 = dd_occupation(V1, V2, A=A, Um=Um, kT=kT)
+    sig = -(sens[0] * N1 + sens[1] * N2)
+    if noise:
+        sig = sig + RNG.normal(0, noise, sig.shape)
+    d = np.hypot(np.gradient(sig, axis=1), np.gradient(sig, axis=0))
+    return V1, V2, N1, N2, d
+
+
+@fig
+def csd_dqd():
+    v1 = np.linspace(0.40, 0.66, 420); v2 = np.linspace(0.40, 0.66, 420)
+    V1, V2, N1, N2, d = csd_image(v1, v2, noise=0.0)
+    ax = Axes(460, 430, xlim=(400, 660), ylim=(400, 660), xlabel='P1 (mV)', ylabel='P2 (mV)', grid=False, ml=56, mt=18)
+    ax.image(colormap(d[::-1], 'Greys', 0, np.percentile(d, 99.2)))
+    for i in range(3):
+        for j in range(3):
+            m = (np.round(N1) == i) & (np.round(N2) == j)
+            if m.sum() > 300:
+                ax.text(V1[m].mean() * 1000, V2[m].mean() * 1000, f'({i},{j})', 'sm tacc', anchor='middle', dy=4)
+    save('csd-dqd', ax.svg())
+
+
+@fig
+def virtual_gates():
+    v = np.linspace(0.40, 0.62, 330)
+    V1, V2, N1, N2, d = csd_image(v, v)
+    ax1 = Axes(330, 330, xlim=(400, 620), ylim=(400, 620), xlabel='P1 (mV)', ylabel='P2 (mV)', grid=False, title='physical gates', mr=12)
+    ax1.image(colormap(d[::-1], 'Greys', 0, np.percentile(d, 99)))
+    # virtual gates vP1, vP2 defined so that each moves only its own dot: V = A^-1 * diag(a11, a22) * u
+    Ainv = np.linalg.inv(ALPHA)
+    M = Ainv @ np.diag([ALPHA[0, 0], ALPHA[1, 1]])
+    u = np.linspace(0.40, 0.62, 330)
+    U1, U2 = np.meshgrid(u, u)
+    base = np.array([0.45, 0.46])
+    P1 = base[0] + M[0, 0] * (U1 - base[0]) + M[0, 1] * (U2 - base[1])
+    P2 = base[1] + M[1, 0] * (U1 - base[0]) + M[1, 1] * (U2 - base[1])
+    N1v, N2v = dd_occupation(P1, P2)
+    sig = -(0.10 * N1v + 0.16 * N2v)
+    dv = np.hypot(np.gradient(sig, axis=1), np.gradient(sig, axis=0))
+    ax2 = Axes(330, 330, xlim=(400, 620), ylim=(400, 620), xlabel='virtual gate vP1 (mV)', ylabel='virtual gate vP2 (mV)', grid=False,
+               title='virtual gates', mr=12)
+    ax2.image(colormap(dv[::-1], 'Greys', 0, np.percentile(dv, 99)))
+    print('virtual gate matrix (physical = M @ virtual):', M)
+    save('virtual-gates', row(ax1.svg(), ax2.svg()))
+
+
+@fig
+def last_electron():
+    VP = np.linspace(200, 600, 2400)    # mV on P1 (virtual), other dot empty
+    trans = [452, 517, 612]
+    N = sum(sigmoid((VP - t) / 0.5) for t in trans)
+    sig = -0.10 * N + RNG.normal(0, 0.004, VP.size)
+    ax = Axes(600, 280, xlim=(200, 600), ylim=(-0.25, 0.03), xlabel='virtual plunger vP1 (mV)', ylabel='sensor signal (arb.)', yticks=[], mt=18)
+    ax.line(VP, sig, 't1')
+    ax.text(300, -0.03, 'N₁ = 0: no transitions over 250 mV', 'sm', anchor='middle')
+    ax.text(485, -0.14, 'N₁ = 1', 'sm', anchor='middle')
+    ax.text(560, -0.24, 'N₁ = 2', 'sm', anchor='middle', dy=0)
+    ax.vline(452, 'thin dash', '0→1', ly=-0.2)
+    ax.vline(517, 'thin dash', '1→2', ly=-0.2)
+    save('last-electron', ax.svg())
+
+
+# ---------------------------------------------------------------- chapter 12: tunnelling
+@fig
+def interdot_polarization():
+    eps = np.linspace(-150, 150, 600)    # ueV detuning
+    kT = KB_UEV * 0.05
+    ax = Axes(600, 300, xlim=(-150, 150), ylim=(-0.03, 1.05), xlabel='detuning ε (µeV)', ylabel='probability electron is in dot 2', mt=18)
+    for tc, cls in [(2, 't2'), (20, 't1'), (50, 't3')]:
+        Om = np.sqrt(eps ** 2 + 4 * tc ** 2)
+        P = 0.5 * (1 + eps / Om * np.tanh(Om / (2 * kT)))
+        ax.line(eps, P, cls, f't_c = {tc} µeV')
+    ax.text(-140, 0.3, '(1,0): electron in dot 1', 'sm')
+    ax.text(55, 0.45, '(0,1): electron in dot 2', 'sm')
+    save('interdot-polarization', ax.svg(legend_pos='tl'))
+
+
+@fig
+def pat_map():
+    eps = np.linspace(-160, 160, 420)    # ueV
+    f = np.linspace(1, 40, 300)          # GHz
+    E, F = np.meshgrid(eps, f)
+    tc = 20.0
+    Om = np.sqrt(E ** 2 + 4 * tc ** 2) / H_UEV_GHZ          # GHz
+    gam = 0.8
+    resp = np.sign(E) * (gam ** 2 / ((F - Om) ** 2 + gam ** 2))
+    base = np.tanh(E / 10.0) * 0.15
+    Z = base + 0.85 * resp
+    ax = Axes(460, 380, xlim=(-160, 160), ylim=(1, 40), xlabel='detuning ε (µeV)', ylabel='microwave frequency (GHz)', grid=False, ml=56, mt=18)
+    ax.image(colormap(Z[::-1], 'RdBu', -1, 1))
+    ax.line(eps, np.sqrt(eps ** 2 + 4 * tc ** 2) / H_UEV_GHZ, 'thin dash')
+    ax.text(0, 2 * tc / H_UEV_GHZ - 2.5, '2t_c/h ≈ 9.7 GHz', 'sm', anchor='middle')
+    save('pat-map', ax.svg())
+
+
+@fig
+def tunnel_rates():
+    V = np.linspace(-40, 50, 300)       # mV of virtual barrier relative to a reference
+    rate = 10 ** (3 + V / 29.5)         # one decade per ~30 mV (exp(V/12.8 mV))
+    ax = Axes(330, 300, xlim=(-40, 50), ylim=(0, 7), xlabel='virtual barrier vB3 (mV, relative)', ylabel='log₁₀ tunnel rate (Hz)',
+              title='dot–reservoir rate', mr=12, yticks=[0, 1, 2, 3, 4, 5, 6, 7])
+    ax.area(np.array([-40, 50]), np.array([4, 4]), np.array([5, 5]), 'fa3')
+    ax.text(-38, 4.35, 'Elzerman readout window', 'sm')
+    ax.area(np.array([-40, 50]), np.array([0, 0]), np.array([2.0, 2.0]), 'fa2')
+    ax.text(-38, 1.0, 'slower than a fast map: lines smear', 'sm')
+    meas = np.arange(-35, 45, 7.0)
+    ax.scatter(meas, 3 + meas / 29.5 + RNG.normal(0, 0.06, meas.size), 'f1', r=3.5, opacity=0.9)
+    ax.line(V, np.log10(rate), 't1')
+    V2 = np.linspace(-30, 30, 300)
+    tc = 10 ** (1.0 + V2 / 23.3)   # ueV, e-fold per 10 mV
+    ax2 = Axes(330, 300, xlim=(-30, 30), ylim=(-0.5, 2.5), xlabel='virtual barrier vB2 (mV, relative)', ylabel='log₁₀ t_c (µeV)',
+               title='interdot tunnel coupling', mr=12, yticks=[0, 1, 2])
+    ax2.line(V2, np.log10(tc), 't3')
+    mt = np.arange(-26, 28, 6.0)
+    ax2.scatter(mt, 1.0 + mt / 23.3 + RNG.normal(0, 0.05, mt.size), 'f3', r=3.5, opacity=0.9)
+    save('tunnel-rates', row(ax.svg(), ax2.svg()))
+
+
+@fig
+def load_unload():
+    t = np.linspace(0, 400, 800)       # us
+    rng = np.random.default_rng(11)
+    Gin, Gout = 1 / 45.0, 1 / 30.0     # per us
+    P_load = 1 - np.exp(-t * Gin)
+    P_unl = np.exp(-t * Gout)
+    ax = Axes(600, 300, xlim=(0, 400), ylim=(-0.05, 1.45), xlabel='time after the pulse edge (µs)', ylabel='average occupation of dot 2', mt=18, yticks=[0, 0.25, 0.5, 0.75, 1])
+    ax.line(t, P_load + rng.normal(0, 0.012, t.size), 't1', 'after pulsing the level below E_F (loading)')
+    ax.line(t, P_unl + rng.normal(0, 0.012, t.size), 't2', 'after pulsing it above E_F (unloading)')
+    ax.text(150, 0.62, 'fit: Γ_in = 1/45 µs ≈ 22 kHz', 'sm')
+    ax.text(150, 0.25, 'fit: Γ_out = 1/30 µs ≈ 33 kHz', 'sm')
+    save('load-unload', ax.svg(legend_pos='tr'))
+
+
+
+# ---------------------------------------------------------------- chapter 13: pulses
+def _highpass(x, dt, tau):
+    """First-order RC high-pass (bias tee seen from the device side)."""
+    a = tau / (tau + dt)
+    y = np.empty_like(x)
+    y[0] = x[0]
+    for i in range(1, x.size):
+        y[i] = a * (y[i - 1] + x[i] - x[i - 1])
+    return y
+
+
+@fig
+def bias_tee_droop():
+    dt = 0.05                     # ms
+    t = np.arange(0, 1000, dt)    # ms
+    ph = t % 10.0
+    # 10 ms cycle: load 4 ms (+10 mV), manipulate 1 ms (+20 mV), read 4 ms (+5 mV), empty 1 ms (0)
+    levels = [(0.0, 4.0, 10.0, 'load'), (4.0, 5.0, 20.0, 'manipulate'), (5.0, 9.0, 5.0, 'read'), (9.0, 10.0, 0.0, 'empty')]
+    uni = np.select([ph < 4, ph < 5, ph < 9], [10.0, 20.0, 5.0], 0.0)
+    comp = uni - 7.5                                    # same pulses, shifted so the cycle averages to zero
+    tau = 200.0                   # ms (2 MOhm x 100 nF)
+    cls = ['t1', 't3', 't2', 't4']
+    out = []
+    for seq, title in [(uni, 'unipolar sequence'), (comp, 'zero-average sequence')]:
+        y = _highpass(np.concatenate([[0.0], seq]), dt, tau)[1:]
+        ax = Axes(330, 300, xlim=(0, 1000), ylim=(-12, 22), xlabel='time (ms)', ylabel='level at the gate (mV)',
+                  title=title, mr=12, xticks=[0, 250, 500, 750, 1000])
+        for (a0, a1, v, name), c in zip(levels, cls):
+            idx = np.where((ph > a0 + 0.5 * (a1 - a0) - dt / 2) & (ph <= a0 + 0.5 * (a1 - a0) + dt / 2))[0]
+            ax.line(t[idx], y[idx], c, name if seq is uni else None)
+        ax.hline(0, 'thin dash')
+        out.append(ax)
+    out[0].text(330, -10.5, 'all levels sink by 7.5 mV', 'sm')
+    out[1].text(300, -10.5, 'levels stay where they were set', 'sm')
+    save('bias-tee-droop', row(out[0].svg(legend_pos='tr'), out[1].svg()))
+
+
+def _line_response(t):
+    """Step response of a realistic baseband line (ns): fast edge, a 4% 25-ns undershoot, 3% 600-ns droop."""
+    r = 1 - np.exp(-t / 0.8)
+    r += 0.04 * np.exp(-t / 25.0) * (t > 0) * (1 - np.exp(-t / 2.0))
+    r -= 0.03 * (1 - np.exp(-t / 600.0))
+    return np.where(t > 0, r, 0)
+
+
+@fig
+def step_response():
+    t = np.linspace(-20, 1000, 4000)
+    raw = _line_response(t)
+    fixed = np.where(t > 0, 1 - np.exp(-t / 0.8), 0) + RNG.normal(0, 0.0015, t.size) * (t > 0)
+    ax = Axes(330, 300, xlim=(-20, 1000), ylim=(0.9, 1.06), xlabel='time after the step (ns)', ylabel='step at the gate (normalized)',
+              title='what the gate actually sees', mr=12, yticks=[0.9, 0.95, 1.0, 1.05])
+    ax.hline(1, 'thin dash')
+    ax.line(t, raw, 't2', 'without correction')
+    ax.line(t, fixed, 't1', 'pre-distorted')
+    # in-situ map: charge transition position after a step of 2 mV on vP1
+    tau = np.linspace(4, 1000, 160)
+    off = np.linspace(-0.25, 0.25, 140)   # mV of DC offset relative to the nominal transition
+    T, O = np.meshgrid(tau, off)
+    shift = 2.0 * (_line_response(T + 1e-9) - 1)  # mV the gate is short of the target
+    occ = sigmoid((O + shift) / 0.012)
+    ax2 = Axes(330, 300, xlim=(0, 1000), ylim=(-0.25, 0.25), xlabel='delay after the step (ns)', ylabel='DC offset (mV)',
+               title='measured in situ at a charge line', mr=12, grid=False)
+    ax2.image(colormap(occ[::-1], 'viridis', 0, 1))
+    ax2.line(tau, -2.0 * (_line_response(tau + 1e-9) - 1), 'thin dash', extra='style="stroke:#fff"')
+    ax2.text(120, 0.17, 'charge line follows the settling step', 'sm', style='fill:#fff')
+    save('step-response', row(ax.svg(legend_pos='br'), ax2.svg()))
+
+
+@fig
+def pulse_amplitude_map():
+    V = np.linspace(440, 480, 400)     # DC on vP1 (mV)
+    A = np.linspace(0, 30, 240)        # programmed pulse amplitude at the AWG (mV)
+    VV, AA = np.meshgrid(V, A)
+    att = 0.5                          # fraction arriving at the gate (line + divider)
+    v0 = 470.0
+    w = 0.25
+    # square wave: half the time at V, half at V + att*A; electron follows (fast tunnelling)
+    occ = 0.5 * sigmoid((VV - v0) / w) + 0.5 * sigmoid((VV + att * AA - v0) / w)
+    sig = np.gradient(occ, axis=1)
+    ax = Axes(560, 330, xlim=(440, 480), ylim=(0, 30), xlabel='DC on virtual plunger vP1 (mV)', ylabel='programmed pulse amplitude (mV)',
+              grid=False, mt=18)
+    ax.image(colormap(sig[::-1], 'magma', 0, sig.max()))
+    ax.text(462, 26, 'slope: 0.5 of the programmed', 'sm', style='fill:#fff')
+    ax.text(462, 23.5, 'amplitude reaches the gate', 'sm', style='fill:#fff')
+    ax.text(471.5, 6, 'DC level at', 'sm', style='fill:#fff')
+    ax.text(471.5, 3.5, 'the transition', 'sm', style='fill:#fff')
+    ax.text(441, 26, 'pulse top at the', 'sm', style='fill:#fff')
+    ax.text(441, 23.5, 'transition', 'sm', style='fill:#fff')
+    save('pulse-amplitude-map', ax.svg())
+
+
 # ================================================================ main
 if __name__ == '__main__':
     names = sys.argv[1:] or list(FIGS)

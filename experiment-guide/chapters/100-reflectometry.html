@@ -1,0 +1,100 @@
+<!--meta {"id": "reflectometry", "part": "Part D · Seeing single electrons fast", "title": "RF reflectometry from the ground up"}-->
+
+<p class="lede">The DC sensor of Chapter 9 sees single electrons, but only a few thousand times per second, because the cable's capacitance shorts out its signal. Radio-frequency reflectometry turns that same capacitance into part of a resonant circuit and measures the sensor's resistance through the reflection of a weak radio wave. It brings the readout from milliseconds down to microseconds, and it is how nearly every modern spin-qubit experiment reads its sensor <cite data-r="vigneau2023,schoelkopf1998,reilly2007"></cite>.</p>
+
+<h2>The idea: measure a resistance by reflection</h2>
+<p>Send a radio-frequency wave down a 50 Ω cable towards a load. If the load's impedance Z equals the cable's impedance Z₀, the wave is absorbed completely. If not, part of it is reflected, with a complex <dfn data-def="Γ = (Z − Z₀)/(Z + Z₀): the complex amplitude ratio of the wave reflected from a load of impedance Z to the wave incident on it through a line of impedance Z₀.">reflection coefficient</dfn></p>
+\[ \Gamma = \frac{Z - Z_0}{Z + Z_0}. \]
+<p>The sensor dot is the load, but it is a poor one: its resistance on the flank of a peak is 50 to 100 kΩ, thousands of times larger than 50 Ω. Attached directly to the cable, it reflects almost everything whether its resistance is 50 kΩ or 100 kΩ, so Γ barely changes and nothing can be measured. The solution is an impedance-matching network that transforms the sensor's large resistance down to about 50 Ω. Then small changes of the sensor's resistance produce large changes in how much is reflected.</p>
+
+<h2>The tank circuit</h2>
+<p>The simplest matching network, used on our board (Chapter 3), is an inductor L in series with the sensor, together with the parasitic capacitance C<sub>p</sub> of the bond pad and wiring in parallel with the sensor. This "tank" behaves like a resonator: near its resonance frequency</p>
+\[ f_0 = \frac{1}{2\pi\sqrt{L\,C_p}} \approx 205\ \text{MHz} \quad (L = 1.2\ \mu\text{H},\ C_p = 0.5\ \text{pF}), \]
+<p>the inductor and capacitor together step the sensor's resistance R down to an effective resistance of</p>
+\[ R_{\text{eff}} \approx \frac{L}{R\,C_p}. \]
+<p>The match is perfect (R<sub>eff</sub> = Z₀, Γ = 0) when the sensor's resistance equals</p>
+\[ R_{\text{match}} = \frac{L}{Z_0\,C_p} = \frac{1.2\ \mu\text{H}}{50\ \Omega \times 0.5\ \text{pF}} = 48\ \text{k}\Omega. \]
+<p>This is the single most important formula in reflectometry design: it tells you which sensor resistance the circuit is optimized for. Our sensor, on the flank of its peak, has a resistance of 50 to 100 kΩ, which is close.</p>
+<figure>
+<div class="figbody"><!--plot:reflecto-resonance--></div>
+<figcaption>Calculated reflection from our tank circuit for four sensor resistances. When the sensor is in blockade (R → ∞), the tank is a lossless resonator and reflects everything (|Γ| = 1), with a sharp phase jump at f₀. At the matched resistance of 48 kΩ the reflection vanishes at resonance. A sensor that is more or less conducting than that gives an intermediate dip. A change in the sensor's resistance, caused by a nearby electron, therefore changes both the depth of the dip and the phase at f₀.</figcaption>
+</figure>
+<figure>
+<div class="figbody"><!--plot:reflecto-match--></div>
+<figcaption>Reflection at resonance as a function of sensor resistance (blue), and the size of the response to a small fractional change in resistance (orange). The response peaks near the matched resistance. A sensor resistance far from R<sub>match</sub>, in either direction, gives a much weaker signal. This is why the matching condition matters, and why a mismatched tank can make an excellent sensor look useless.</figcaption>
+</figure>
+<p>The parasitic capacitance is not known precisely before cooldown, and it is the main reason real tanks miss their design. Groups that need control over matching add tunable elements, such as varactor diodes, whose capacitance can be set with a voltage at low temperature <cite data-r="vigneau2023"></cite>.</p>
+
+<h2>Finding the resonance</h2>
+<p>The first reflectometry measurement on a cold device is a frequency sweep. A network analyzer, or the readout source and demodulator stepping in frequency, records the reflected amplitude and phase around the expected resonance, first with the sensor pinched off (R → ∞) and then with it conducting. Three things are read off:</p>
+<ul>
+<li><b>The resonance frequency.</b> In our device it comes out at 196 MHz instead of the estimated 205 MHz, so the real parasitic capacitance is about 0.55 pF.</li>
+<li><b>The depth of the dip</b> when the sensor conducts, which tells you how close to matched it is.</li>
+<li><b>The width of the dip</b>, which sets the resonator's bandwidth f₀/Q<sub>L</sub>. With a loaded quality factor of about 20, our tank responds in about 1/(2π × 10 MHz) ≈ 16 ns. That is fast enough never to be the limit; the limit will be noise.</li>
+</ul>
+<p>Then the carrier frequency is chosen, usually at or very near f₀, where the response to a change in sensor resistance is largest. Sweeping the sensor plunger SP at that frequency should show the sensor's Coulomb peaks in the reflected signal, now at microsecond speed.</p>
+
+<h2>From reflected wave to number: demodulation</h2>
+<p>The reflected wave comes back up through the cold directional coupler and the HEMT amplifier (Chapter 4) and is demodulated into its two quadratures I and Q (Chapter 5). A change in the sensor's resistance moves the signal point in the IQ plane along some direction set by the circuit and cable delays. Before thresholding, the IQ data are rotated so that this direction lies along one axis, and only that axis is kept. All of the signal is then in one number, and the orthogonal axis, which carries only noise, is discarded. The same rotation is applied to every subsequent measurement <cite data-r="philips2022"></cite>.</p>
+
+<h2>How much power?</h2>
+<p>More carrier power means a larger reflected signal and a better signal-to-noise ratio, up to a point. The carrier is an oscillating voltage across the sensor, and once its amplitude becomes comparable to the width of the sensor's Coulomb peak, it smears the peak out and heats the reservoirs. The optimum is where the sensor's response per electron, relative to the noise, is largest (Figure 10.4).</p>
+<figure>
+<div class="figbody"><!--plot:rf-power--></div>
+<figcaption>Signal-to-noise ratio per electron at fixed integration time versus carrier power at the tank (schematic). Too little power and the amplifier noise dominates; too much and the carrier broadens the sensor peak. The optimum lies around −100 dBm for a typical sensor dot, in line with published measurements, where the improvement saturates near −100 dBm <cite data-r="vigneau2023"></cite>.</figcaption>
+</figure>
+<div class="box numbers"><span class="tag">Worked numbers: how small is the signal?</span>
+<p>At −100 dBm (10⁻¹³ W) in 50 Ω, the carrier amplitude is V = √(2PZ₀) = √(2 × 10⁻¹³ × 50) ≈ 3.2 µV. Small compared with the sensor peak width in bias (hundreds of µV), as it should be.</p>
+<p>Suppose one electron changes |Γ| by 0.05. The reflected amplitude then changes by about 0.16 µV.</p>
+<p>The noise is set by the system noise temperature, a few kelvin for a good HEMT, more once cable and coupler losses are included. With T<sub>sys</sub> = 10 K and an integration time t, the rms noise voltage is roughly √(k<sub>B</sub>T<sub>sys</sub>Z₀/(2t)). For t = 2 µs that is √(1.38 × 10⁻²³ × 10 × 50 / 4 × 10⁻⁶) ≈ 0.04 µV.</p>
+<p>The signal-to-noise ratio is therefore about 4 in 2 µs, and it grows as the square root of the integration time. Every decibel lost between the tank and the HEMT, and every kelvin of amplifier noise, comes straight off this budget.</p>
+</div>
+
+<h2>Signal-to-noise ratio versus integration time</h2>
+<p>The figure of merit for a charge sensor is how long it must integrate to tell two charge states apart. Prepare the two states (for example, by sitting on either side of a charge transition), record many single measurements of each with integration time t, and histogram them (Figure 10.5). The SNR is the separation of the two peaks divided by their width. For white noise it grows as √t, so a plot of SNR versus t extrapolates to SNR = 1 at the <dfn data-def="The integration time at which a charge sensor reaches a signal-to-noise ratio of 1 for a single-electron change; a standard figure of merit for fast readout.">minimum integration time</dfn> t<sub>min</sub> <cite data-r="vigneau2023"></cite>.</p>
+<figure>
+<div class="figbody"><!--plot:snr-time--></div>
+<figcaption>Simulated single-shot histograms of the demodulated sensor signal for two charge states, at two integration times, for a sensor with t<sub>min</sub> = 55 ns. At 0.2 µs the two distributions overlap heavily (SNR ≈ 1.9). At 2 µs they are well separated (SNR ≈ 6), enough to identify the charge state in one shot with an error of about 0.1%.</figcaption>
+</figure>
+<p>For Gaussian noise and a threshold halfway between the two peaks, the probability of assigning the wrong charge state in a single shot is</p>
+\[ \epsilon = \tfrac{1}{2}\,\operatorname{erfc}\!\left(\frac{\text{SNR}}{2\sqrt{2}}\right), \]
+<p>which is 16% at SNR = 2, 1.2% at SNR = 4.5, and 0.13% at SNR = 6. That is why SNR of about 5 to 10 is the usual target for single-shot spin readout (Chapters 16 and 17).</p>
+
+<h2>Gate-based sensing: reflectometry without a sensor dot</h2>
+<p>A sensor dot costs space: its own gates, its own reservoirs, and a position within a dot pitch or two of the qubits. In large arrays this becomes a serious constraint. An alternative is to attach the tank circuit not to a sensor's ohmic contact but to one of the qubit device's own gates. When an electron tunnels between two dots, or between a dot and a reservoir, in response to the small RF voltage on that gate, the gate sees an extra, state-dependent capacitance (the quantum or tunnelling capacitance). That shifts the tank's resonance slightly, which is measured in the reflected phase <cite data-r="vigneau2023"></cite>.</p>
+<p>This <dfn data-def="Reflectometry with the resonator attached to one of the device's own gates, detecting the state-dependent capacitance from electron tunnelling instead of using a separate charge sensor.">gate-based (dispersive) sensing</dfn> needs no extra sensor at all, and single-shot spin readout has been demonstrated with it in silicon devices <cite data-r="west2019,zheng2019,urdampilleta2019,pakkiam2018"></cite>. Its signal is usually weaker than a good sensor dot's, and it only sees charge movement that the gate's RF voltage can drive, but it scales far better. Many groups expect large processors to rely on it.</p>
+
+<h2>Reading many sensors at once</h2>
+<p>Reflectometry has one more advantage: different tanks can be built with different inductors and therefore different resonance frequencies, connected to a single input line and a single output line and amplifier. Each sensor is probed by its own carrier tone and demodulated separately. This <b>frequency multiplexing</b> lets one amplifier chain read several sensors simultaneously; Harvard read four singlet–triplet qubits this way <cite data-r="fedele2021"></cite>. Our device has one sensor, but the technique becomes essential with more.</p>
+
+<div class="box symptom"><span class="tag">When it goes wrong</span>
+<p><b>What you see:</b> the reflected signal barely changes when the sensor is swept through its Coulomb peaks, although the DC current shows the peaks clearly.</p>
+<p><b>Likely causes:</b> the tank is badly mismatched, so the sensor resistance is far from L/(Z₀C<sub>p</sub>); the carrier frequency is not at the resonance; the carrier is too weak or far too strong; or the reflected signal is lost through a broken output line or a missing amplifier bias.</p>
+<p><b>What to do:</b> sweep the frequency with the sensor conducting and pinched off. If the resonance barely changes depth between the two, the match is poor. Tune the sensor towards the resistance the tank prefers, if its peaks allow it, or change the inductor in the next cooldown.</p>
+</div>
+
+<div class="box notebook"><span class="tag">Lab notebook · day 4</span>
+<p>VNA sweep 150–260 MHz: resonance at 196 MHz (sensor conducting), dip depth −18 dB; pinched off: no dip. → C_p ≈ 0.55 pF, R_match ≈ 44 kΩ. Q_L ≈ 20.</p>
+<p>Carrier 196.3 MHz. Power scan: best SNR at −99 dBm at the tank. Charge transition of D2: SNR = 6.1 at 2 µs integration, t_min ≈ 55 ns. IQ rotation angle stored (−37°).</p>
+<p>Sensor peaks visible in RF at 1 µs/point. Fast maps now possible.</p>
+</div>
+
+<div class="box passport"><span class="tag">Device passport · after Chapter 10</span>
+<div class="tablewrap"><table>
+<thead><tr><th>Quantity</th><th>Value</th><th>Used in</th></tr></thead>
+<tbody>
+<tr><td>Tank resonance</td><td>f₀ = 196 MHz, Q<sub>L</sub> ≈ 20, C<sub>p</sub> ≈ 0.55 pF</td><td>everywhere</td></tr>
+<tr><td>Carrier</td><td>196.3 MHz, −99 dBm at the tank</td><td>Chapters 15, 16</td></tr>
+<tr><td>Readout SNR</td><td>6 in 2 µs (t<sub>min</sub> ≈ 55 ns)</td><td>Chapters 15–17</td></tr>
+<tr><td>IQ rotation</td><td>−37°</td><td>all readout</td></tr>
+</tbody></table></div>
+</div>
+
+<div class="box check"><span class="tag">Check yourself</span>
+<p>1. Your tank uses L = 820 nH and has C<sub>p</sub> = 0.6 pF. What is the resonance frequency, and which sensor resistance is matched?</p>
+<details><summary>Show answer</summary><div>f₀ = 1/(2π√(820 nH × 0.6 pF)) ≈ 227 MHz, and R<sub>match</sub> = L/(Z₀C<sub>p</sub>) = 820 nH / (50 Ω × 0.6 pF) ≈ 27 kΩ.</div></details>
+<p>2. A sensor has t<sub>min</sub> = 200 ns. How long must you integrate for an assignment error of about 1%?</p>
+<details><summary>Show answer</summary><div>An error of 1% needs SNR ≈ 4.65 (from ε = ½ erfc(SNR/2√2)). Since SNR = √(t/t<sub>min</sub>), t = 4.65² × 200 ns ≈ 4.3 µs.</div></details>
+<p>3. Why does increasing the carrier power stop helping beyond a certain point?</p>
+<details><summary>Show answer</summary><div>The carrier is an AC voltage across the sensor. When its amplitude becomes comparable to the width of the sensor's Coulomb peak, it averages the sensor's response over the peak, which flattens the slope that the measurement relies on. It also heats the reservoirs. Beyond that point the signal per electron falls while the noise stays the same.</div></details>
+</div>
